@@ -1,0 +1,280 @@
+{
+  "why": "NO-PLAN-SCOPE-1 (2026-11-03): a machine with a Marketplace purchase plan is outside the scope of this tool. This file holds image references read from Azure in centralus on 2026-11-03 with Get-AzVMImage (the newest version of each SKU; one lab version as named). supported: for each publisher that data/supported-images.json lists as supported, images that carry NO purchase plan - each must stay in scope. withPlan: editions of the same publishers that carry a plan - each is outside the scope of this tool. NoPlanScope.Tests.ps1 fails when a supported publisher has no entry here. Read again with the sweep in the NO-PLAN-SCOPE-1 item. CLIENT-IMAGE-DATA-1 (2026-11-14) took out the MicrosoftWindowsDesktop image (windows-11, win11-24h2-entn): the list now marks that publisher unsupported, as the scan excludes it as a client operating system.",
+  "readUtc": "2026-11-03",
+  "region": "centralus",
+  "supported": [
+    {
+      "publisher": "MicrosoftWindowsServer",
+      "offer": "WindowsServer",
+      "sku": "2016-datacenter-smalldisk",
+      "version": "14393.9615.261025",
+      "os": "Windows"
+    },
+    {
+      "publisher": "MicrosoftWindowsServer",
+      "offer": "WindowsServer",
+      "sku": "2019-datacenter-smalldisk",
+      "version": "17763.9378.261025",
+      "os": "Windows"
+    },
+    {
+      "publisher": "MicrosoftWindowsServer",
+      "offer": "WindowsServer",
+      "sku": "2022-datacenter-smalldisk",
+      "version": "20348.5773.261025",
+      "os": "Windows"
+    },
+    {
+      "publisher": "MicrosoftWindowsServer",
+      "offer": "WindowsServer",
+      "sku": "2022-datacenter-smalldisk-g2",
+      "version": "20348.5773.261025",
+      "os": "Windows"
+    },
+    {
+      "publisher": "MicrosoftWindowsServer",
+      "offer": "WindowsServer",
+      "sku": "2025-datacenter-azure-edition",
+      "version": "26100.33674.261025",
+      "os": "Windows"
+    },
+    {
+      "publisher": "MicrosoftSQLServer",
+      "offer": "sql2022-ws2022",
+      "sku": "enterprise-gen2",
+      "version": "16.0.260610",
+      "os": "Windows"
+    },
+    {
+      "publisher": "MicrosoftSQLServer",
+      "offer": "sql2022-ws2022",
+      "sku": "sqldev-gen2",
+      "version": "16.0.260610",
+      "os": "Windows"
+    },
+    {
+      "publisher": "microsoft-dsvm",
+      "offer": "ubuntu-2204",
+      "sku": "2204-gen2",
+      "version": "25.06.18",
+      "os": "Linux"
+    },
+    {
+      "publisher": "Canonical",
+      "offer": "0001-com-ubuntu-server-jammy",
+      "sku": "22_04-lts",
+      "version": "22.04.202610220",
+      "os": "Linux"
+    },
+    {
+      "publisher": "Canonical",
+      "offer": "0001-com-ubuntu-server-jammy",
+      "sku": "22_04-lts-gen2",
+      "version": "22.04.202610220",
+      "os": "Linux"
+    },
+    {
+      "publisher": "Canonical",
+      "offer": "0001-com-ubuntu-server-jammy",
+      "sku": "22_04-lts-gen2",
+      "version": "22.04.202301050",
+      "os": "Linux"
+    },
+    {
+      "publisher": "Canonical",
+      "offer": "ubuntu-24_04-lts",
+      "sku": "server",
+      "version": "24.04.202610210",
+      "os": "Linux"
+    },
+    {
+      "publisher": "Canonical",
+      "offer": "0001-com-ubuntu-server-focal",
+      "sku": "20_04-lts-gen2",
+      "version": "20.04.202505200",
+      "os": "Linux"
+    },
+    {
+      "publisher": "Canonical",
+      "offer": "UbuntuServer",
+      "sku": "18_04-lts-gen2",
+      "version": "18.04.202401162",
+      "os": "Linux"
+    },
+    {
+      "publisher": "RedHat",
+      "offer": "RHEL",
+      "sku": "8-lvm-gen2",
+      "version": "8.10.2026102318",
+      "os": "Linux"
+    },
+    {
+      "publisher": "RedHat",
+      "offer": "RHEL",
+      "sku": "9-lvm-gen2",
+      "version": "9.8.2026102709",
+      "os": "Linux"
+    },
+    {
+      "publisher": "RedHat",
+      "offer": "RHEL-SAP-HA",
+      "sku": "90sapha-gen2",
+      "version": "9.0.2026030914",
+      "os": "Linux"
+    },
+    {
+      "publisher": "SUSE",
+      "offer": "sles-15-sp6",
+      "sku": "gen2",
+      "version": "2026.10.15",
+      "os": "Linux"
+    },
+    {
+      "publisher": "SUSE",
+      "offer": "sles-sap-15-sp6",
+      "sku": "gen2",
+      "version": "2026.10.15",
+      "os": "Linux"
+    },
+    {
+      "publisher": "Debian",
+      "offer": "debian-11",
+      "sku": "11-gen2",
+      "version": "0.20260805.2561",
+      "os": "Linux"
+    },
+    {
+      "publisher": "Debian",
+      "offer": "debian-12",
+      "sku": "12-gen2",
+      "version": "0.20261026.2643",
+      "os": "Linux"
+    },
+    {
+      "publisher": "Oracle",
+      "offer": "Oracle-Linux",
+      "sku": "ol810-lvm-gen2",
+      "version": "8.10.12",
+      "os": "Linux"
+    }
+  ],
+  "withPlan": [
+    {
+      "edition": "Ubuntu Pro",
+      "publisher": "Canonical",
+      "offer": "0001-com-ubuntu-pro-jammy",
+      "sku": "pro-22_04-lts",
+      "version": "22.04.202610220",
+      "os": "Linux",
+      "plan": {
+        "publisher": "canonical",
+        "product": "0001-com-ubuntu-pro-jammy",
+        "name": "pro-22_04-lts"
+      }
+    },
+    {
+      "edition": "Ubuntu Pro FIPS",
+      "publisher": "Canonical",
+      "offer": "0001-com-ubuntu-pro-jammy-fips",
+      "sku": "pro-fips-22_04-arm64",
+      "version": "22.04.202610290",
+      "os": "Linux",
+      "plan": {
+        "publisher": "canonical",
+        "product": "0001-com-ubuntu-pro-jammy-fips",
+        "name": "pro-fips-22_04-arm64"
+      }
+    },
+    {
+      "edition": "RHEL BYOS",
+      "publisher": "RedHat",
+      "offer": "rhel-byos",
+      "sku": "rhel-lvm76",
+      "version": "7.6.20210207",
+      "os": "Linux",
+      "plan": {
+        "publisher": "redhat",
+        "product": "rhel-byos",
+        "name": "rhel-lvm76"
+      }
+    },
+    {
+      "edition": "RHEL for SAP, rh-rhel-sap-haus",
+      "publisher": "RedHat",
+      "offer": "rh-rhel-sap-haus",
+      "sku": "rh-rhel-sap-haus-gen2",
+      "version": "8.6.2026072112",
+      "os": "Linux",
+      "plan": {
+        "publisher": "redhat",
+        "product": "rh-rhel-sap-haus",
+        "name": "rh-rhel-sap-haus-gen2"
+      }
+    },
+    {
+      "edition": "Red Hat JBoss EAP",
+      "publisher": "RedHat",
+      "offer": "rh-jboss-eap",
+      "sku": "rh-jboss-eap74-jdk17-rhel8",
+      "version": "7.4.2025071415",
+      "os": "Linux",
+      "plan": {
+        "publisher": "redhat",
+        "product": "rh-jboss-eap",
+        "name": "rh-jboss-eap74-jdk17-rhel8"
+      }
+    },
+    {
+      "edition": "SUSE -llc",
+      "publisher": "SUSE",
+      "offer": "sles-15-sp6-llc",
+      "sku": "gen2",
+      "version": "2026.10.15",
+      "os": "Linux",
+      "plan": {
+        "publisher": "suse",
+        "product": "sles-15-sp6-llc",
+        "name": "gen2"
+      }
+    },
+    {
+      "edition": "SUSE for SAP -llc",
+      "publisher": "SUSE",
+      "offer": "sles-sap-15-sp6-llc",
+      "sku": "gen1",
+      "version": "2026.10.15",
+      "os": "Linux",
+      "plan": {
+        "publisher": "suse",
+        "product": "sles-sap-15-sp6-llc",
+        "name": "gen1"
+      }
+    },
+    {
+      "edition": "Oracle WebLogic",
+      "publisher": "Oracle",
+      "offer": "weblogic-141200-jdk17-ol94",
+      "sku": "owls-141200-jdk17-ol94",
+      "version": "1.1.1",
+      "os": "Linux",
+      "plan": {
+        "publisher": "oracle",
+        "product": "weblogic-141200-jdk17-ol94",
+        "name": "owls-141200-jdk17-ol94"
+      }
+    },
+    {
+      "edition": "Windows Server preview",
+      "publisher": "MicrosoftWindowsServer",
+      "offer": "microsoftserveroperatingsystems-previews",
+      "sku": "windows-server-vnext-azure-edition",
+      "version": "29683.1000.261020",
+      "os": "Windows",
+      "plan": {
+        "publisher": "microsoftwindowsserver",
+        "product": "microsoftserveroperatingsystems-previews",
+        "name": "windows-server-vnext-azure-edition"
+      }
+    }
+  ]
+}

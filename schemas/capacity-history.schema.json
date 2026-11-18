@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://vmf.local/schemas/capacity-history.schema.json",
+  "title": "VMF released capacity reservation, kept as history",
+  "description": "REPORT-RELEASED-1: a RELEASED capacity claim, kept under capacity-history/ when the live record is cleared (a wave changed, a target changed, or the quota was checked again). The customer report and the Reports page read it beside the live claims; nothing that judges a wave does. One file per reservation: its name comes from the reservation, so a second write replaces the first.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "clearedUtc", "because", "claim"],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "clearedUtc": { "type": "string", "description": "When the live record was cleared, ISO 8601 UTC." },
+    "because": { "type": "string", "enum": ["changed", "checked"], "description": "changed: the wave or a machine's target changed. checked: the wave's quota was checked again." },
+    "claim": {
+      "type": "object",
+      "description": "The released claim as it was, in the capacity-claim contract.",
+      "required": ["wave", "size", "region", "state"],
+      "properties": { "state": { "const": "RELEASED" } }
+    }
+  }
+}

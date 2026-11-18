@@ -1,0 +1,346 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://vmf.local/schemas/plan-entry.schema.json",
+  "title": "VMF migration plan entry",
+  "description": "One VM's row in plan.json. Produced by New-VmfPlan, consumed by Start-VmfWave.",
+  "type": "object",
+  "required": [
+    "schemaVersion",
+    "vmId",
+    "wave",
+    "assessment",
+    "target",
+    "path",
+    "policy"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schemaVersion": {
+      "const": 37,
+      "description": "37 (SQL-TEMPDB-SIGNOFF-1, 2026-11-16): assessment.sqlServerDetected - the scan found SQL Server on the machine (its warning sql-server-agree-downtime). The plan sign-off names each machine that moves (path A) with it true, from a SCSI temporary disk (sourceDiskArch scsi-temp) to an NVMe temporary disk or none (target.diskArch nvme-temp or diskless), and is refused until the approver confirms they checked where tempdb is (plan-approval v4 sqlTempdbChecked). 36 (VF-UNMANAGED-CONFIG-1, 2026-11-14): policy.onSriovUnmanagedMissing (stop, proceed) - a Linux move with accelerated networking on after it stops at Checking when the network settings do not set the SR-IOV interface as unmanaged (sriovNotUnmanaged) or the check gives no answer (sriovUnmanagedNotChecked), until an approver accepts it for that machine; written only by a decision, absent reads as stop. 35 (ROLLBACK-CAPACITY-1, 2026-11-14): assessment.sourceCapacityRestricted - whether Microsoft restricts capacity growth for the series of the original size (target-families.json lifecycle.capacityRestrictions), so the sign-off of a wave that holds such a machine says that the product gives no guarantee of capacity. 34 (EOL-RELEASE-AN-1, 2026-11-14): policy.onReleaseEndOfLife (stop, proceed) - a Linux release past its vendor's end of standard support stops at Checking (linuxReleaseEndOfLife) until an approver accepts it for that machine; written only by a decision, absent reads as stop. 33 (OLD-VERSION-READERS-REMOVE-3, 2026-11-12): no value or field that no writer of this version gives - assessment.classification ReadyNow, policy.onDriverBelowFloor proceed, policy.acceleratedNetworking ensureOff (and the rule that refused it on an NVMe target), and target.rollbackSize. Nothing is public before 1.0, so no store holds an entry with one; the plan reader refuses an entry of an earlier version (OLD-VERSION-READERS-REMOVE-7), and Checking refuses a policy value the contract does not list (policyNotKnown). 32 (PLAN-HIBERNATION-UNUSED-1, 2026-11-12): no assessment.hibernationEnabled. Nothing read it: the scan excludes a machine with hibernation enabled, and Checking reads the machine again before any change. Nothing is public before 1.0, so no reader takes the old field. 31 (OLD-VERSION-READERS-REMOVE-1, 2026-11-11): no field of the rebuild around the same disks - path B, target.choice.method rebuild, assessment.rebuildLinks, policy.onSystemAssignedIdentity and the decision fields extensions, sqlVirtualMachine, dataCollectionRuleAssociations and principalId leave the contract. No writer gave them since v29, and nothing is public before 1.0, so no store holds an entry with one; no reader takes them. 30 (CRG-MOVE-DEMAND-1, 2026-11-07): assessment.capacityReservationGroupId - the capacity reservation group the scan found the machine in. A machine in a group this migration did not make gets no place in the reservation of its wave (Test-VmfEntryReservable). 29 (REBUILD-REMOVE-PLAN-1, 2026-11-07): the rebuild around the same disks is removed. No new entry has path B or target.choice.method rebuild, and assessment.rebuildLinks is no longer written. All three stay in the contract, so an entry an earlier version planned still reads - and a later save that stamps such an entry with the current version keeps them. A Windows machine whose move changes the kind of temporary disk is path A with method preview (the in-place upgrade (Preview)), for Generation 1 too. 28 (AN-MANA-DRIVER-RULE-1, 2026-11-06): policy.acceleratedNetworking is never ensureOff on an NVMe target (v6, v7), held by an allOf rule until v33; and onDriverBelowFloor proceed is no longer written (AN-PROCEED-NETVSC-1) - it stayed in the enum until v33, and the engine stopped on it. 27 (MACHINES-AT-ONCE-RANGE-1, 2026-11-06): policy.throttle is written as one of four choices - 5, 15, 30 or 60 machines at once (Pilot, Standard, Large, Maximum) - and a new plan gets 15; an older entry keeps its number. 26 (DCR-READ-1, 2026-11-06): a rebuild decision may carry dataCollectionRuleAssociations - the names of the data collection rule associations that Checking read before the stop, which the person accepted the rebuild deletes; and assessment.rebuildLinks may carry the names the scan read. 25 (SQLVM-REREAD-1, 2026-11-05): a rebuild decision may carry sqlVirtualMachine - the person accepted that the rebuild deletes the SQL virtual machine resource that Checking read before the stop. 24 (REBUILD-ACCEPT-1, 2026-11-01): a decision may be the acceptance of a rebuild (setting rebuild) with the extensions the person was shown, and assessment.rebuildLinks carries what the scan read. 23 (REBUILD-PICKER-1, 2026-11-01): target.choice.method - in-place, rebuild or preview - how the machine moves, as the person saved it. 22 (IDENTITY-LOSS-1, 2026-10-30): a decision for onSystemAssignedIdentity may carry principalId - the account of the system-assigned identity the person accepted to lose. 21 (HDD-OS-1, 2026-10-25): policy.diskUpgrade os-standard-ssd, and assessment.osDiskType. 20 (WAVE-AN-NAMES-1, 2026-10-24): acceleratedNetworkingOutcome. 19 (MANA-LINUX-KERNEL-1): onDriverBelowFloor updateKernel. Every earlier version is in docs/schema-migrations.md; the plan reader accepts every one of them."
+    },
+    "vmId": {
+      "type": "string",
+      "pattern": "^/subscriptions/.+/resourceGroups/.+/providers/Microsoft.Compute/virtualMachines/.+$"
+    },
+    "wave": {
+      "type": "string",
+      "minLength": 1
+    },
+    "appGroup": {
+      "type": "string"
+    },
+    "assessment": {
+      "type": "object",
+      "required": [
+        "classification",
+        "gen",
+        "os",
+        "sourceSize",
+        "sourceDiskArch"
+      ],
+      "additionalProperties": true,
+      "properties": {
+        "classification": {
+          "type": "string",
+          "enum": [
+            "ReadyAfterPrep",
+            "Blocked",
+            "Excluded"
+          ]
+        },
+        "gen": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "enum": [
+            "V1",
+            "V2",
+            null
+          ],
+          "description": "Hyper-V generation. NULL when Azure did not report it - properties.extended.instanceView.hyperVGeneration is absent for a machine that was deallocated at discovery time. The assessment records this as the prep item 'verify-generation' rather than guessing, because Gen1 is a hard blocker and reading unknown as V2 would migrate a machine that cannot be migrated."
+        },
+        "os": {
+          "type": "string",
+          "enum": [
+            "Windows",
+            "Linux"
+          ]
+        },
+        "osVersion": {
+          "type": "string"
+        },
+        "sourceSize": {
+          "type": "string"
+        },
+        "sourceCapacityRestricted": {
+          "type": [
+            "boolean",
+            "null"
+          ],
+          "description": "ROLLBACK-CAPACITY-1 (v35): true when Microsoft restricts capacity growth for the series of sourceSize (target-families.json lifecycle.capacityRestrictions, from the page retirements-and-capacity-restrictions), false when it does not, null when the size cannot be read - never read null as either. A rollback returns the machine to sourceSize, and the product gives no guarantee of capacity; the sign-off of a wave says so once when any machine of the wave that moves has true. Written by New-VmfPlan from the data (Test-VmfSizeCapacityRestricted)."
+        },
+        "sqlServerDetected": {
+          "type": "boolean",
+          "description": "SQL-TEMPDB-SIGNOFF-1 (v37): true when the scan found SQL Server on the machine - its warning sql-server-agree-downtime, from the SQL IaaS Agent record or a SQL Server image (Test-VmfSqlServerFound). Written by New-VmfPlan, true or false. A machine that moves with it true, from a SCSI temporary disk to an NVMe temporary disk or none, is named at the plan sign-off (Test-VmfSqlTempdbRisk). Only a stored true counts."
+        },
+        "sourceDiskArch": {
+          "type": "string",
+          "enum": [
+            "scsi-temp",
+            "nvme-temp",
+            "diskless"
+          ]
+        },
+        "blockers": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "prepNeeded": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "adeDetected": {
+          "type": "boolean"
+        },
+        "platformManaged": {
+          "type": "boolean",
+          "description": "true = VMSS/AKS/AVD member; must be Excluded"
+        },
+        "sourceTempDisks": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0,
+          "description": "TEMPPOOL-1: how many local temporary disks the machine has TODAY. null means the SKU catalog could not answer - never read it as zero. Compare with target.tempDisks: 1 -> 0 means the temporary disk disappears, 1 -> 4 means the machine gains drives."
+        },
+        "capacityReservationGroupId": {
+          "type": ["string", "null"],
+          "description": "CRG-MOVE-DEMAND-1 (v30): the resource id of the capacity reservation group the scan found the machine in (assessment v13); null for none. A machine in a group this migration did not make stays in it through the move (CRG-MOVE-1), so Check the quota and Reserve capacity leave it out of the reserved count, and CONVERTING never puts it in the group of the wave."
+        },
+        "osDiskType": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "HDD-OS-1 (v21): the type of the OS disk as the scan read it from the disk resource (Standard_LRS is Standard HDD). null when the scan could not read it - never read it as a type."
+        }
+      }
+    },
+    "target": {
+      "type": "object",
+      "required": [
+        "size",
+        "diskArch",
+        "controller"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "size": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "null when no target could be mapped (path MANUAL, reason in planNotes)"
+        },
+        "sizeAlternates": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Ranked fallbacks for a BLOCKED quota record"
+        },
+        "diskArch": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "enum": [
+            "scsi-temp",
+            "nvme-temp",
+            "diskless",
+            null
+          ]
+        },
+        "controller": {
+          "type": "string",
+          "enum": [
+            "NVMe",
+            "SCSI"
+          ]
+        },
+        "trustedLaunch": {
+          "type": "boolean"
+        },
+        "choice": {
+          "type": ["object", "null"],
+          "additionalProperties": false,
+          "required": ["option", "source"],
+          "description": "ADVISOR-1 (v15): where this machine's size series came from. default: the option it started on under the migration's default; person: somebody changed it; plan: the plan was built on one series for every machine; wave: a wave's series change moved it. Null when targets were chosen and none was chosen for this machine, which is then not moved. The time and the full record of the choice made on the targets step are in target-choices.json, copied into the migration; a change to one machine after planning (WAVE-MIX-2) is recorded here as person, and its time and author in the run's event log.",
+          "properties": {
+            "option": { "enum": ["v5", "v6", "v7"] },
+            "source": { "enum": ["default", "person", "plan", "wave"] },
+            "chosenBy": { "type": ["string", "null"] },
+            "method": { "enum": ["in-place", "preview"], "description": "REBUILD-PICKER-1 (v23): how this machine moves. in-place: Path A, the VM is changed where it stands. preview: Path A for a Windows machine whose move changes the kind of temporary disk - the in-place upgrade (Preview), which needs the preview feature VMTempDiskResizePreview on the subscription (TEMP-DISK-PREVIEW-1); Checking reads it before any change. New-VmfPlan refuses a saved method that the rules no longer give. Absent on an entry older than v23: the path says it." }
+          }
+        },
+        "zone": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "tempDisks": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0,
+          "description": "TEMPPOOL-1: how many LOCAL TEMPORARY disks the target size has. null means the SKU catalog could not answer - it must never be read as zero, because zero says 'this machine has no temporary disk', which is the claim that would send an operator into a migration believing nothing changes. The source's count is on the assessment record (sourceTempDisks); the pair is what tells an operator which machines gain drives and which lose their temporary disk entirely."
+        }
+      }
+    },
+    "path": {
+      "type": "string",
+      "enum": [
+        "A",
+        "MANUAL",
+        "EXCLUDED"
+      ],
+      "description": "OLD-VERSION-READERS-REMOVE-1 (v31): B, the rebuild around the same disks, left the enum - no writer gave it since v29 (REBUILD-REMOVE-PLAN-1), and A is the only path a wave runs. PATH-C-1: 'C' was here - a redeploy from a fresh image. No planner ever produced it and no engine step ever handled it, so the contract named a behaviour the product does not have. A stored plan cannot carry it; nothing ever wrote one."
+    },
+    "planNotes": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "acceleratedNetworkingOutcome": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["turnsOn", "unknownWhy"],
+      "description": "WAVE-AN-NAMES-1 (v20): does the move turn accelerated networking on for the primary network interface? Worked out by the engine from this entry (Get-VmfPlannedAnOutcome: the setting, the move, the primary interface the scan read, the target size and, for Linux, the release the VM agent reports) and written by every writer that changes one of those: New-VmfPlan, Set-VmfMachineTarget, and Resolve-VmfDecision when it sets accelerated networking. The wave settings name each machine from it, and the wave's acceptance hash covers it. Only on an entry that moves (path A).",
+      "properties": {
+        "turnsOn": {
+          "type": ["boolean", "null"],
+          "description": "true: it turns on. false: it does not (it is on already, the plan keeps it as it is or turns it off, or a SCSI reversion). null: the move decides (unknownWhy)."
+        },
+        "unknownWhy": {
+          "enum": ["kernel", "nics", null],
+          "description": "Why turnsOn is null. kernel: a Linux machine on a size that can give MANA - guest preparation reads the kernel, and with no MANA driver it stays off (AN-KEEP-1); on a release Microsoft does not list too, where a kernel of 6.14 or later has one. nics: the scan did not read whether the primary interface has it - the move reads the interfaces. null when turnsOn is known."
+        }
+      }
+    },
+    "decisions": {
+      "type": "array",
+      "description": "WAVE-LEVER-OVERRIDE-1 (v17): the settings a person decided for THIS machine alone, with Resolve-VmfDecision. One record per setting; a later decision for the same setting replaces it. A wave change never writes over a setting recorded here (Set-VmfWavePlan), and the wave editor names the machines that hold one. Absent: no decision. Not part of the policy, so not part of what a wave's acceptance is bound to - the setting's value is.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["setting", "by", "utc"],
+        "properties": {
+          "setting": { "type": "string", "minLength": 1 },
+          "by": { "type": "string" },
+          "utc": { "type": "string" }
+        }
+      }
+    },
+    "policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "acceleratedNetworking": {
+          "type": "string",
+          "enum": [
+            "ensureOn",
+            "preserve"
+          ],
+          "description": "AN-1: default ensureOn for NVMe targets (MANA requires AN on the NIC), preserve for SCSI reversions. AN-MANA-DRIVER-RULE-1 (v28): accelerated networking is always on where the target size can give MANA (every v6 and v7 size, Intel v5, Bsv2); the engine refuses preserve on a primary interface that is off there, in Checking before any change. ensureOff, which no writer gave since v28, left the contract at v33"
+        },
+        "diskUpgrade": {
+          "type": "string",
+          "enum": [
+            "os",
+            "all",
+            "os-standard-ssd"
+          ],
+          "description": "OLD-SKU-1C (v16): change the OS disk (os), or every disk (all), to Premium SSD during the move, while the machine is stopped and on its new size. HDD-OS-1 (v21): change a Standard HDD OS disk to Standard SSD (os-standard-ssd), on any size; a data disk keeps its type. Absent: the disk types are kept. Chosen per machine on the targets step (target-choices.json disks)."
+        },
+        "onReleaseEndOfLife": {
+          "type": "string",
+          "enum": [
+            "stop",
+            "proceed"
+          ],
+          "description": "EOL-RELEASE-AN-1 (v34): what Checking does with a Linux machine whose release, as the Azure Linux Agent reported it to the scan, is past its vendor's end of standard support (data/linux-release-eol.json). stop: stop with linuxReleaseEndOfLife before anything changes. proceed: an approver accepted it for this machine (Resolve-VmfDecision, always with a record in decisions). Absent: stop."
+        },
+        "capacityGate": {
+          "type": "string",
+          "enum": [
+            "Reserved",
+            "BestEffort"
+          ]
+        },
+        "keepSnapshotDays": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 90
+        },
+        "throttle": {
+          "type": "integer",
+          "enum": [5, 15, 30, 60],
+          "description": "SCALE-UX-1: how many machines the engine works on at the same time in this wave. A lever of the wave, accepted with it, and the number every start of the wave uses (MACHINES-AT-ONCE-RANGE-1: no start carries a number of its own). One engine container runs 15 machines, and a wave runs up to four containers (SCALE-2), so the limit is 60. Since v27 the planner and the wave editor write one of the four choices, 5, 15, 30 or 60 (Pilot, Standard, Large, Maximum), and a new plan gets 15. ATONCE-EARLIER-1 (narrowed, 2026-11-12): no other number. An entry with none reads as 15."
+        },
+        "onDDataFound": {
+          "type": "string",
+          "enum": [
+            "proceed",
+            "stop"
+          ]
+        },
+        "onSriovUnmanagedMissing": {
+          "type": "string",
+          "enum": [
+            "stop",
+            "proceed"
+          ],
+          "description": "VF-UNMANAGED-CONFIG-1 (v36): what Checking does for a Linux move with accelerated networking on after it, when the network settings do not set the SR-IOV interface as unmanaged (sriovNotUnmanaged) or the check gives no answer (sriovUnmanagedNotChecked). Microsoft: Accelerated Networking requires configuring the SR-IOV drivers as unmanaged devices in your network settings. Absent or stop: the machine waits for a decision, untouched. proceed: written only by Resolve-VmfDecision when an approver accepts the move of this one machine, always with a record in decisions; Checking then does not read the setting. Never a wave setting."
+        },
+        "onDriverBelowFloor": {
+          "type": "string",
+          "enum": [
+            "stop",
+            "updateKernel"
+          ],
+          "description": "DRIVER-1: what to do when the guest kernel is below the published MANA floor for its distro, or has no MANA driver (AN-KEEP-1). Judged against the PLAN'S TARGET fabric, never the fabric the guest currently reports. stop: stop and ask before anything changes. updateKernel (MANA-LINUX-KERNEL-1, v19): a Linux machine whose target can give MANA, on a release Microsoft's MANA table lists, has its kernel updated by its own package manager in GUEST_PREP, after the pristine copy; the machine is restarted and read again, and any failure rolls it back from the pristine copy. Written only by New-VmfPlan from the person's choice on the targets step (target-choices.json kernel), always with a record in decisions, so a wave save never writes over it."
+        },
+        "requireApproval": {
+          "type": "boolean",
+          "description": "Whether a person must approve the wave before it starts. Only false turns the approval off: an entry with no value, or any value that is not a boolean, is read as requiring it (SIGNOFF-NULL-1, Test-VmfApprovalRequired). The planner writes true."
+        },
+        "safetyCopy": {
+          "type": "string",
+          "enum": [
+            "pristine"
+          ],
+          "description": "SAFETY-2: 'pristine' takes a copy of every disk before anything is changed, on the original hardware - the only copy that can roll a machine back to the way it was. Every rollback and a restore from the first copy use it. Absent reads as pristine. SAFETYCOPY-CLEAN-1 (v19): 'clean', which skipped this copy, is no longer in the contract, and PRECHECK refuses any other value (policyNotKnown)."
+        },
+        "targetGeneration": {
+          "type": "string",
+          "enum": [
+            "v5",
+            "v6",
+            "v7"
+          ],
+          "description": "WAVE-2 lever 8: which VM size series this wave migrates to. v6 by default; v5 or v7 is chosen per wave. v5 (GEN-V5-1, plan v14) is a plain resize on SCSI that takes Generation 1 machines. A machine with no target size in the chosen series is reported unmapped - never silently moved to another series."
+        }
+      }
+    }
+  }
+}

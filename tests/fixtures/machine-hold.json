@@ -1,0 +1,38 @@
+{
+  "_comment": [
+    "WAVE-RUNNING-LEASE-1. Does a machine keep its wave running, and why?",
+    "ONE answer, decided in two languages: the engine (Get-VmfMachineHold,",
+    "PowerShell, which Get-VmfWaveRunningDetail and Get-VmfEndedWaveHolds ask)",
+    "and the pages (VmfHelp.machineHold in src/dashboard/help.js, JavaScript,",
+    "which the Migrations page and the wave editor ask).",
+    "  none       nothing holds the machine: no lease, and no state document or a final one.",
+    "  working    a worker or a restore works on it, or its state is not final.",
+    "  endedHold  a WAVE WORKER's lease older than the lease limit, on a machine whose",
+    "             state is final: the worker stopped after the move ended, and the",
+    "             service removes the hold at its next check (STALE-WAVE-HOLD-1).",
+    "Both 'working' and 'endedHold' keep the wave running: the engine refuses an edit",
+    "and a release of it. A lease's age is heartbeatAgeSeconds before now; a lease with",
+    "heartbeatUtc gives that text as it is. A heartbeat that cannot be read is not old.",
+    "Held by tests/unit/WaveRunningLease.Tests.ps1 and tests/js/wave-running-lease.test.js."
+  ],
+  "cases": [
+    { "name": "no state document and no lease",                      "state": null,                     "lease": null,                                                         "hold": "none" },
+    { "name": "PLANNED and no lease",                                "state": "PLANNED",                "lease": null,                                                         "hold": "working" },
+    { "name": "CONVERTING and no lease",                             "state": "CONVERTING",             "lease": null,                                                         "hold": "working" },
+    { "name": "MIGRATED and no lease",                               "state": "MIGRATED",               "lease": null,                                                         "hold": "none" },
+    { "name": "NEEDS_DECISION and no lease",                         "state": "NEEDS_DECISION",         "lease": null,                                                         "hold": "none" },
+    { "name": "no state document and a live worker lease",           "state": null,                     "lease": { "workerId": "w1-worker-0", "heartbeatAgeSeconds": 60 },    "hold": "working" },
+    { "name": "no state document and an old worker lease",           "state": null,                     "lease": { "workerId": "w1-worker-0", "heartbeatAgeSeconds": 3600 },  "hold": "working" },
+    { "name": "CONVERTING and an old worker lease",                  "state": "CONVERTING",             "lease": { "workerId": "w1-worker-0", "heartbeatAgeSeconds": 3600 },  "hold": "working" },
+    { "name": "MIGRATED and a live worker lease",                    "state": "MIGRATED",               "lease": { "workerId": "w1-worker-0", "heartbeatAgeSeconds": 60 },    "hold": "working" },
+    { "name": "MIGRATED and an old worker lease",                    "state": "MIGRATED",               "lease": { "workerId": "w1-worker-0", "heartbeatAgeSeconds": 3600 },  "hold": "endedHold" },
+    { "name": "SKIPPED and an old worker lease",                     "state": "SKIPPED",                "lease": { "workerId": "w1-worker-0", "heartbeatAgeSeconds": 3600 },  "hold": "endedHold" },
+    { "name": "FAILED_ROLLED_BACK and an old worker lease",          "state": "FAILED_ROLLED_BACK",     "lease": { "workerId": "w1-worker-0", "heartbeatAgeSeconds": 3600 },  "hold": "endedHold" },
+    { "name": "FAILED_NEEDS_ATTENTION and an old worker lease",      "state": "FAILED_NEEDS_ATTENTION", "lease": { "workerId": "w1-worker-0", "heartbeatAgeSeconds": 3600 },  "hold": "endedHold" },
+    { "name": "NEEDS_DECISION and an old worker lease",              "state": "NEEDS_DECISION",         "lease": { "workerId": "w1-worker-0", "heartbeatAgeSeconds": 3600 },  "hold": "endedHold" },
+    { "name": "MIGRATED and a live restore lease",                   "state": "MIGRATED",               "lease": { "workerId": "restore:op-1", "heartbeatAgeSeconds": 60 },   "hold": "working" },
+    { "name": "MIGRATED and an old restore lease",                   "state": "MIGRATED",               "lease": { "workerId": "restore:op-1", "heartbeatAgeSeconds": 3600 }, "hold": "working" },
+    { "name": "MIGRATED and a worker lease whose heartbeat is not a time", "state": "MIGRATED",         "lease": { "workerId": "w1-worker-0", "heartbeatUtc": "not a time" }, "hold": "working" },
+    { "name": "MIGRATED and a worker lease with no heartbeat",       "state": "MIGRATED",               "lease": { "workerId": "w1-worker-0" },                                "hold": "working" }
+  ]
+}

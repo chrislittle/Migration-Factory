@@ -1,0 +1,23 @@
+{
+  "schemaVersion": 9,
+  "runId": "run1-t2-20261102",
+  "wave": "second-tranche",
+  "acceptedBy": "operator@example.com",
+  "acceptedUtc": "2026-11-02T01:40:00Z",
+  "machineCount": 12,
+  "optionsHash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "levers": [
+    {
+      "safetyCopy": "pristine",
+      "onDDataFound": "stop",
+      "capacityGate": "Reserved",
+      "requireApproval": true,
+      "keepSnapshotDays": 7,
+      "targetGeneration": "v6"
+    }
+  ],
+  "note": "reviewed in the wave editor",
+  "amendments": [
+    { "by": "approver@example.com", "utc": "2026-11-02T02:15:00Z", "vmId": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-app/providers/Microsoft.Compute/virtualMachines/app-01", "change": "acceleratedNetworking=ensureOn", "reason": "decision" }
+  ]
+}

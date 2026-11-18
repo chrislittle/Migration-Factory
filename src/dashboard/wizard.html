@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Migration Factory - Assess and migrate</title>
+<!--
+  WIZARD-1: one guided flow for setting up a migration, replacing the buttons
+  named after the engine's operations (assess / plan / wave). Nobody thinks
+  "I will now perform an assessment"; they think "I want to migrate these
+  machines".
+
+    1 Where to look     2 What the scan found    3 How to group
+    4 Arrange the waves 5 Run it
+
+  The current step is DERIVED FROM THE RUN ITSELF, never from a variable this
+  page holds - so closing the tab and coming back resumes exactly where you
+  were. Going backward before any wave has started is expected (wrong scope,
+  disliked grouping); once a wave starts, setup is finished for that run and
+  the run view takes over operating it.
+-->
+<script src="msal-browser.min.js"></script>
+<!-- DARK-1: one stylesheet, Bootswatch Darkly. Rules in docs/ux.md;
+     the short version is that no page carries CSS of its own. -->
+<script src="theme.js"></script>
+<link rel="icon" href="logo.svg" type="image/svg+xml">
+<link rel="stylesheet" href="app.css">
+</head>
+<body class="p-wizard">
+<header class="topbar">
+  <!-- The product name, not a control. It used to link to Migrations,
+       which is ONE of the five areas, so the name of the whole product
+       acted as a shortcut to
+       a part of it. The navigation beside it names every area. -->
+  <span class="brand"><span class="logo" aria-hidden="true"></span><span class="brand-name"><span class="b-1">Migration</span><span class="b-2">Factory</span></span></span>
+  <nav class="topnav"></nav>
+  <span id="demo-tag" class="demo-tag" style="display:none">SAMPLE DATA</span>
+</header>
+
+<main class="wrap">
+  <div id="err" role="alert" tabindex="-1"></div>
+  <div id="ok"></div>
+  <!-- SIGNIN-1: filled by VmfHelp.showSignIn(). One card, on all of them. -->
+  <div id="login-view"></div>
+
+  <div id="app" style="display:none">
+    <div class="rail" id="rail"></div>
+    <div id="step"></div>
+  </div>
+</main>
+
+<script src="help.js"></script>
+<script src="assessment-report.js"></script>
+
+<script src="wizard.js"></script>
+  </body>
+</html>

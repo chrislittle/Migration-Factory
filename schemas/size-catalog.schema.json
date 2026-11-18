@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://vmf.local/schemas/size-catalog.schema.json",
+  "title": "VMF saved size catalog",
+  "description": "WAVEGEN-HOSTED-1. The part of one region's Azure size catalog a target can come from - D, E and F sizes of v5, v6 and v7 - and, from v2 (WAVE-MIX-2), the sizes the plan's machines are on, saved beside a plan by the engine when it builds the plan (catalog/<location>.json). The service cannot read Azure's catalog: it ships Az.Accounts only and its identity holds no Microsoft.Compute/skus/read. So a size-series change made through the service reads this copy. It is the catalog as it was when the plan was built. MIGRATION NOTE v1 to v2: v2 adds the source sizes, because whether a source has a temporary disk decides a v5 d size and a v2 or v3 size says so only in the catalog. A v1 file stays valid and is read the same way; lacking the source sizes, a change that would need one is refused by the agreement check, never given a different size.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "location", "readUtc", "sizes"],
+  "properties": {
+    "schemaVersion": { "enum": [1, 2] },
+    "location": { "type": "string", "minLength": 1, "description": "The region, lower case, as Azure names it." },
+    "readUtc": { "type": "string", "format": "date-time", "description": "When the engine read the catalog." },
+    "sizes": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["name", "family", "capabilities"],
+        "properties": {
+          "name": { "type": "string", "pattern": "^Standard_[A-Za-z0-9_-]+$", "description": "A target size (D, E or F at v5 to v7) or, from v2, a size a machine in the plan is on." },
+          "family": { "type": "string", "description": "The quota family Azure reports for the size. Never inferred from the name." },
+          "capabilities": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["name", "value"],
+              "properties": { "name": { "type": "string" }, "value": { "type": "string" } }
+            }
+          }
+        }
+      }
+    }
+  }
+}

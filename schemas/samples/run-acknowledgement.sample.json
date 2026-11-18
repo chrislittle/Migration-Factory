@@ -1,0 +1,9 @@
+{
+  "schemaVersion": 1,
+  "runId": "migration-2026-08",
+  "topic": "infrastructure-as-code",
+  "acknowledgedBy": "operator@contoso.com",
+  "acknowledgedUtc": "2026-08-27T18:20:00Z",
+  "statement": "Terraform, Bicep, Pulumi, ARM templates and Ansible keep their own definition of each machine. This migration makes these changes, and those definitions do not know about them: The size of the machine changes. A move to v6 or v7 changes the disk controller from SCSI to NVMe. A move can change accelerated networking. A move can change the disk type to Standard SSD or Premium SSD. A rollback or a restore puts the machine on new disks, made from its safety copies. A restore can keep the disk names. The next apply can undo these changes, or replace the machine. Reconcile your definitions after the migration.",
+  "note": null
+}

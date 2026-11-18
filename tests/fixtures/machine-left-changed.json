@@ -1,0 +1,87 @@
+{
+  "_comment": [
+    "DELETE-CHANGED-FREED-1. Is a machine left CHANGED, with nothing that mended it",
+    "since? A stopped machine: the stop that still describes it says changed, or a",
+    "data disk swap is left. A machine left out (SKIPPED): the same question, asked",
+    "of the record as the machine stood when it was left out, with every restore",
+    "and data disk swap on the record now. Decided in TWO places: the engine",
+    "(Test-VmfMachineLeftChanged, which keeps the claim and, at Delete this",
+    "migration, the safety copies) and the run page (machineLeftChanged in",
+    "migrations.html, which names the machine in the dialog Delete this migration).",
+    "Both are held to this one list: tests/unit/DeleteChangedFreed.Tests.ps1 and",
+    "tests/js/delete-changed-freed-real.test.js."
+  ],
+  "cases": [
+    { "why": "POWER-ONLY-CHANGED-1: left out after a stop whose power state is owed: changed, until the product returns it",
+      "doc": { "state": "SKIPPED", "history": [
+        { "tsUtc": "2026-11-06T10:00:00Z", "state": "FAILED_NEEDS_ATTENTION", "outcome": "ok", "reasonCode": "rollbackDisksBeforeMoveNotMade", "machineState": "changed", "powerNotPutBack": "PowerState/deallocated" },
+        { "tsUtc": "2026-11-06T10:05:00Z", "state": "SKIPPED", "outcome": "skip" } ] },
+      "expected": true },
+    { "why": "POWER-ONLY-CHANGED-1: left out, and the product returned its power state since: as it was",
+      "doc": { "state": "SKIPPED", "history": [
+        { "tsUtc": "2026-11-06T10:00:00Z", "state": "FAILED_NEEDS_ATTENTION", "outcome": "ok", "reasonCode": "rollbackDisksBeforeMoveNotMade", "machineState": "changed", "powerNotPutBack": "PowerState/deallocated" },
+        { "tsUtc": "2026-11-06T10:05:00Z", "state": "SKIPPED", "outcome": "skip" },
+        { "tsUtc": "2026-11-06T10:09:00Z", "state": "SKIPPED", "outcome": "ok", "machineState": "untouched" } ] },
+      "expected": false },
+    { "why": "POWER-ONLY-CHANGED-1: closed out part way by Stop this migration, its power state owed: changed",
+      "doc": { "state": "SKIPPED", "history": [
+        { "tsUtc": "2026-11-06T10:00:00Z", "state": "PRECHECK", "outcome": "ok" },
+        { "tsUtc": "2026-11-06T10:05:00Z", "state": "SKIPPED", "outcome": "skip", "machineState": "changed", "powerNotPutBack": "PowerState/running" } ] },
+      "expected": true },
+    { "why": "the rollback did not finish: changed",
+      "doc": { "state": "FAILED_NEEDS_ATTENTION", "history": [
+        { "tsUtc": "2026-10-01T10:00:00Z", "state": "PRECHECK", "outcome": "ok" },
+        { "tsUtc": "2026-10-01T10:03:00Z", "state": "GUEST_PREP", "outcome": "ok" },
+        { "tsUtc": "2026-10-01T10:08:00Z", "state": "FAILED_NEEDS_ATTENTION", "outcome": "fail", "reasonCode": "rollbackFailed", "machineState": "changed" } ] },
+      "expected": true },
+    { "why": "the product rolled it back: as it was",
+      "doc": { "state": "FAILED_ROLLED_BACK", "history": [
+        { "tsUtc": "2026-10-01T10:00:00Z", "state": "PRECHECK", "outcome": "ok" },
+        { "tsUtc": "2026-10-01T10:20:00Z", "state": "FAILED_ROLLED_BACK", "outcome": "fail", "reasonCode": "bootFailedAfterConversion", "machineState": "restored" } ] },
+      "expected": false },
+    { "why": "a data disk swap is left: changed, whatever the stop says",
+      "doc": { "state": "FAILED_NEEDS_ATTENTION", "swapPending": { "kind": "rollback" }, "history": [
+        { "tsUtc": "2026-10-01T10:08:00Z", "state": "FAILED_NEEDS_ATTENTION", "outcome": "fail", "reasonCode": "bootFailedAfterConversion", "machineState": "restored" } ] },
+      "expected": true },
+    { "why": "changed, then restored after the stop: mended",
+      "doc": { "state": "FAILED_NEEDS_ATTENTION", "restore": { "restoredUtc": "2026-10-01T12:00:00Z" }, "history": [
+        { "tsUtc": "2026-10-01T10:08:00Z", "state": "FAILED_NEEDS_ATTENTION", "outcome": "fail", "reasonCode": "rollbackFailed", "machineState": "changed" } ] },
+      "expected": false },
+    { "why": "migrated: not left changed",
+      "doc": { "state": "MIGRATED", "history": [
+        { "tsUtc": "2026-10-01T10:00:00Z", "state": "PRECHECK", "outcome": "ok" },
+        { "tsUtc": "2026-10-01T10:30:00Z", "state": "MIGRATED", "outcome": "ok" } ] },
+      "expected": false },
+    { "why": "left out after the rollback did not finish: changed",
+      "doc": { "state": "SKIPPED", "history": [
+        { "tsUtc": "2026-10-01T10:00:00Z", "state": "PRECHECK", "outcome": "ok" },
+        { "tsUtc": "2026-10-01T10:08:00Z", "state": "FAILED_NEEDS_ATTENTION", "outcome": "fail", "reasonCode": "rollbackFailed", "machineState": "changed" },
+        { "tsUtc": "2026-10-01T10:30:00Z", "state": "SKIPPED", "outcome": "skip", "detail": "left out" } ] },
+      "expected": true },
+    { "why": "left out after the product rolled it back: as it was",
+      "doc": { "state": "SKIPPED", "history": [
+        { "tsUtc": "2026-10-01T10:20:00Z", "state": "FAILED_ROLLED_BACK", "outcome": "fail", "reasonCode": "bootFailedAfterConversion", "machineState": "restored" },
+        { "tsUtc": "2026-10-01T10:30:00Z", "state": "SKIPPED", "outcome": "skip", "detail": "left out" } ] },
+      "expected": false },
+    { "why": "left out changed, then restored: mended",
+      "doc": { "state": "SKIPPED", "restore": { "restoredUtc": "2026-10-01T12:00:00Z" }, "history": [
+        { "tsUtc": "2026-10-01T10:08:00Z", "state": "FAILED_NEEDS_ATTENTION", "outcome": "fail", "reasonCode": "rollbackFailed", "machineState": "changed" },
+        { "tsUtc": "2026-10-01T10:30:00Z", "state": "SKIPPED", "outcome": "skip", "detail": "left out" } ] },
+      "expected": false },
+    { "why": "left out before it started: nothing changed",
+      "doc": { "state": "SKIPPED", "history": [
+        { "tsUtc": "2026-10-01T10:30:00Z", "state": "SKIPPED", "outcome": "skip", "detail": "left out" } ] },
+      "expected": false },
+    { "why": "Stop this migration left it part way: the SKIPPED line says changed",
+      "doc": { "state": "SKIPPED", "history": [
+        { "tsUtc": "2026-10-01T10:00:00Z", "state": "PRECHECK", "outcome": "ok" },
+        { "tsUtc": "2026-10-01T10:05:00Z", "state": "CONVERTING", "outcome": "ok" },
+        { "tsUtc": "2026-10-01T10:30:00Z", "state": "SKIPPED", "outcome": "skip", "detail": "stopped", "machineState": "changed" } ] },
+      "expected": true },
+    { "why": "left out with a data disk swap left: changed",
+      "doc": { "state": "SKIPPED", "swapPending": { "kind": "restore" }, "history": [
+        { "tsUtc": "2026-10-01T10:20:00Z", "state": "FAILED_ROLLED_BACK", "outcome": "fail", "reasonCode": "bootFailedAfterConversion", "machineState": "restored" },
+        { "tsUtc": "2026-10-01T10:30:00Z", "state": "SKIPPED", "outcome": "skip", "detail": "left out" } ] },
+      "expected": true }
+  ]
+}

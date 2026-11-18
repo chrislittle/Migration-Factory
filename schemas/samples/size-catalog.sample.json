@@ -1,0 +1,29 @@
+{
+  "schemaVersion": 1,
+  "location": "centralus",
+  "readUtc": "2026-09-26T12:00:00Z",
+  "sizes": [
+    {
+      "name": "Standard_D2ds_v6",
+      "family": "standardDDSv6Family",
+      "capabilities": [
+        { "name": "vCPUs", "value": "2" },
+        { "name": "MaxResourceVolumeMB", "value": "0" },
+        { "name": "MaxNetworkInterfaces", "value": "2" },
+        { "name": "MaxDataDiskCount", "value": "8" },
+        { "name": "HyperVGenerations", "value": "V2" }
+      ]
+    },
+    {
+      "name": "Standard_D2ds_v5",
+      "family": "standardDDSv5Family",
+      "capabilities": [
+        { "name": "vCPUs", "value": "2" },
+        { "name": "MaxResourceVolumeMB", "value": "76800" },
+        { "name": "MaxNetworkInterfaces", "value": "2" },
+        { "name": "MaxDataDiskCount", "value": "4" },
+        { "name": "HyperVGenerations", "value": "V1,V2" }
+      ]
+    }
+  ]
+}

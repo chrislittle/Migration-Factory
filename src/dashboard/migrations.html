@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Migration Factory - Migrations</title>
+<!--
+  Migration Dashboard (architecture section 6; S3-5 adds actions).
+  Still a static page. READS and ACTIONS both go to the Stage 3 facade with a
+  delegated token AS the signed-in user - the facade and the engine enforce
+  authorization and record who did what; the page only mirrors those role
+  checks for display.
+  STORE-READ-1: reads used to go STRAIGHT to the run store with the viewer's
+  own identity, which needed a second Azure permission and, more importantly,
+  could never work against a store with public network access disabled - a
+  browser is not in a subscription, so no perimeter rule can name it.
+  Without an apiUrl in dashboard.config.json the page renders zero action
+  controls and stays exactly the Stage 2 read-only view.
+
+  COCK-3 principles:
+  - PLAIN LANGUAGE: the viewer knows what a virtual machine and a disk are,
+    nothing else. Raw engine vocabulary never reaches the page as headline
+    text - a translation layer renders it, raw strings demoted to tooltips.
+  - WAVES are the unit of presentation, in name order, with progress + status.
+  - Quota and reservation are TWO facts, never one merged state.
+  - Look/feel: the gh- design system (ghcp-credit-visibility-azure).
+  ?demo=1 renders bundled sample data offline.
+-->
+<script src="msal-browser.min.js"></script>
+<!-- DARK-1: one stylesheet, Bootswatch Darkly. Rules in docs/ux.md;
+     the short version is that no page carries CSS of its own. -->
+<script src="theme.js"></script>
+<link rel="icon" href="logo.svg" type="image/svg+xml">
+<link rel="stylesheet" href="app.css">
+</head>
+<body class="p-migrations">
+<header class="topbar">
+  <!-- The product name, not a control. It used to link to Migrations, which
+       is ONE of the five areas - so the name of the whole product acted as a
+       shortcut to a part of it. The navigation beside it names every area. -->
+  <span class="brand"><span class="logo" aria-hidden="true"></span><span class="brand-name"><span class="b-1">Migration</span><span class="b-2">Factory</span></span></span>
+  <nav class="topnav"></nav>
+  <span id="demo-tag" class="demo-tag" style="display:none">SAMPLE DATA</span>
+  <span class="right">
+    <span class="runpick"><span class="navlabel">Migration run</span><span id="live-ind" class="livedot idle"></span><button type="button" id="run-current" class="current" aria-haspopup="listbox" aria-expanded="false"><span id="run-current-project" class="rp"></span><span id="run-current-name">&hellip;</span> <span class="caret">&#9660;</span></button><div id="run-panel" class="run-panel" role="listbox" aria-label="Migration runs"></div></span>
+    <span id="tick"></span>
+    <span class="act-menu" id="act-wrap" style="display:none">
+      <!-- NAV-HOVER-1: .navbtn, like every control that sits ON the navigation
+           bar. As .btn / .refresh-btn they were the bar's own blue in the light
+           theme, so they read as plain text and barely changed on hover. -->
+      <button type="button" id="act-menu-btn" class="navbtn" aria-haspopup="menu" aria-expanded="false"></button>
+      <div id="act-panel" class="run-panel" role="menu" style="min-width:300px"></div>
+    </span>
+    <button type="button" id="refresh-btn" class="navbtn">Refresh now</button>
+  </span>
+</header>
+
+<main class="wrap">
+  <div id="err"></div>
+  <div id="ok"></div>
+  <!-- SIGNIN-1: filled by VmfHelp.showSignIn(). One card, on all of them. -->
+  <div id="login-view"></div>
+
+  <div id="app" style="display:none">
+    <div class="kpis" id="kpis"></div>
+    <div id="run-actions"></div>
+    <div id="nextstep"></div>
+    <div id="found"></div>
+    <div class="card">
+      <div class="ch">
+        <h2>Virtual machines by wave</h2>
+        <span class="chips">
+          <input id="vm-search" class="searchbox" type="search" placeholder="Find a virtual machine&hellip;">
+          <span class="chips" id="status-chips"></span>
+        </span>
+      </div>
+    </div>
+    <div id="waves"></div>
+    <div class="card" id="capacity-card">
+      <!-- CAPNAME-1: "Capacity" named one of the two things this card holds.
+           Quota is a LIMIT Azure puts on how much of a size you may run;
+           a capacity reservation is hardware Azure HOLDS for you, and is
+           billed. Headroom under the quota guarantees nothing about whether
+           the hardware is free, and a reservation is no use without quota to
+           cover it - so the card shows both, and now says both.
+           The names are Azure's own: the portal calls them "Quotas" and
+           "Capacity Reservations". -->
+      <div class="ch"><h2 id="cap-title"></h2><span class="hint" id="cap-hint"></span></div>
+      <!-- RES-LIST-1: two lists, not one table. -->
+      <div class="cardbody cap-sub" id="cap-quota-sub"><h3 id="cap-quota-title"></h3><span class="hint" id="cap-quota-hint"></span></div>
+      <!-- QUOTA-CARD-LAYOUT-1: each list is in the wide-table box, so a
+           table wider than a phone scrolls inside it. The card hides what runs
+           past it, and the Quota column was cut off. -->
+      <div class="vmf-scroll">
+      <table id="cap-table">
+        <!-- QUOTA-FAMILY-1: quota family and region FIRST, because that is
+             the thing a quota belongs to. The headings are built by
+             renderCapacity. -->
+        <thead><tr id="cap-head"></tr></thead>
+        <tbody></tbody>
+      </table>
+      </div>
+      <!-- Shown only when a wave in view uses an on-demand capacity reservation (claimUsesReservation). -->
+      <div id="res-section" style="display:none">
+        <div class="cardbody cap-sub"><h3 id="res-title"></h3><span class="hint" id="res-hint"></span></div>
+        <div class="vmf-scroll">
+        <table id="res-table">
+          <thead><tr id="res-head"></tr></thead>
+          <tbody></tbody>
+        </table>
+        </div>
+      </div>
+    </div>
+    <!-- RETAIN-UX-1: the safety copies and what the daily cleanup will do. -->
+    <div class="card" id="copies-card">
+      <div class="ch"><h2 id="copies-title"></h2><span class="hint" id="copies-hint"></span></div>
+      <div id="copies-pass" class="cardbody muted"></div>
+      <table id="copies-table">
+        <thead><tr id="copies-head"></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+    <div class="card">
+      <div class="ch"><h2>Activity</h2><span class="hint">Newest first &middot; hover any line for the technical record</span></div>
+      <!-- LOG-1: the activity list dropped older messages as it scrolled,
+           with nothing to reach anything past the last minute or two.
+           The feed showed the newest 30
+           and nothing led to the rest. One button, two states (rule 11):
+           the whole log in a scrolling box, or the latest 30 again. -->
+      <div id="event-scroll">
+        <table id="event-table">
+          <thead><tr><th>When</th><th>Virtual machine</th><th>What happened</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      <div class="ev-foot"><button type="button" id="ev-toggle" class="btn ghost" hidden></button><span id="ev-count" class="hint"></span></div>
+    </div>
+  </div>
+</main>
+
+<aside id="drill" aria-label="Virtual machine detail"><button type="button" class="close" id="drill-close" aria-label="Close" title="Close">&times;</button><div id="drill-body"></div></aside>
+
+<div id="modal-back"><div class="modal" role="dialog" aria-modal="true">
+  <h3 id="m-title"></h3><div class="desc" id="m-desc"></div>
+  <div class="m-stale" id="m-stale" role="status"></div>
+  <div id="m-fields"></div>
+  <div class="m-err" id="m-err"></div>
+  <div class="m-actions"><button class="btn ghost" id="m-cancel"></button><button class="btn" id="m-confirm"></button></div>
+</div></div>
+
+<script src="help.js"></script>
+
+<script src="migrations.js"></script>
+</body>
+</html>

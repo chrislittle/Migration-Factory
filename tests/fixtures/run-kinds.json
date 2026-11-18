@@ -1,0 +1,17 @@
+{
+  "_comment": "RETAIN-KIND-1. What a run's manifest (run.json) says the run IS. The pages (help.js runKind) and the engine (Get-VmfRunKind) answer by this one list. OLD-VERSION-READERS-REMOVE-6: the manifest writer (Initialize-VmfRun) writes kind on every manifest and the contract requires it, so a manifest with no kind is not known: null, never a guess - it is not read as a migration any more. No manifest at all is null too. A kind the schema does not know is returned as written, so it is neither a migration nor an assessment.",
+  "schemaVersion": 1,
+  "cases": [
+    { "manifest": null,                                    "kind": null,         "why": "no manifest, or one that could not be read: not known" },
+    { "manifest": { "runId": "r1" },                       "kind": null,         "why": "no kind: not known, and not a migration - this version writes kind on every manifest" },
+    { "manifest": { "runId": "r1", "kind": null },         "kind": null,         "why": "a kind written as null says nothing either" },
+    { "manifest": { "runId": "r1", "kind": "" },           "kind": null,         "why": "nor does an empty one" },
+    { "manifest": { "runId": "r1", "kind": "migration" },  "kind": "migration",  "why": "a migration" },
+    { "manifest": { "runId": "r1", "kind": "assessment" }, "kind": "assessment", "why": "an assessment" },
+    { "manifest": { "runId": "r1", "kind": "report" },     "kind": "report",     "why": "a kind the schema does not know is not made into a migration" },
+    { "manifest": "migration",                             "kind": null,         "why": "text is not a manifest" },
+    { "manifest": 5,                                       "kind": null,         "why": "nor is a number" },
+    { "manifest": true,                                    "kind": null,         "why": "nor is true" },
+    { "manifest": [],                                      "kind": null,         "why": "nor is a list" }
+  ]
+}

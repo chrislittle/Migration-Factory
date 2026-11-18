@@ -1,0 +1,30 @@
+{
+  "items": [
+    {
+      "toc_title": "Virtual machines",
+      "children": [
+        { "toc_title": "Overview", "href": "overview" },
+        {
+          "toc_title": "Sizes",
+          "children": [
+            { "toc_title": "Example overview", "href": "sizes/example/overview" },
+            { "toc_title": "A series", "href": "sizes/example/a-series" },
+            { "toc_title": "B series, written with a dot", "href": "./sizes/example/b-series" },
+            {
+              "toc_title": "Nested",
+              "children": [
+                { "toc_title": "D series, a site path with a toc query", "href": "/azure/virtual-machines/sizes/example/d-series?toc=/azure/virtual-machines/toc.json" },
+                { "toc_title": "E series, with a locale and an anchor", "href": "/en-us/azure/virtual-machines/sizes/example/e-series#top" }
+              ]
+            },
+            { "toc_title": "F series, a full Learn address", "href": "https://learn.microsoft.com/en-us/azure/virtual-machines/sizes/example/f-series" },
+            { "toc_title": "C series, another folder", "href": "sizes/other/c-series" },
+            { "toc_title": "G series, another site", "href": "https://example.com/azure/virtual-machines/sizes/example/g-series" },
+            { "toc_title": "H series, another section", "href": "../virtual-network/sizes/example/h-series" }
+          ]
+        }
+      ]
+    }
+  ],
+  "metadata": { "brand": "azure" }
+}

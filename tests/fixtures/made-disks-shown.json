@@ -1,0 +1,132 @@
+{
+  "about": "MADE-DISK-SHOWN-1: the managed disks a rollback or Restore this machine made from the safety copies that the record of the machine says nothing uses, and what the daily cleanup does with each. The page's madeDiskRows (src/dashboard/migrations.js) gives 'disks' for each 'doc'; tests/unit/MadeDiskShown.Tests.ps1 holds the same cases to the engine: the disks are Get-VmfDeletableMadeDisks, a disk is 'due' exactly when Get-VmfDueMadeDisks lists it, and restoreRuns, finishRuns and restoreStopped are Test-VmfPutBackJobHolds.",
+  "cases": [
+    {
+      "why": "no lists: nothing to show",
+      "doc": { "vmId": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-app/providers/Microsoft.Compute/virtualMachines/app-01", "state": "MIGRATED" },
+      "disks": []
+    },
+    {
+      "why": "a disk a rollback made, nothing uses it, and the move has ended: the next cleanup deletes it",
+      "doc": { "vmId": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-app/providers/Microsoft.Compute/virtualMachines/app-01", "state": "FAILED_ROLLED_BACK",
+        "rollbackDisksDuringRollback": [ { "diskId": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-app/providers/Microsoft.Compute/disks/app-01-os-rb", "diskName": "app-01-os-rb", "lun": null, "madeUtc": "2026-11-06T09:00:00Z" } ] },
+      "disks": [ { "diskId": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-app/providers/Microsoft.Compute/disks/app-01-os-rb", "list": "rollbackDisksDuringRollback", "status": "due" } ]
+    },
+    {
+      "why": "MIGRATED and SKIPPED are ended too",
+      "doc": { "vmId": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-app/providers/Microsoft.Compute/virtualMachines/app-01", "state": "SKIPPED",
+        "restoreDisks": [ { "diskId": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-app/providers/Microsoft.Compute/disks/app-01-d0-r", "diskName": "app-01-d0-r", "lun": 0, "madeUtc": "2026-11-06T09:00:00Z" } ] },
+      "disks": [ { "diskId": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-app/providers/Microsoft.Compute/disks/app-01-d0-r", "list": "restoreDisks", "status": "due" } ]
+    },
+    {
+      "why": "a machine that needs attention keeps the disk: a person may still put it back",
+      "doc": { "vmId": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-app/providers/Microsoft.Compute/virtualMachines/app-01", "state": "FAILED_NEEDS_ATTENTION",
+        "restoreDisks": [ { "diskId": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-app/providers/Microsoft.Compute/disks/app-01-os-rec", "diskName": "app-01-os-rec", "lun": null, "madeUtc": "2026-11-06T09:00:00Z" } ] },
+      "disks": [ { "diskId": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-app/providers/Microsoft.Compute/disks/app-01-os-rec", "list": "restoreDisks", "status": "waits" } ]
+    },
+    {
+      "why": "a machine that waits for a decision keeps it too",
+      "doc": { "vmId": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-app/providers/Microsoft.Compute/virtualMachines/app-01", "state": "NEEDS_DECISION",
+        "rollbackDisksDuringRollback": [ { "diskId": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-app/providers/Microsoft.Compute/disks/app-01-d1-rb", "diskName": "app-01-d1-rb", "lun": 1, "madeUtc": "2026-11-06T09:00:00Z" } ] },
+      "disks": [ { "diskId": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-app/providers/Microsoft.Compute/disks/app-01-d1-rb", "list": "rollbackDisksDuringRollback", "status": "waits" } ]
+    },
+    {
+      "why": "a disk marked used is the machine's own, and one marked deleted is gone: neither shows",
+      "doc": { "vmId": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-app/providers/Microsoft.Compute/virtualMachines/app-01", "state": "MIGRATED",
+        "rollbackDisksDuringRollback": [
+          { "diskId": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-app/providers/Microsoft.Compute/disks/app-01-used", "diskName": "app-01-used", "lun": null, "madeUtc": "2026-11-06T09:00:00Z", "usedUtc": "2026-11-06T09:10:00Z" },
+          { "diskId": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-app/providers/Microsoft.Compute/disks/app-01-gone", "diskName": "app-01-gone", "lun": 0, "madeUtc": "2026-11-06T09:00:00Z", "deletedUtc": "2026-11-07T03:30:00Z" },
+          { "diskId": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-app/providers/Microsoft.Compute/disks/app-01-free", "diskName": "app-01-free", "lun": 1, "madeUtc": "2026-11-06T09:00:00Z", "usedUtc": null, "deletedUtc": "" } ] },
+      "disks": [ { "diskId": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-app/providers/Microsoft.Compute/disks/app-01-free", "list": "rollbackDisksDuringRollback", "status": "due" } ]
+    },
+    {
+      "why": "a disk the record says the machine runs on (an id field of the capture or a put-back record, in any letter case) does not show",
+      "doc": { "vmId": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-app/providers/Microsoft.Compute/virtualMachines/app-01", "state": "MIGRATED",
+        "captured": { "vmConfig": { "osDisk": { "managedDiskId": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/RG-APP/providers/Microsoft.Compute/disks/APP-01-OS-RB" } } },
+        "rollback": { "dataDisks": [ { "lun": 0, "newDiskId": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-app/providers/Microsoft.Compute/disks/app-01-d0-rb" } ] },
+        "restore": { "diskIds": [ "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-app/providers/Microsoft.Compute/disks/app-01-d1-rec" ] },
+        "rollbackDisksDuringRollback": [
+          { "diskId": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-app/providers/Microsoft.Compute/disks/app-01-os-rb", "diskName": "app-01-os-rb", "lun": null, "madeUtc": "2026-11-06T09:00:00Z" },
+          { "diskId": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-app/providers/Microsoft.Compute/disks/app-01-d0-rb", "diskName": "app-01-d0-rb", "lun": 0, "madeUtc": "2026-11-06T09:00:00Z" } ],
+        "restoreDisks": [
+          { "diskId": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-app/providers/Microsoft.Compute/disks/app-01-d1-rec", "diskName": "app-01-d1-rec", "lun": 1, "madeUtc": "2026-11-06T09:00:00Z" },
+          { "diskId": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-app/providers/Microsoft.Compute/disks/app-01-d2-rec", "diskName": "app-01-d2-rec", "lun": 2, "madeUtc": "2026-11-06T09:00:00Z" } ] },
+      "disks": [ { "diskId": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-app/providers/Microsoft.Compute/disks/app-01-d2-rec", "list": "restoreDisks", "status": "due" } ]
+    },
+    {
+      "why": "an id field of the restore record counts too",
+      "doc": { "vmId": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-app/providers/Microsoft.Compute/virtualMachines/app-01", "state": "MIGRATED",
+        "restore": { "newDiskId": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-app/providers/Microsoft.Compute/disks/app-01-os-r" },
+        "restoreDisks": [
+          { "diskId": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-app/providers/Microsoft.Compute/disks/app-01-os-r", "diskName": "app-01-os-r", "lun": null, "madeUtc": "2026-11-06T09:00:00Z" },
+          { "diskId": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-app/providers/Microsoft.Compute/disks/app-01-os-tmp", "diskName": "app-01-os-tmp", "lun": null, "madeUtc": "2026-11-06T09:00:00Z" } ] },
+      "disks": [ { "diskId": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-app/providers/Microsoft.Compute/disks/app-01-os-tmp", "list": "restoreDisks", "status": "due" } ]
+    },
+    {
+      "why": "an id deeper than the walk reads (more than 12 levels) is not on the record",
+      "doc": { "vmId": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-app/providers/Microsoft.Compute/virtualMachines/app-01", "state": "MIGRATED",
+        "captured": { "a": { "b": { "c": { "d": { "e": { "f": { "g": { "h": { "i": { "j": { "k": { "l": { "m": { "diskId": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-app/providers/Microsoft.Compute/disks/app-01-deep" } } } } } } } } } } } } },
+          "n": { "diskId": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-app/providers/Microsoft.Compute/disks/app-01-shallow" } },
+        "rollbackDisksDuringRollback": [
+          { "diskId": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-app/providers/Microsoft.Compute/disks/app-01-deep", "diskName": "app-01-deep", "lun": 0, "madeUtc": "2026-11-06T09:00:00Z" },
+          { "diskId": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-app/providers/Microsoft.Compute/disks/app-01-shallow", "diskName": "app-01-shallow", "lun": 1, "madeUtc": "2026-11-06T09:00:00Z" } ] },
+      "disks": [ { "diskId": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-app/providers/Microsoft.Compute/disks/app-01-deep", "list": "rollbackDisksDuringRollback", "status": "due" } ]
+    },
+    {
+      "why": "a disk a refused swap waits to put on the machine, or one it swapped, does not show: Finish uses it",
+      "doc": { "vmId": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-app/providers/Microsoft.Compute/virtualMachines/app-01", "state": "FAILED_NEEDS_ATTENTION",
+        "swapPending": { "kind": "rollback", "swaps": [ { "lun": 0, "diskId": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-app/providers/Microsoft.Compute/disks/APP-01-D0-RB" } ],
+          "swapped": [ { "lun": 1, "diskId": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-app/providers/Microsoft.Compute/disks/app-01-d1-rb" } ] },
+        "rollbackDisksDuringRollback": [
+          { "diskId": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-app/providers/Microsoft.Compute/disks/app-01-d0-rb", "diskName": "app-01-d0-rb", "lun": 0, "madeUtc": "2026-11-06T09:00:00Z" },
+          { "diskId": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-app/providers/Microsoft.Compute/disks/app-01-d1-rb", "diskName": "app-01-d1-rb", "lun": 1, "madeUtc": "2026-11-06T09:00:00Z" },
+          { "diskId": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-app/providers/Microsoft.Compute/disks/app-01-d2-rb", "diskName": "app-01-d2-rb", "lun": 2, "madeUtc": "2026-11-06T09:00:00Z" } ] },
+      "disks": [ { "diskId": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-app/providers/Microsoft.Compute/disks/app-01-d2-rb", "list": "rollbackDisksDuringRollback", "status": "waits" } ]
+    },
+    {
+      "why": "a restore that has not ended keeps every disk, even when the move has ended",
+      "doc": { "vmId": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-app/providers/Microsoft.Compute/virtualMachines/app-01", "state": "MIGRATED",
+        "putBackJob": { "kind": "restore", "operationId": "op-1", "startedUtc": "2026-11-06T09:00:00Z", "phase": "made" },
+        "restoreDisks": [ { "diskId": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-app/providers/Microsoft.Compute/disks/app-01-os-r", "diskName": "app-01-os-r", "lun": null, "madeUtc": "2026-11-06T09:00:00Z" } ] },
+      "disks": [ { "diskId": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-app/providers/Microsoft.Compute/disks/app-01-os-r", "list": "restoreDisks", "status": "restoreRuns" } ]
+    },
+    {
+      "why": "a finish that has not ended keeps them, and says so as a finish",
+      "doc": { "vmId": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-app/providers/Microsoft.Compute/virtualMachines/app-01", "state": "FAILED_ROLLED_BACK",
+        "putBackJob": { "kind": "finish", "operationId": "op-2", "startedUtc": "2026-11-06T09:00:00Z", "phase": "begun" },
+        "rollbackDisksDuringRollback": [ { "diskId": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-app/providers/Microsoft.Compute/disks/app-01-os-rb", "diskName": "app-01-os-rb", "lun": null, "madeUtc": "2026-11-06T09:00:00Z" } ] },
+      "disks": [ { "diskId": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-app/providers/Microsoft.Compute/disks/app-01-os-rb", "list": "rollbackDisksDuringRollback", "status": "finishRuns" } ]
+    },
+    {
+      "why": "a restore the service gave up on keeps them until a restore finishes",
+      "doc": { "vmId": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-app/providers/Microsoft.Compute/virtualMachines/app-01", "state": "MIGRATED",
+        "putBackJob": { "kind": "restore", "operationId": "op-3", "startedUtc": "2026-11-06T09:00:00Z", "phase": "made", "ended": { "utc": "2026-11-06T12:00:00Z", "reason": "gaveUp" } },
+        "restoreDisks": [ { "diskId": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-app/providers/Microsoft.Compute/disks/app-01-os-rec", "diskName": "app-01-os-rec", "lun": null, "madeUtc": "2026-11-06T09:00:00Z" } ] },
+      "disks": [ { "diskId": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-app/providers/Microsoft.Compute/disks/app-01-os-rec", "list": "restoreDisks", "status": "restoreStopped" } ]
+    },
+    {
+      "why": "a later job that carries the hold keeps them too",
+      "doc": { "vmId": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-app/providers/Microsoft.Compute/virtualMachines/app-01", "state": "SKIPPED",
+        "putBackJob": { "kind": "restore", "operationId": "op-4", "startedUtc": "2026-11-06T09:00:00Z", "phase": "made", "held": true, "ended": { "utc": "2026-11-06T12:00:00Z", "reason": "failed" } },
+        "restoreDisks": [ { "diskId": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-app/providers/Microsoft.Compute/disks/app-01-os-r", "diskName": "app-01-os-r", "lun": null, "madeUtc": "2026-11-06T09:00:00Z" } ] },
+      "disks": [ { "diskId": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-app/providers/Microsoft.Compute/disks/app-01-os-r", "list": "restoreDisks", "status": "restoreStopped" } ]
+    },
+    {
+      "why": "a job that ended with no hold leaves the cleanup to the state",
+      "doc": { "vmId": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-app/providers/Microsoft.Compute/virtualMachines/app-01", "state": "MIGRATED",
+        "putBackJob": { "kind": "restore", "operationId": "op-5", "startedUtc": "2026-11-06T09:00:00Z", "phase": "made", "ended": { "utc": "2026-11-06T12:00:00Z", "reason": "failed" } },
+        "restoreDisks": [ { "diskId": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-app/providers/Microsoft.Compute/disks/app-01-os-r", "diskName": "app-01-os-r", "lun": null, "madeUtc": "2026-11-06T09:00:00Z" } ] },
+      "disks": [ { "diskId": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-app/providers/Microsoft.Compute/disks/app-01-os-r", "list": "restoreDisks", "status": "due" } ]
+    },
+    {
+      "why": "every list, in the order rollback, restore; an entry with no disk id is skipped",
+      "doc": { "vmId": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-app/providers/Microsoft.Compute/virtualMachines/app-01", "state": "MIGRATED",
+        "restoreDisks": [ { "diskId": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-app/providers/Microsoft.Compute/disks/app-01-c", "diskName": "app-01-c", "lun": null, "madeUtc": "2026-11-06T09:00:00Z" } ],
+        "rollbackDisksDuringRollback": [ { "diskId": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-app/providers/Microsoft.Compute/disks/app-01-a", "diskName": "app-01-a", "lun": 0, "madeUtc": "2026-11-06T09:00:00Z" }, { "diskId": "", "diskName": "nothing", "lun": null, "madeUtc": "2026-11-06T09:00:00Z" }, { "diskId": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-app/providers/Microsoft.Compute/disks/app-01-b", "diskName": "app-01-b", "lun": 3, "madeUtc": "2026-11-06T09:00:00Z" } ] },
+      "disks": [
+        { "diskId": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-app/providers/Microsoft.Compute/disks/app-01-a", "list": "rollbackDisksDuringRollback", "status": "due" },
+        { "diskId": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-app/providers/Microsoft.Compute/disks/app-01-b", "list": "rollbackDisksDuringRollback", "status": "due" },
+        { "diskId": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-app/providers/Microsoft.Compute/disks/app-01-c", "list": "restoreDisks", "status": "due" } ]
+    }
+  ]
+}

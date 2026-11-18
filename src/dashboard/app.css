@@ -1,0 +1,989 @@
+/* =====================================================================
+   VMF dashboard - the ONE stylesheet.
+   =====================================================================
+
+   2026-09-02, after a day of finding mismatched fonts, clipped cards,
+   three names for one action and a button wrapping mid-phrase: the whole
+   site needed one consistent look, built against a template.
+
+   Every one of those defects had the same cause - eight pages each with
+   their own <style> block, 47 selectors defined identically in three or
+   more of them and 16 that had already drifted apart. A shared look with
+   no shared home is not a system; it is a coincidence that decays.
+
+   THE THEME IS BOOTSWATCH DARKLY. Its palette is used as published where
+   it clears 4.5:1 on Darkly's own card colour, and lightened - hue kept,
+   so red still reads as red - where it does not. Our previous palette was
+   tuned for white and five of its six colours failed on this ground:
+
+       token    was       now       on card   on page
+       --bad    #d93025   #ec7266   2.8 -> 4.5   5.4
+       --brand  #2563eb   #759bc3   2.6 -> 4.5   5.5
+       --muted  #66707d   #9aa4b0   2.6 -> 5.2   6.3
+       --good   #0f9d58   #00bc8c   3.8 -> 5.4   6.5
+       --warn   #b05e03   #f39c12   2.8 -> 6.0   7.3
+
+   The soft chip backgrounds are DARK TINTS of the card, not the pale
+   washes they were - and each chip's own text is checked against the chip
+   it sits on, not against the card behind it.
+
+   RULES: docs/ux.md. The short version - no page may carry a <style>
+   block, and no file but this one may contain a colour literal.
+   ===================================================================== */
+
+:root, :root[data-theme="light"] {
+  /* ===================== LIGHT - Bootswatch Spacelab =====================
+     Read from bootswatch@5.3.3/dist/spacelab, not from memory. Its published
+     values are used where they clear 4.5:1 on the surface they actually sit
+     on, and darkened - hue and saturation kept - where they do not:
+
+         token    Spacelab   ours      on the PAGE
+         --good   #3cb521 -> #2c8418   2.55 -> 4.51
+         --warn   #d47500 -> #ac5f00   3.15 -> 4.54
+         --link   #3399f3 -> #0c74ce   2.85 -> 4.52
+         --muted  #777777 -> #727272   4.27 -> 4.56
+
+     Bootswatch sets $min-contrast-ratio to 2.65 and we hold 4.5, so a light
+     theme needs MORE adjusting than the dark one did, not less. The eye
+     forgives low contrast on white; a projector and a bright room do not.
+
+     MEASURED AGAINST THE PAGE, NOT THE CARD, and that is the trap. On the dark
+     theme the page (#222) is DARKER than a card (#303030), so text on the page
+     always had more contrast and deriving against the card was the safe end.
+     On light it inverts: the card is pure white and the page is tinted, so the
+     PAGE is the worst surface. Deriving these against the card the first time
+     shipped four tokens that passed on a card and failed on the page - found
+     by auditing the rendered page, not by reading this file. */
+
+  /* surfaces. On white the ladder inverts: the page is the tinted one and a
+     card is pure white, because a white card on a white page is not a card. */
+  --bg:#f8f9fa;            /* the page - Spacelab's tertiary */
+  --card:#ffffff;          /* a panel on it */
+  --card-2:#eeeeee;        /* a panel on a panel, and a row hover */
+  --line:#dee2e6;          /* every border and rule - Spacelab's own */
+  --nav:#446e9b;           /* Spacelab's $primary; its navbar gradient midpoint */
+
+  /* text */
+  --ink:#2d2d2d;           /* headings and emphasis - Spacelab's $headings-color */
+  --body:#495057;          /* running text */
+  --muted:#6c6c6c;         /* secondary text - 4.53 on --card-2, the darkest plain surface */
+
+  /* meaning. The chips are Bootstrap 5.3's own -bg-subtle / -text-emphasis
+     pairs as Spacelab compiles them, so the chip and its text were designed
+     against each other rather than picked to look right. */
+  --brand:#446e9b;  --brand-soft:#dae2eb;  --brand-on:#1b2c3e;
+  --good:#2c8418;   --good-soft:#d8f0d3;   --good-on:#18480d;
+  --warn:#ac5f00;   --warn-soft:#f6e3cc;   --warn-on:#552f00;
+  --bad:#cd0200;    --bad-soft:#f5cccc;    --bad-on:#520100;
+  /* MADE-DISK-DELETE-1: red as a button fill, with white on it (5.9). */
+  --bad-fill:#cd0200;
+
+  --brand-fill:#446e9b;    /* white on it reads 5.32 */
+  --link:#0c74ce;          /* Spacelab's $info, darkened to clear the floor */
+
+  --on-fill:#ffffff;
+  --on-nav:#ffffff;
+  /* .90, NOT the .85 the dark theme uses. Spacelab's navbar is lighter than
+     Darkly's, so the same dimmed white falls to 4.35 on it - under the floor.
+     An alpha is not a colour until you know what is behind it. */
+  --on-nav-dim:rgba(255,255,255,.90);
+  /* DARKEN, where the dark theme lightens. A white pill on Spacelab's lighter
+     bar drops its own white label to 3.41; darkening the pill instead puts it
+     at 7.14. The same alpha is a different control depending on the ground. */
+  --quiet-on:#5f5f5f;       /* text on a --card-2 chip: 5.50 */
+  --nav-hover:rgba(0,0,0,.12);
+  --nav-active:rgba(0,0,0,.18);
+  --nav-active-line:rgba(0,0,0,.24);
+  --logo-bg:rgba(0,0,0,.26);
+  /* A shadow is a light-source effect. On white it has to be far softer or
+     every card looks like it is floating an inch off the page. */
+  --shadow:0 1px 2px rgba(0,0,0,.06), 0 4px 14px rgba(0,0,0,.05);
+  --shadow-lift:0 16px 48px rgba(16,24,40,.14);   /* a panel that floats over the page */
+  --scrim:rgba(45,45,45,.45);                     /* behind a dialog */
+
+  --radius:.375rem;        /* Bootstrap 5.3 */
+  /* Declared AND used, or it is not a token. Both of these were defined here
+     and never referenced once - `body` and nine other rules each restated
+     their own stack, which is the same defect the colour literals were.
+     This is the stack the app actually renders in. Darkly's face is Lato and
+     Spacelab's is Open Sans; using either means loading a webfont, which is a
+     separate decision and not one this change makes. */
+  --font:'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, Helvetica, Arial, sans-serif;
+  --mono:Consolas, 'Cascadia Mono', monospace;
+}
+
+:root[data-theme="dark"] {
+  /* ===================== DARK - Bootswatch Darkly =======================
+     Used as published where it clears 4.5:1 on Darkly's own card colour, and
+     lightened - hue kept, so red still reads as red - where it does not. The
+     previous palette was tuned for white and five of its six colours failed:
+
+         token    was       now       on card   on page
+         --bad    #d93025   #ec7266   2.8 -> 4.5   5.4
+         --brand  #2563eb   #759bc3   2.6 -> 4.5   5.5
+         --muted  #66707d   #9aa4b0   2.6 -> 5.2   6.3
+         --good   #0f9d58   #00bc8c   3.8 -> 5.4   6.5
+         --warn   #b05e03   #f39c12   2.8 -> 6.0   7.3
+
+     The soft chips are DARK TINTS of the card, not pale washes, and each
+     chip's own text is checked against the chip rather than the card. */
+
+  /* surfaces */
+  --bg:#222222;            /* the page */
+  --card:#303030;          /* a panel on it */
+  --card-2:#3a3a3a;        /* a panel on a panel */
+  --line:#444444;          /* every border and rule */
+  --nav:#375a7f;           /* Darkly's navbar */
+
+  /* text */
+  --ink:#ffffff;           /* headings and emphasis */
+  --body:#dee2e6;          /* running text */
+  --muted:#9aa4b0;         /* secondary text - 5.2 on the card */
+
+  /* meaning. NOT the brand colour: a failure is the same red whatever
+     the theme, because it means the same thing to the person reading it. */
+  --brand:#759bc3;  --brand-soft:#31363b;  --brand-on:#7ea1c7;
+  --good:#00bc8c;   --good-soft:#29443d;   --good-on:#00c291;
+  --warn:#f39c12;   --warn-soft:#4b3f2c;   --warn-on:#f39c12;
+  --bad:#ec7266;    --bad-soft:#4a3432;    --bad-on:#ef867c;
+  /* MADE-DISK-DELETE-1: red as a button fill. The text red (#ec7266) is too
+     light for white on it (2.9), as the brand was; this one reads 6.3. */
+  --bad-fill:#b52b20;
+
+  /* A FILL is the fourth job, and the opposite one: the brand as a button
+     background, with white on it. Lightening the text colour made it worse as
+     a fill (white on #759bc3 is 2.9), so the fill keeps Darkly's published
+     #375a7f, where white reads at 7.2. Bootswatch splits these for the same
+     reason. */
+  --brand-fill:#375a7f;
+  --link:#00bc8c;          /* Darkly's link colour */
+
+  --on-fill:#ffffff;
+  --on-nav:#ffffff;
+  --on-nav-dim:rgba(255,255,255,.92);   /* 6.38 on the bar, 4.78 inside the run picker,
+                                           which lightens the ground under it */
+  --quiet-on:#adb6bf;       /* 5.54 on --card-2 */
+  --nav-hover:rgba(255,255,255,.12);
+  --nav-active:rgba(255,255,255,.16);
+  --nav-active-line:rgba(255,255,255,.22);
+  --logo-bg:rgba(0,0,0,.34);
+  --shadow:0 1px 2px rgba(0,0,0,.35), 0 8px 24px rgba(0,0,0,.3);
+  --shadow-lift:0 16px 48px rgba(0,0,0,.45);
+  --scrim:rgba(0,0,0,.62);
+}
+
+
+/* ── shell, components: every page, one definition ── */
+
+/* Form controls do NOT inherit the page font - the browser gives them the
+   system one, so a <select> renders in a different typeface from everything
+   around it. Many pages showed mixed fonts because of this. */
+button, input, select, textarea { font: inherit; color: inherit; }
+/* And their SURFACES. Inheriting the font was only half of it - an input with
+   no background falls back to the browser's white, which on this ground is the
+   single most obvious sign that nobody owns the styling.
+
+   Darkly ships light inputs on purpose. We do not follow it there: on pages
+   with nineteen of them (the wizard) a row of white boxes reads as a rendering
+   fault, and controls that looked wrong had already been reported. */
+input, select, textarea {
+  background:var(--bg); border:1px solid var(--line); border-radius:var(--radius);
+  padding:6px 10px;
+}
+input:focus-visible, select:focus-visible, textarea:focus-visible,
+button:focus-visible, a:focus-visible {
+  outline:2px solid var(--brand); outline-offset:1px;
+}
+input[type=checkbox], input[type=radio] { padding:0; accent-color:var(--brand-fill); }
+input::placeholder, textarea::placeholder { color:var(--muted); }
+input:disabled, select:disabled, textarea:disabled { opacity:.55; }
+/* Links, once. `:not(.btn)` because a button that happens to be an anchor is
+   a button - without it the link colour wins on specificity and the label
+   disappears into the fill. */
+a:not(.btn) { color:var(--link); }
+a:not(.btn):hover { color:var(--link); text-decoration:underline; }
+
+* { box-sizing:border-box; }
+/* ROLE-GATE-1: `hidden` must actually hide.
+   The browser's own [hidden] rule is display:none at the lowest possible
+   precedence, so ANY display an element already has beats it - and these pages
+   set `$('#app').style.display = 'block'` inline, which beats everything.
+   The role gate set hidden on the page content and the content stayed on
+   screen: a block that looked like it worked and blocked nothing. */
+[hidden] { display:none !important; }
+body { margin:0; background:var(--bg); color:var(--ink); font-family:var(--font); font-size:14px; }
+.wrap { max-width:1360px;margin:0 auto;padding:24px 24px 60px; }
+/* DISCLAIMER-1: the short line at the foot of every page (help.js draws it).
+   Tokens only, so both themes reach it. Measured on the page, the surface it
+   sits on: --muted 4.99 light and 6.3 dark, the link 4.52 light and 6.5 dark. */
+.vmf-foot { max-width:1360px;margin:0 auto;padding:14px 24px 28px;border-top:1px solid var(--line);
+  color:var(--muted);font-size:12px;line-height:1.5; }
+/* Top bar */
+.topbar { background:var(--nav);color:var(--on-nav);padding:0 24px;display:flex;align-items:center;gap:18px;min-height:58px;flex-wrap:wrap; }
+/* BRAND-1: the mark and the name, as one lockup.
+   LOGO-SERVERS-1: help.js draws mark.svg INLINE in the header span, in
+   currentColor, so it follows the theme - and so the motion below can move
+   its parts, which a CSS mask cannot. */
+.brand { display:flex;align-items:center;gap:11px;color:var(--on-nav);cursor:default;user-select:none; }
+.brand .logo { width:34px;height:34px;flex:none;display:block; }
+.brand .logo svg { display:block;width:100%;height:100%; }
+/* The motion, ONCE when a page opens: the waiting units
+   fade in, the moving unit slides 4 units right as it fades in, then the
+   arrow head draws itself. Then nothing moves.
+   The dash and the zero opacity live ONLY in the keyframes, so with no
+   animation the drawing is whole. And the head is hidden until it starts
+   (0% opacity 0, 1% opacity 1): a dash of length zero with a round cap is
+   a dot, and the delay would show it. */
+.brand .logo .vmf-mark-wait { animation:vmf-mark-in .45s ease-out both; }
+.brand .logo .vmf-mark-move { animation:vmf-mark-slide .45s ease-out both; }
+.brand .logo .vmf-mark-head { animation:vmf-mark-draw .4s ease-out .35s both; }
+@keyframes vmf-mark-in { from { opacity:0; } }
+@keyframes vmf-mark-slide { from { opacity:0;transform:translateX(-4px); } }
+@keyframes vmf-mark-draw {
+  0% { stroke-dasharray:100 100;stroke-dashoffset:100;opacity:0; }
+  1% { opacity:1; }
+  100% { stroke-dasharray:100 100;stroke-dashoffset:0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .brand .logo svg * { animation:none; }
+  /* SHOT-CLOCK-1: the rules above weigh more than svg *, so each is stopped
+     by its own selector. */
+  .brand .logo .vmf-mark-wait, .brand .logo .vmf-mark-move, .brand .logo .vmf-mark-head { animation:none; }
+}
+/* The name reads as one thing rather than two words: the distinctive half
+   carries the weight, and the baselines are shared so the gap is optical. */
+.brand-name { display:flex;align-items:baseline;gap:.32em;font-size:17.5px;line-height:1;letter-spacing:-.01em;white-space:nowrap; }
+.brand-name .b-1 { font-weight:400;color:var(--on-nav-dim); }
+.brand-name .b-2 { font-weight:700; }
+.topnav { display:flex;align-items:center;gap:8px; }
+/* A hairline gives the brand its own zone, so the name does not read as the
+   first item of the navigation. Only when there IS navigation - the bar is
+   filled by script, and an empty one would leave a rule floating. */
+.topnav:not(:empty) { border-left:1px solid var(--nav-active-line);padding-left:18px; }
+.topnav a:not(.btn) { color:var(--on-nav-dim);text-decoration:none;font-size:13px;font-weight:600;padding:6px 14px;border-radius:9px;border:1px solid transparent; }
+.topnav a:not(.btn):hover { background:var(--nav-hover);color:var(--on-nav); }
+.topnav a.active:not(.btn) { background:var(--nav-active);border-color:var(--nav-active-line);color:var(--on-nav); }
+/* A label ON the navigation bar. --muted is tuned for a card, and this sits
+   on #375a7f - the same word needs a different value depending on what is
+   behind it, which is exactly what a token set is for. */
+.navlabel { font-size:12px;color:var(--on-nav-dim);font-weight:600;white-space:nowrap; }
+.who { font-size:13px;color:var(--on-nav-dim);font-weight:600;white-space:nowrap; }
+/* THEME-1 / SIGNOUT-1: the two controls at the right-hand end of the bar.
+   They sit ON the navigation colour, so they take their text from the nav
+   token set and not from the card one - the same word needs a different value
+   depending on what is behind it. */
+.navbtn { background:transparent;border:1px solid var(--nav-active-line);color:var(--on-nav-dim);font-size:12.5px;font-weight:600;padding:5px 12px;border-radius:9px;cursor:pointer;white-space:nowrap; }
+.navbtn:hover { background:var(--nav-hover);color:var(--on-nav); }
+.navbtn[hidden] { display:none; }
+/* THEME-2: the theme picker. It sits ON the navigation colour like .navbtn, so
+   it takes the nav token set rather than the card one - and it overrides the
+   shared control surface deliberately, which is the one place that is right:
+   --bg is a PAGE colour and this control is not on the page. */
+.navsel { background:var(--nav-hover);border:1px solid var(--nav-active-line);color:var(--on-nav);font-size:12.5px;font-weight:600;padding:4px 10px;border-radius:9px;cursor:pointer; }
+.navsel:hover { background:var(--nav-active); }
+/* The open list is drawn by the operating system on the PAGE ground, not on
+   the bar, so its options need page colours or they are white on white. */
+.navsel option { background:var(--card);color:var(--ink); }
+.right { margin-left:auto;display:flex;align-items:center;gap:14px; }
+/* NAV-1: the page's own controls, on a second row under the bar - built by
+   help.js from whatever the page put in the right-hand group. Same nav
+   colour family, one shade in, so it reads as part of the bar and the tabs
+   above keep one straight line whatever the page carries. */
+/* TOOLBAR-LIGHT-1: the header's own colour, SOLID. It was --nav-hover, a tint
+   meant to sit ON the header - but this bar is below the header, so the tint
+   sat on the page. Dark theme: a light tint on a dark page, readable. Light
+   theme: a dark tint on a near-white page under white text, not readable.
+   The dark theme's --on-nav-dim figures (6.38 on the bar, 4.78 in the run
+   picker) were measured against the header colour, which is what this now is.
+   Light theme, measured the same way: 4.66 on the bar, 5.60 in the picker. */
+.toolbar { background:var(--nav);color:var(--on-nav-dim);padding:6px 24px;display:flex;align-items:center;gap:14px;min-height:44px;flex-wrap:wrap;font-size:13px;border-top:1px solid var(--nav-active-line); }
+.toolbar:empty { display:none; }
+.demo-tag { background:var(--warn);color:var(--bg);font-weight:700;font-size:11.5px;padding:3px 11px;border-radius:999px;letter-spacing:.04em; }
+/* Cards */
+.card { background:var(--card);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);overflow:hidden;margin-bottom:16px; }
+.card .ch { display:flex;align-items:center;justify-content:space-between;gap:12px;padding:13px 18px;border-bottom:1px solid var(--line); }
+.card .ch h2 { font-size:14.5px;margin:0;font-weight:700; }
+.card .ch .hint { color:var(--muted);font-size:12px; }
+.cardbody { padding:14px 18px; }
+/* RES-LIST-1: the two lists of the Quota and capacity reservations card. */
+.card .cap-sub { padding:12px 18px 6px;display:flex;align-items:baseline;gap:10px;flex-wrap:wrap; }
+.card .cap-sub h3 { font-size:13px;margin:0;font-weight:700; }
+.card .cap-sub .hint { color:var(--muted);font-size:12px; }
+#res-section { border-top:1px solid var(--line);margin-top:6px; }
+/* KPI row */
+.kpis { display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:16px;margin-bottom:20px; }
+.kpi { background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px 18px;box-shadow:var(--shadow); }
+.kpi .label { color:var(--muted);font-size:11.5px;font-weight:600;text-transform:uppercase;letter-spacing:.4px; }
+.kpi .val { font-size:25px;font-weight:800;letter-spacing:-.5px; }
+.kpi .sub { color:var(--muted);font-size:12px;margin-top:3px; }
+/* PAGE-SCALE-OVERVIEW-1: a count tile is a .kpi that is a real button, and
+   selecting it shows its rows in the one list below (VmfHelp.listMount). The
+   selected tile carries a heavier border in its own tone, so the choice reads
+   without colour too (aria-pressed says it to a screen reader). */
+button.kpi.vmf-tile { display:flex;flex-direction:column;align-items:flex-start;gap:2px;text-align:left;width:100%;min-height:44px;cursor:pointer;color:var(--ink);border-width:2px; }
+button.kpi.vmf-tile:hover { background:var(--card-2); }
+button.kpi.vmf-tile[aria-pressed="true"] { border-color:var(--brand);background:var(--card-2); }
+button.kpi.vmf-tile.t-bad .val { color:var(--bad); }
+button.kpi.vmf-tile.t-warn .val { color:var(--warn); }
+button.kpi.vmf-tile.t-bad[aria-pressed="true"] { border-color:var(--bad); }
+button.kpi.vmf-tile.t-warn[aria-pressed="true"] { border-color:var(--warn); }
+.vmf-list .ch { flex-wrap:wrap; }
+.vmf-ctls { display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center; }
+.vmf-ctls .vmf-ctl { display:flex;align-items:center;gap:6px;color:var(--muted);font-size:13px; }
+.vmf-ctls select, .vmf-ctls input { min-height:38px; }
+.vmf-ctls input { width:220px;max-width:100%; }
+.vmf-scroll { overflow-x:auto; }
+.vmf-scroll table { min-width:640px; }
+.vmf-list .vmf-name { font-weight:600; }
+/* PAGE-SCALE-REPORTS-1: the tabs that choose a list (VmfHelp.listMount), and
+   the sentence above a tab's table. The selected tab carries a line in the
+   brand colour and the ink colour, so the choice reads without colour too
+   (aria-selected says it to a screen reader). */
+.vmf-tabs { display:flex;flex-wrap:wrap;gap:4px; }
+.vmf-tabs[hidden] { display:none; }
+.vmf-tabs [role="tab"] { background:transparent;border:0;border-bottom:2px solid transparent;border-radius:6px 6px 0 0;padding:10px 14px;min-height:44px;font-size:15px;font-weight:600;color:var(--muted);cursor:pointer; }
+.vmf-tabs [role="tab"]:hover { background:var(--card-2);color:var(--ink); }
+.vmf-tabs [role="tab"][aria-selected="true"] { background:var(--card-2);color:var(--ink);border-bottom-color:var(--brand); }
+.vmf-tabs [role="tab"]:focus-visible { outline:2px solid var(--brand);outline-offset:1px; }
+.vmf-intro { margin:0;padding:10px 18px 0;font-size:13px; }
+/* The lines a page writes above the table (the Safety copies box's summary). */
+.vmf-lead:empty { display:none; }
+.vmf-lead .cardbody { border-bottom:1px solid var(--line); }
+.vmf-lead p { margin:0 0 6px; }
+button.kpi.vmf-tile.t-good .val { color:var(--good); }
+button.kpi.vmf-tile.t-good[aria-pressed="true"] { border-color:var(--good); }
+/* TILE-COUNT-READING-1: words in place of a count while the page reads, or after a read that failed. */
+button.kpi.vmf-tile .val.vmf-waiting { font-size:15px;font-weight:600;letter-spacing:0;line-height:30px;color:var(--muted); }
+.vmf-sub { font-size:11.5px;margin-top:2px;overflow-wrap:anywhere; }
+.vmf-pager { display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:8px;padding:10px 18px;border-top:1px solid var(--line);color:var(--muted);font-size:13px; }
+.vmf-pages { display:flex;gap:8px; }
+.vmf-pages .btn { min-height:36px; }
+/* PAGE-SCALE-PROJECTS-1: a row's actions stay on one line, and the reason
+   under a disabled one wraps inside the width of its cell - a reason that
+   cannot wrap runs past the table and cannot be read (PROJ-EMPTY-1). */
+.vmf-actions { white-space:nowrap;text-align:right; }
+.vmf-note { white-space:normal;max-width:300px;margin:5px 0 0 auto;font-size:12px;text-align:left; }
+.vmf-desc { font-size:12px;margin-top:2px;max-width:48ch; }
+@media(max-width:560px){
+  .vmf-ctls, .vmf-ctls .vmf-ctl { width:100%; }
+  .vmf-ctls select, .vmf-ctls input { flex:1;width:auto; }
+}
+/* Tables */
+table { width:100%;border-collapse:collapse; }
+th,td { padding:10px 18px;text-align:left;font-size:13px;vertical-align:middle; }
+thead th { color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid var(--line);font-weight:600; }
+tbody tr { border-bottom:1px solid var(--line); }
+tbody tr:hover { background:var(--card-2); }
+tbody tr:last-child { border-bottom:0; }
+td.num,th.num { text-align:right;font-variant-numeric:tabular-nums; }
+.mono { font-family:var(--mono);font-size:12.5px; }
+.muted { color:var(--muted);font-size:12.5px; }
+.tech { color:var(--muted);font-size:11.5px;font-family:var(--mono); }
+/* Pills */
+.pill { display:inline-flex;align-items:center;gap:6px;font-size:11.5px;font-weight:700;border-radius:999px;padding:3px 11px;white-space:nowrap;background:var(--brand-soft);color:var(--brand-on); }
+.pill.good { background:var(--good-soft);color:var(--good-on); }
+.pill.bad { background:var(--bad-soft);color:var(--bad-on); }
+.pill.warn { background:var(--warn-soft);color:var(--warn-on); }
+/* A quiet pill paints its OWN background, so like every other pill its text
+   sits on a chip rather than on the card - --muted landed at 4.5 exactly on
+   dark, which is no headroom at all once the row underneath is hovered. */
+.pill.quiet { background:var(--card-2);color:var(--quiet-on); }
+/* RULE 3, AS A MECHANISM RATHER THAN A LIST.
+ *
+ * `--muted` is tuned to read on a CARD. Anything with a --*-soft background is
+ * a chip - a different ground - and the secondary text inside it was landing at
+ * 3.3 to 4.0 on the light theme. Found three times in one sweep: an alert
+ * metric card, a selected run row, and a selected search result.
+ *
+ * Enumerating those three selectors would fix those three and wait for the
+ * fourth. Redefining --muted ON the chip fixes every descendant that already
+ * asks for it, and every one added later, because a custom property inherits.
+ * That is what a token set is FOR. */
+.p-migrations .kpi.alert            { --muted:var(--bad-on); }
+.p-migrations .run-panel .row.sel   { --muted:var(--brand-on); }
+.p-access .result.sel               { --muted:var(--brand-on); }
+/* text-decoration:none because a .btn is often an <a>, and the browser underlines those. Every page's own CSS used to say it; the move to one sheet dropped it, and "Assess an estate" shipped underlined inside its own blue box.
+   white-space:nowrap because a label that breaks mid-phrase splits the box with it, as "Plan a migration" did. It is a property of BUTTONS, not of the three cells where it was noticed - stated here once instead. */
+.btn { background:var(--brand-fill);color:var(--on-fill);text-decoration:none;white-space:nowrap;border:0;border-radius:9px;padding:7px 16px;font-weight:600;font-size:13px;cursor:pointer;display:inline-block; }
+.btn:hover { background:var(--brand); }
+.btn.ghost { background:var(--card);color:var(--ink);border:1px solid var(--line); }
+.btn.ghost:hover { background:var(--card-2); }
+.btn.small { padding:4px 12px;font-size:12px;border-radius:8px; }
+/* A disabled control must look disabled, or it reads as a control that does nothing when pressed. */
+.btn:disabled { opacity:.55;cursor:default; }
+/* CLICKS-LOST-1: a button at work (VmfHelp.markBusy) shows a turning circle,
+   so a long save does not read as a press that did nothing. */
+.btn[aria-busy="true"] { opacity:.8;cursor:progress; }
+.btn[aria-busy="true"]::before { content:"";display:inline-block;width:11px;height:11px;margin-right:7px;vertical-align:-1px;border:2px solid currentColor;border-top-color:transparent;border-radius:50%;animation:vmf-busy 1s linear infinite; }
+@keyframes vmf-busy { to { transform:rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .btn[aria-busy="true"]::before { animation:none; } }
+/* MADE-DISK-DELETE-1: a delete that cannot be undone, in red - the primary
+   button of the slide-out delete of disks on the machine's panel. */
+.btn.danger-fill { background:var(--bad-fill);color:var(--on-fill); }
+.btn.danger-fill:hover { background:var(--bad-fill);filter:brightness(1.08); }
+/* A quiet text link that opens something in place: a button that reads as a
+   link, with a chevron that turns when it is open. */
+.linkbtn { background:none;border:0;padding:4px 0;color:var(--muted);font-size:13px;text-decoration:underline;cursor:pointer; }
+.linkbtn:hover { color:var(--ink); }
+.linkbtn .chev { display:inline-block;margin-left:3px;transition:transform .15s ease; }
+.linkbtn[aria-expanded="true"] .chev { transform:rotate(90deg); }
+.diskdel { margin:6px 0 0; }
+.diskdel-slide { animation:vmf-slide-open .18s ease-out; }
+/* The warning on its own line, and the two buttons together under it. */
+.diskdel-slide .ask { flex-basis:100%; }
+@keyframes vmf-slide-open { from { opacity:0;transform:translateY(-4px); } }
+@media (prefers-reduced-motion: reduce) { .diskdel-slide { animation:none; } .linkbtn .chev { transition:none; } }
+.rowgo { color:var(--muted);font-size:15px;text-align:right;width:34px; }
+/* OUTCOME-WORDS-1: the Reports outcome column is a state and counts, not a bar. */
+.outcome-note { color:var(--muted);font-size:12.5px; }
+.outcome-note .pb { color:var(--warn); }
+.warn-text { color:var(--warn); }
+#err { background:var(--bad-soft);color:var(--bad-on);border-radius:10px;padding:11px 16px;margin:12px 0;display:none;font-size:13.5px; }
+#ok { background:var(--good-soft);color:var(--good-on);border-radius:10px;padding:11px 16px;margin:12px 0;display:none;font-size:13.5px; }
+/* SIGNIN-1: ONE sign-in card, for every page.
+   This rule was written three times - here, under .p-access and under
+   .p-waves - with two different widths, which is how the same card came out
+   430px wide on six pages and 460px on two. The gate-view those two pages
+   also show keeps the same shape, so it is named here rather than copied.
+   The card is wide enough for its longest line to break where a reader would
+   break it, and the parts step down in weight: mark, product, what it does,
+   the way in, then the note about access. */
+#login-view, .p-access #gate-view, .p-waves #gate-view {
+  max-width:34rem;margin:11vh auto 0;background:var(--card);border:1px solid var(--line);
+  border-radius:14px;box-shadow:var(--shadow);padding:40px 38px 34px;text-align:center;display:none; }
+#login-view h2, #gate-view h2 { font-size:21px;margin:0;letter-spacing:-.3px; }
+/* The same drawing as the header's, still, through a mask - mark.svg. */
+.signin-mark { display:block;width:42px;height:42px;margin:0 auto 16px;background:var(--brand);
+  -webkit-mask:url(mark.svg) center/contain no-repeat;mask:url(mark.svg) center/contain no-repeat; }
+/* text-wrap:balance, so a line that wraps does not end on a single orphaned
+   word. An earlier, longer tagline broke and left "sizes." alone on a line. */
+.signin-what { margin:10px auto 26px;max-width:36ch;font-size:14.5px;line-height:1.55;
+  color:var(--ink);text-wrap:balance; }
+.signin-btn { font-size:15px;padding:11px 26px; }
+/* On a phone the button is wider than the card's padding box, so the padding
+   comes in rather than the button's own words being made smaller. MEASURED at
+   375px: card 327, button 260 - it overflowed the padding by 9px. */
+@media(max-width:480px){ #login-view, .p-access #gate-view, .p-waves #gate-view { padding:32px 20px 28px;margin-top:6vh; } }
+.detail { padding:6px 18px 18px; }
+.detail h4 { font-size:12px;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin:16px 0 8px; }
+.detail table { background:var(--card);border:1px solid var(--line);border-radius:10px;overflow:hidden; }
+.issue { margin:6px 0;font-size:13px; }
+tr.run-row { cursor:pointer; }
+tr.detail-row { background:var(--card-2); }
+tr.detail-row:hover { background:var(--card-2); }
+/* Form controls do NOT inherit the page font - the browser gives them the system one, so a <select> renders in a different typeface from everything around it - which showed up as mixed fonts across pages, most visibly in the pull-downs on the admin page. */
+button, input, select, textarea { font: inherit; color: inherit; }
+
+/* ── access ──────────────────────────────────────── */
+.p-access .pill button { border:0;background:transparent;color:inherit;font-size:12px;cursor:pointer;padding:0 0 0 2px;line-height:1; }
+.p-access .searchbox { border-radius:9px;padding:8px 12px;font-size:13px;width:100%; }
+.p-access .result { display:flex;align-items:center;gap:10px;width:100%;border:1px solid var(--line);background:var(--card);text-align:left;padding:9px 12px;border-radius:9px;cursor:pointer;font-size:13px;color:var(--ink);margin-top:6px; }
+.p-access .result:hover { background:var(--card-2); }
+.p-access .result.sel { background:var(--brand-soft);border-color:var(--brand); }
+.p-access .addrole { display:inline-flex;align-items:center;gap:6px; }
+/* Size only. The nowrap that used to be repeated here is on .btn now - see the note there. */
+.p-access .addrole .btn { padding:2px 10px;font-size:12px;border-radius:8px; }
+.p-access .rolemenu { display:inline-flex;gap:6px;flex-wrap:wrap; }
+/* ROLE-2: the control that OPENS the role menu, and closes it again, is not
+   one of the roles. It sat in a row of identical ghost buttons that were, so
+   "Cancel" read as the first thing you could pick. Quieter, and separated
+   from the choices by a rule. */
+.p-access .addrole .addcancel { background:transparent;border-color:transparent;color:var(--muted);text-decoration:underline; }
+.p-access .addrole .addcancel:hover { background:transparent;color:var(--ink); }
+.p-access .rolemenu { border-left:1px solid var(--line);padding-left:8px;margin-left:2px; }
+.p-access .rolemenu[hidden] { display:none; }
+.p-access td .mono { font-size:12px; }
+.p-access .rolepick { margin-top:14px;display:flex;flex-direction:column;gap:8px; }
+.p-access .rolepick label { display:flex;gap:9px;align-items:baseline;font-size:13px;cursor:pointer; }
+.p-access .rolepick .muted { display:block; }
+
+/* ── assessments ──────────────────────────────────────── */
+/* A BUTTON, not a clickable row. Deliberate target, keyboard reachable, and it says whether it is open. */
+.p-assessments button.chev { background:none;border:1px solid transparent;border-radius:8px;color:var(--muted); font-size:17px;line-height:1;cursor:pointer;padding:3px 9px; }
+.p-assessments button.chev:hover { background:var(--card-2);color:var(--ink); }
+.p-assessments button.chev:focus-visible { outline:2px solid var(--brand);outline-offset:1px; }
+
+/* ── index ──────────────────────────────────────── */
+/* An ID, not a bare element: `.p-index h1` outranks every shared class,
+   which is rule 13 and how a page repaints the system by accident. */
+.p-index #h1 { font-size:22px;margin:0 0 4px;letter-spacing:-.3px; }
+.p-index .lede { color:var(--muted);font-size:14px;margin:0 0 22px; }
+.p-index .pagehead { display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap; }
+/* PAGE-SCALE-PROJECTS-1: the Projects page has the same head. */
+.p-projects #list-title { font-size:22px;margin:0 0 4px;letter-spacing:-.3px; }
+.p-projects .lede { color:var(--muted);font-size:14px;margin:0 0 22px; }
+.p-projects .pagehead { display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap; }
+.p-projects #new-btn { min-height:44px;margin-bottom:16px; }
+/* PAGE-SCALE-ASSESSMENTS-1: the Assessments page has the same head, with
+   two buttons at the top right. */
+.p-assessments #list-title { font-size:22px;margin:0 0 4px;letter-spacing:-.3px; }
+.p-assessments .lede { color:var(--muted);font-size:14px;margin:0 0 22px; }
+.p-assessments .pagehead { display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap; }
+.p-assessments .pagehead-actions { display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px; }
+.p-assessments .pagehead-actions .btn { min-height:44px;display:inline-flex;align-items:center; }
+/* PAGE-SCALE-REPORTS-1: the Reports page has the same head, and the detail
+   of a migration below the list has its title, its run id and Close. */
+.p-reports #page-title { font-size:22px;margin:0 0 4px;letter-spacing:-.3px; }
+.p-reports .lede { color:var(--muted);font-size:14px;margin:0 0 22px; }
+.p-reports #run-detail .ch { justify-content:space-between;gap:12px;flex-wrap:wrap; }
+.p-reports #run-detail .ch .btn { min-height:44px; }
+.p-reports #run-detail[hidden] { display:none; }
+.p-index .card .ch a:not(.btn) { color:var(--brand);text-decoration:none;font-size:13px;font-weight:600; }
+.p-index .card .ch a:not(.btn):hover { text-decoration:underline; }
+/* removed: links belong to the shared sheet, not to one page. This rule
+   outranked .btn and repainted the primary button, which is an <a>. */
+/* Left aligned, and a measure a sentence can live in. Centred body copy wraps badly and leaves orphans - the last two words on a line of their own - which is what the first version did. */
+.p-index .empty { padding:30px 22px;max-width:64ch; }
+.p-index .empty h2 { font-size:17px;margin:0 0 10px; }
+.p-index .empty p { margin:0 0 12px;line-height:1.55; }
+.p-index .empty .btn { margin-top:6px; }
+.p-index .working { display:flex;align-items:center;gap:10px;color:var(--muted);font-size:13px;padding:14px 18px; }
+.p-index .spin { width:14px;height:14px;border:2px solid var(--line);border-top-color:var(--brand);border-radius:50%;animation:sp .8s linear infinite; }
+@keyframes sp { to { transform:rotate(360deg); } }
+@media(prefers-reduced-motion:reduce){ .spin, .p-index .spin{animation:none;} }
+
+/* ── migrations ──────────────────────────────────────── */
+.p-migrations .toolbar { justify-content:flex-end; }
+.p-migrations .runpick { position:relative;display:inline-flex;align-items:center;gap:8px;background:var(--nav-hover);border:1px solid var(--nav-active-line);border-radius:10px;padding:5px 12px; }
+.p-migrations .runpick button.current { border:0;background:transparent;color:var(--on-nav);font-weight:600;font-size:13px;cursor:pointer;display:inline-flex;align-items:center;gap:8px;font-family:var(--mono); }
+.p-migrations .runpick button.current .caret { font-size:10px;opacity:.7; }
+.p-migrations .run-panel { position:absolute;top:calc(100% + 8px);right:0;min-width:380px;max-height:70vh;overflow-y:auto;background:var(--card);color:var(--ink);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow),var(--shadow-lift);padding:8px;display:none;z-index:20; }
+.p-migrations .run-panel.open { display:block; }
+.p-migrations .run-panel .grp { font-size:10.5px;text-transform:uppercase;letter-spacing:.6px;color:var(--muted);font-weight:700;padding:10px 12px 4px; }
+.p-migrations .run-panel .row { display:flex;align-items:center;gap:10px;width:100%;border:0;background:transparent;text-align:left;padding:8px 12px;border-radius:9px;cursor:pointer;font-size:13px;color:var(--ink); }
+.p-migrations .run-panel .row:hover { background:var(--card-2); }
+.p-migrations .run-panel .row.sel { background:var(--brand-soft); }
+
+.p-migrations .run-panel .row .rn { font-family:var(--mono);font-size:12.5px;flex:1;min-width:0;overflow-wrap:anywhere; }
+/* WRAP-1: the wave table squeezed its columns until headings and values broke
+   mid-word - "MIGRATION METHOD" over two lines, "Standard_D2s_v6 changing"
+   over two, "Migrated 4h ago" over two. Give the columns that hold real
+   sentences room, and stop the short ones breaking at all. */
+.p-migrations #waves table th { white-space:nowrap; }
+.p-migrations #waves table td:nth-child(2) { min-width:190px; }
+.p-migrations #waves table td:nth-child(6) { white-space:nowrap; }
+/* RUNPICK-1: the piece of work a run belongs to, under the run's own name.
+   Quiet, because the run is what tells one row from the next. */
+.p-migrations .run-panel .row .rn .rp { display:block;color:var(--muted);font-size:11px;font-weight:500;margin-top:2px; }
+/* TOOLBAR-LIGHT-1: .9, not .6. At .6 the project name read 3.47 in the light
+   theme and 3.03 in the dark one - under the floor in BOTH. At .9 it clears
+   4.5 in both, and the lighter weight still sets it apart from the run. */
+.p-migrations .runpick button.current .rp { opacity:.9;font-weight:500; }
+.p-migrations .runpick button.current .rp:not(:empty)::after { content:'/';opacity:.5;margin:0 5px; }
+.p-migrations .run-panel .row .when { color:var(--muted);font-size:11.5px;white-space:nowrap; }
+.p-migrations .livedot { width:8px;height:8px;border-radius:50%;background:var(--good);flex:0 0 auto; }
+/* QUOTA-ONCE-1: a size, and a wave name, are single things - they break
+   between names, never inside one ("Standard_D2s_v6 @ westus3" and
+   "prod-wave" were broken mid-name on the quota card). */
+.p-migrations .cap-size, .p-migrations .nowrap { white-space:nowrap; }
+/* QUOTA-CARD-LAYOUT-1: the Quota card reads as an even table with 2 rows or
+   30, and 1 size or 15 in a row. A Total Regional vCPUs row that listed every
+   size took most of the width; the Quota cell was squeezed until "ago" sat
+   alone under its pill on every row, and both vCPU headings broke in two.
+   Now no heading wraps, the Quota cell (the pill and its reading) never
+   wraps, a figure column is only as wide as its heading, and the Sizes
+   column takes the rest and wraps between names inside it, above a floor.
+   In the reservations list, Details has a floor and Release stays on one
+   line. A table wider than a phone scrolls inside its .vmf-scroll box
+   (migrations.html). */
+.p-migrations #capacity-card th { white-space:nowrap; }
+.p-migrations #capacity-card td.cap-quota { white-space:nowrap; }
+.p-migrations #capacity-card td.num { white-space:nowrap;width:1%; }
+/* A floor for a column that wraps: a table cell takes no min-width, so an
+   empty block of that width inside it sets the least width the column gets. */
+.p-migrations #capacity-card td.cap-sizes::before { content:'';display:block;width:44ch; }
+.p-migrations #capacity-card td.cap-fact::before { content:'';display:block;width:16ch; }
+.p-migrations #capacity-card td.cap-act { white-space:nowrap;width:1%; }
+.p-migrations .livedot.idle { background:var(--muted); }
+.p-migrations #tick { font-size:12px;color:var(--on-nav-dim);min-width:150px;text-align:right; }
+/* LOG-1: the whole log scrolls inside the card instead of growing the page. */
+.p-migrations #event-scroll.all { max-height:65vh;overflow:auto; }
+.p-migrations .ev-foot { display:flex;align-items:center;gap:12px;padding:10px 18px;border-top:1px solid var(--line); }
+.p-migrations .ev-foot:has(#ev-toggle[hidden]):has(#ev-count:empty) { display:none; }
+.p-migrations .act-menu { position:relative;display:inline-flex; }
+/* Confirm dialog: every action states what it does and requires a note */
+.p-migrations #modal-back { position:fixed;inset:0;background:var(--scrim);display:none;place-items:center;z-index:30; }
+.p-migrations #modal-back.open { display:grid; }
+.p-migrations .modal { background:var(--card);color:var(--ink);border-radius:14px;box-shadow:var(--shadow),var(--shadow-lift);width:min(460px,92vw);max-height:88vh;overflow-y:auto;padding:22px 24px; }
+.p-migrations .modal h3 { margin:0 0 6px;font-size:16px; }
+.p-migrations .modal .desc { color:var(--muted);font-size:13px;margin:0 0 4px;line-height:1.45; }
+/* IAC-NOTE-LIST-1: the note about machines defined in code is a lead, a list and a closing line. */
+.p-migrations .modal .desc p { margin:0 0 6px; }
+.p-migrations .modal .desc ul { margin:0 0 6px;padding-left:20px; }
+.p-migrations .modal label { display:block;font-size:12px;font-weight:600;color:var(--muted);margin:13px 0 4px; }
+/* text inputs fill the dialog; radios/checkboxes must NOT (they are sized by the browser - a width:100% radio pushes its label to the far edge) */
+.p-migrations .modal input:not([type=radio]):not([type=checkbox]), .p-migrations .modal textarea, .p-migrations .modal select { width:100%;border-radius:9px;padding:8px 10px;font-size:13px; }
+.p-migrations .modal .radio-row { display:flex;flex-direction:column;gap:9px;font-size:13px;max-height:210px;overflow-y:auto; }
+/* two columns, always: the control, then ONE span holding all its words */
+.p-migrations .modal .radio-row label { font-weight:400;color:var(--ink);margin:0;display:grid;grid-template-columns:auto 1fr;gap:9px;align-items:start;line-height:1.4;cursor:pointer; }
+.p-migrations .modal .radio-row input { margin:2px 0 0; }
+.p-migrations .modal .radio-row .opt .sub { display:block;color:var(--muted);font-family:var(--mono);font-size:11.5px; }
+/* RESTORE-DIALOG-WORDS-1: the ? helper of an option - one button, ? and Cancel - and the words it opens */
+.p-migrations .modal .radio-row .opt .m-help { margin-left:6px;vertical-align:baseline; }
+.p-migrations .modal .radio-row .opt .m-help-text { display:block;color:var(--muted);font-size:12px;margin-top:3px; }
+.p-migrations .modal .radio-row .opt .m-help-text[hidden] { display:none; }
+.p-migrations .modal .mf + .mf { margin-top:2px; }
+.p-migrations .modal .m-actions { display:flex;justify-content:flex-end;gap:8px;margin-top:18px; }
+/* QUOTA-PREVIEW-1: the wave editor's quota request confirmation, the same dialog as the migration page's. */
+.p-waves #q-modal-back { position:fixed;inset:0;background:var(--scrim);display:none;place-items:center;z-index:30; }
+.p-waves #q-modal-back.open { display:grid; }
+.p-waves .modal { background:var(--card);color:var(--ink);border-radius:14px;box-shadow:var(--shadow),var(--shadow-lift);width:min(680px,92vw);max-height:88vh;overflow-y:auto;padding:22px 24px; }
+.p-waves .modal h3 { margin:0 0 6px;font-size:16px; }
+.p-waves .modal p.desc { color:var(--muted);font-size:13px;margin:10px 0 6px;line-height:1.45; }
+.p-waves .modal table { width:100%; }
+.p-waves .modal tr.q-waves td { border-top:none;padding-top:0; }
+/* QUOTA-CHECK-SPINNER-1: a request ID reads as one word. */
+.p-waves .modal td.mono { white-space:nowrap; }
+/* QUOTA-CONFIRM-ID-OVERFLOW-1: the request ID of the quota confirmation is what
+   the operator gives in a support request, so it wraps and is never cut off
+   at the edge of the dialog box. Only that cell: other IDs stay on one line. */
+.p-waves .modal td.mono.q-id { white-space:normal;overflow-wrap:anywhere;word-break:break-all; }
+.p-waves .modal .m-err { background:var(--bad-soft);color:var(--bad-on);border-radius:9px;padding:8px 12px;font-size:12.5px;margin-top:12px; }
+.p-waves .modal .m-actions { display:flex;justify-content:flex-end;gap:8px;margin-top:18px; }
+/* NO-POPUPS-1: the report, shown over the Reports page instead of in a new window. */
+.p-reports .report-view { position:fixed;inset:0;z-index:40;display:flex;flex-direction:column;background:var(--bg);color:var(--ink); }
+.p-reports .report-view[hidden] { display:none; }
+.p-reports .report-bar { display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px;padding:10px 16px;background:var(--card);border-bottom:1px solid var(--line); }
+.p-reports .report-bar h2 { margin:0;font-size:16px; }
+.p-reports .report-bar .hint { color:var(--muted);font-size:12px; }
+.p-reports .report-actions { margin-left:auto;display:flex;gap:8px; }
+.p-reports .report-slot { flex:1;min-height:0; }
+.p-reports .report-frame { border:0;width:100%;height:100%;display:block; }
+body.p-reports.report-open { overflow:hidden; }
+.p-migrations .m-stale { background:var(--warn-soft);color:var(--warn-on);border-radius:9px;padding:8px 12px;font-size:12.5px;margin:0 0 12px;display:none; }
+.p-migrations .m-stale p { margin:0; }
+.p-migrations .m-stale p + p { margin-top:6px; }
+.p-migrations .m-err { background:var(--bad-soft);color:var(--bad-on);border-radius:9px;padding:8px 12px;font-size:12.5px;margin-top:12px;display:none; }
+@media(min-width:1400px){.wrap{padding-left:36px;padding-right:36px;}}
+@media(max-width:900px){.kpis{grid-template-columns:repeat(2,1fr);}}
+.p-migrations .kpi .ic { width:36px;height:36px;border-radius:10px;display:grid;place-items:center;font-size:17px;margin-bottom:8px; }
+.p-migrations .kpi.b1 .ic { background:var(--brand-soft);color:var(--brand-on); }
+.p-migrations .kpi.b2 .ic { background:var(--good-soft);color:var(--good-on); }
+.p-migrations .kpi.b3 .ic { background:var(--brand-soft);color:var(--brand-on); }
+.p-migrations .kpi.b4 .ic { background:var(--warn-soft);color:var(--warn-on); }
+.p-migrations .kpi.b5 .ic { background:var(--good-soft);color:var(--good-on); }
+.p-migrations .kpi.b6 .ic { background:var(--warn-soft);color:var(--warn-on); }
+/* PUTBACK-TILE-1: the Put back tile makes six. auto-fit at 210px put five in a
+   row at 1280 wide and left the sixth alone on the next one. Six go 6, 3 or 2
+   across - counts that six fills. */
+.p-migrations .kpis:has(> .kpi:nth-child(6)) { grid-template-columns:repeat(6,minmax(0,1fr)); }
+@media(max-width:1240px){ .p-migrations .kpis:has(> .kpi:nth-child(6)) { grid-template-columns:repeat(3,minmax(0,1fr)); } }
+@media(max-width:900px){ .p-migrations .kpis:has(> .kpi:nth-child(6)) { grid-template-columns:repeat(2,minmax(0,1fr)); } }
+.p-migrations .kpi.alert { border-color:var(--bad);background:var(--bad-soft); }
+.p-migrations .kpi.alert .ic { background:var(--bad-soft);color:var(--bad-on); }
+
+/* Wave sections */
+.p-migrations .wave-meter { height:9px;border-radius:6px;background:var(--card-2);overflow:hidden;flex:1;max-width:260px; }
+.p-migrations .wave-meter > i { display:block;height:100%;border-radius:6px;background:var(--brand); }
+.p-migrations .wave-head-right { display:flex;align-items:center;gap:12px;flex-wrap:wrap; }
+/* NAMES-WRAP-1: a wave's header (and the found-machines card, the same shape)
+   holds its state, who accepted and signed off,
+   the schedule and its buttons. Each label is one long line that never broke,
+   so a long user name or date pushed the header past the card. The labels now
+   break onto more lines, and the progress bar moves under them when there is
+   no room beside them. */
+.p-migrations .wrap-head .ch { flex-wrap:wrap; }
+.p-migrations .wrap-head .ch h2 { display:flex;flex-wrap:wrap;align-items:center;gap:6px 8px;flex:1 1 420px;min-width:0; }
+.p-migrations .wrap-head .ch h2 .pill { white-space:normal;max-width:100%;overflow-wrap:anywhere;line-height:1.35;border-radius:12px; }
+.p-migrations .wrap-head .wave-head-right { flex:0 1 auto;margin-left:auto; }
+.p-migrations .wave-count { font-size:12.5px;color:var(--muted);font-weight:600;white-space:nowrap; }
+.p-migrations .gate { display:flex;align-items:center;gap:10px;color:var(--muted);font-size:12.5px;margin:2px 0 16px;padding-left:6px; }
+.p-migrations .gate .bar { flex:0 0 26px;border-top:2px dashed var(--line); }
+.p-migrations .gate .txt { background:var(--card);border:1px solid var(--line);border-radius:999px;padding:4px 13px;font-weight:600;box-shadow:var(--shadow); }
+.p-migrations .pill .spin { width:9px;height:9px;border:2px solid var(--brand);border-top-color:transparent;border-radius:50%;animation:spin 1s linear infinite;flex:0 0 auto; }
+@keyframes spin{to{transform:rotate(360deg);}}
+@media(prefers-reduced-motion:reduce){ .p-migrations .pill .spin{animation:none;} }
+
+.p-migrations tr.vm-row { cursor:pointer; }
+/* the row's call to action, for machines that are waiting on a person */
+.p-migrations .rowact { color:var(--brand);font-weight:600;font-size:12.5px;white-space:nowrap; }
+.p-migrations .mini-meter { height:7px;border-radius:5px;background:var(--card-2);overflow:hidden;min-width:90px; }
+.p-migrations .mini-meter > i { display:block;height:100%;border-radius:5px;background:var(--brand); }
+.p-migrations .mini-meter.done > i { background:var(--good); }
+.p-migrations .mini-meter.bad > i { background:var(--bad); }
+/* OSLOGO-1: the operating system, under the machine name. Text, not a logo. */
+.p-migrations .osline { color:var(--muted);font-size:11.5px; }
+/* RUNPAGE-1: a wave that needs nobody collapses; the settled machines inside one that does need somebody collapse too. A hundred-machine run is mostly rows an operator has no reason to read. */
+/* The wave's show / hide controls are the page's small outlined buttons (.btn.small.ghost), like Show on the safety copies; the collapsed line centres its text on the button. A card has no padding of its own (its header and table cells do), so each line takes the table cells' padding, 10px 18px (WAVE-PAD-1). */
+.p-migrations .wave-collapsed { margin:0;padding:10px 18px;display:flex;align-items:center;gap:8px;flex-wrap:wrap; }
+.p-migrations .wave-hide { margin:0;padding:10px 18px 12px; }
+.p-migrations .settled-row td { padding-top:10px; }
+/* Filter chips + search */
+.p-migrations .chips { display:flex;gap:6px;align-items:center; }
+.p-migrations .chips button { border:1px solid var(--line);background:var(--card);border-radius:999px;padding:4px 12px;font-size:12px;font-weight:600;color:var(--muted);cursor:pointer; }
+.p-migrations .chips button.on { background:var(--brand-fill);border-color:var(--brand-fill);color:var(--on-fill); }
+.p-migrations .searchbox { border-radius:9px;padding:6px 12px;font-size:13px;width:220px; }
+/* Drill panel */
+.p-migrations #drill { position:fixed;inset:0 0 0 auto;width:min(600px,94vw);background:var(--card);border-left:1px solid var(--line);box-shadow:var(--shadow-lift);padding:22px 24px;overflow-y:auto;z-index:10;transform:translateX(102%);transition:transform .18s ease;visibility:hidden; }
+.p-migrations #drill.open { transform:none;visibility:visible; }
+@media(prefers-reduced-motion:reduce){#drill{transition:none;}}
+.p-migrations td.rowgo { color:var(--muted);font-size:15px;text-align:right;width:34px; }
+.p-migrations #drill .close { float:right;cursor:pointer;border:none;background:var(--card-2);border-radius:8px;width:30px;height:30px;font-size:16px;color:var(--muted); }
+.p-migrations #drill h3 { margin:0 0 2px;font-size:17px; }
+.p-migrations #drill h4 { font-size:12px;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin:22px 0 8px; }
+.p-migrations .timeline { list-style:none;margin:8px 0;padding:0;border-left:2px solid var(--line); }
+.p-migrations .timeline li { margin:0 0 12px 16px;position:relative;font-size:13px; }
+.p-migrations .timeline li::before { content:'';position:absolute;left:-21.5px;top:5px;width:9px;height:9px;border-radius:50%;background:var(--brand); }
+.p-migrations .timeline li.fail::before { background:var(--bad); }
+.p-migrations .timeline li.done::before { background:var(--good); }
+.p-migrations .timeline .when { color:var(--muted);font-size:11.5px; }
+.p-migrations .evlink { color:var(--brand);cursor:pointer;font-size:12px;font-weight:600;text-decoration:underline; }
+.p-migrations pre.evidence { background:var(--bg);color:var(--body);font-family:var(--mono);font-size:11.5px;border-radius:10px;padding:12px 14px;overflow-x:auto;white-space:pre-wrap;word-break:break-all;max-height:280px;overflow-y:auto; }
+
+/* ── waves ──────────────────────────────────────── */
+.p-waves .bar { display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:16px; }
+.p-waves .bar h1 { font-size:18px;margin:0;font-weight:800; }
+.p-waves .bar .runid { font-family:var(--mono);font-size:13px;color:var(--muted); }
+.p-waves .spacer { flex:1; }
+.p-waves .btn.danger { background:var(--card);color:var(--bad);border:1px solid var(--bad); }
+.p-waves .cols { display:grid;grid-template-columns:340px 1fr;gap:16px;align-items:start; }
+@media(max-width:1000px){.cols{grid-template-columns:1fr;}}
+.p-waves .card .cb { padding:12px 16px; }
+.p-waves .machines { max-height:62vh;overflow-y:auto; }
+/* ROW-SQUEEZE-1: three columns - tick box, the machine (name over its resource
+   group), and its tags. min-width:0 lets the middle column shrink, so a long
+   group name is cut with "..." (the full name is on hover) instead of breaking
+   into one fragment per line. */
+/* NAMES-WRAP-1: the tags and buttons used to take a fixed third column. On the
+   340px list, "moves with its pair" and Change target took almost all of it,
+   and the machine's NAME was cut to "vm-...". Now the name keeps at least
+   180px, and the tags and buttons move to a line of their own when they do
+   not fit beside it. */
+.p-waves .m { display:flex;flex-wrap:wrap;align-items:center;column-gap:10px;row-gap:5px;padding:7px 16px;border-bottom:1px solid var(--line);font-size:13px;cursor:pointer; }
+.p-waves .m > .pick, .p-waves .m > .pick-sp { flex:0 0 auto; }
+/* NAMES-WRAP-1: the page-wide .who (the signed-in user in the top bar) sets a
+   pale colour made for the dark bar. It reached these rows too, so in the light
+   theme every machine's name was pale text on a white card. The row sets its
+   own. */
+.p-waves .m .who { display:flex;flex-direction:column;min-width:0;flex:1 1 180px;color:var(--ink);font-size:inherit;font-weight:400;white-space:normal; }
+.p-waves .m .acts { display:flex;flex-wrap:wrap;align-items:center;justify-content:flex-end;gap:6px;margin-left:auto; }
+.p-waves .m .who .nm, .p-waves .m .who .meta { overflow:hidden;text-overflow:ellipsis;white-space:nowrap; }
+.p-waves .m:last-child { border-bottom:0; }
+.p-waves .m:hover { background:var(--card-2); }
+.p-waves .m.sel { background:var(--brand-soft); }
+.p-waves .m .nm { font-family:var(--mono);font-size:12.5px; }
+.p-waves .m .meta { color:var(--muted);font-size:11.5px; }
+.p-waves .m .lock { color:var(--warn);font-size:11px;font-weight:700; }
+.p-waves .wave { border:1px solid var(--line);border-radius:12px;margin-bottom:12px;background:var(--card);box-shadow:var(--shadow); }
+.p-waves .wave.drop { outline:2px dashed var(--brand); }
+.p-waves .wave .wh { display:flex;align-items:center;gap:9px;padding:10px 14px;border-bottom:1px solid var(--line);flex-wrap:wrap; }
+/* The wave name reads as a heading until you touch it, then it becomes a
+   field. transparent -> --bg, NOT --card: the wave panel IS --card, so the
+   old hover background was the same colour as the surface under it and the
+   only thing that changed was the border. */
+.p-waves .wave .wh input.name { border:1px solid transparent;border-radius:7px;padding:4px 8px;font-weight:700;font-size:14px;background:transparent;color:var(--ink);width:220px; }
+.p-waves .wave .wh input.name:hover, .p-waves .wave .wh input.name:focus { border-color:var(--line);background:var(--bg); }
+.p-waves .wave select, .p-waves .wave .cap { border-radius:8px;padding:4px 8px;font-size:12px; }
+/* UX-WAVE-3(b): the levers used to sit inline in the header row, which was laid out for two of them. With five they wrapped into each other and the labels stopped lining up with anything, and the text misaligned across the row. They get their own grid now, each label above its control, so the row reflows instead of colliding. */
+.p-waves .m .pick { width:15px;height:15px;accent-color:var(--brand);pointer-events:none; }
+.p-waves .m .pick-sp { width:15px; }
+/* WAVE-MIX-2: the size series panel under one machine row. Indented to the name, so it reads as that row's. */
+.p-waves .m-change { display:flex;flex-direction:column;gap:6px;padding:8px 16px 12px 41px;border-bottom:1px solid var(--line);background:var(--card-2);font-size:12.5px; }
+.p-waves .m-opt { display:grid;grid-template-columns:auto 26px minmax(0,1fr);gap:8px;align-items:center;cursor:pointer; }
+.p-waves .m-opt.off { cursor:default; }
+.p-waves .m-opt input { accent-color:var(--brand); }
+.p-waves .m-change-nav { display:flex;gap:8px;justify-content:flex-end; }
+.p-waves .m-change .err-inline { background:var(--bad-soft);color:var(--bad-on);border-radius:8px;padding:6px 10px;margin:0; }
+/* QUOTA-CHECK-SPINNER-1: one spinner for the page - Change target, the quota row, the quota card and the request confirmation. */
+.p-waves .spin { display:inline-block;width:12px;height:12px;border:2px solid var(--brand);border-top-color:transparent;border-radius:50%;animation:sp 1s linear infinite;vertical-align:-2px;margin-right:6px;flex:0 0 auto; }
+@media(prefers-reduced-motion:reduce){ .p-waves .spin{animation:none;} }
+.p-waves .wave .levhead { padding:10px 14px 0;font-size:12px;font-weight:700;color:var(--ink); }
+.p-waves .wave.focus { outline:2px solid var(--brand);outline-offset:2px; }
+.p-waves .wave .levers { display:grid;grid-template-columns:repeat(auto-fit,minmax(215px,1fr)); gap:10px 18px;padding:10px 14px;border-bottom:1px solid var(--line);background:var(--bg-soft,var(--card-2)); }
+.p-waves .wave .levers label, .p-waves .wave .levers .kernelrow { display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--muted); }
+.p-waves .wave .levers label .lv, .p-waves .wave .levers .kernelrow .lv { font-weight:600;color:var(--ink); }
+.p-waves .wave .levers .chk { flex-direction:row;align-items:center;gap:7px; }
+.p-waves .wave .levers .keep { display:flex;align-items:center;gap:6px; }
+/* MACHINES-AT-ONCE-RANGE-1: each choice says its machines at once and its engine containers, which is wider than one column. The row is its own, and the choice keeps a readable width. */
+.p-waves .wave .levers .atonce { grid-column:1 / -1; }
+.p-waves .wave .levers .atonce select { max-width:30rem; }
+/* A control that BELONGS to a lever, stacked under it rather than beside it.
+   The grid cell is minmax(215px,1fr): a wide select and a button side by side
+   overflow it into the next lever, which is what Reserve capacity did.
+   flex-start so it takes its own width instead of stretching the column. */
+.p-waves .wave .levers .lever-act { align-self:flex-start;margin-top:2px; }
+/* QUOTA-CHECK-SPINNER-1: the quota row is a div, not a label (a label passes a click on its words to the button), laid out as the labels are. With a table of what is short it takes the whole width. */
+.p-waves .wave .levers .quota-row { display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--muted); }
+.p-waves .wave .levers .quota-row .lv { font-weight:600;color:var(--ink); }
+/* QUOTA-CHECK-SPINNER-1: the plan-wide quota on the Request a quota increase card - the time and Check the quota in the header, the state of the plan in its color, a short row in red. */
+.p-waves #quota .ch { flex-wrap:wrap; }
+.p-waves #quota .ch .hint { color:var(--muted);font-size:12px; }
+.p-waves #quota .err-inline { color:var(--bad);font-weight:600; }
+.p-waves #quota .ok-inline { color:var(--good);font-weight:600; }
+.p-waves #quota .cap-short { margin:6px 0 10px; }
+.p-waves #quota .cap-short tr.short td { color:var(--bad); }
+.p-waves .cap-short { display:flex;flex-direction:column;gap:4px;max-width:100%;overflow-x:auto; }
+.p-waves .cap-short table { width:auto;font-size:12.5px; }
+.p-waves .cap-short table td { font-size:12.5px; }
+.p-waves .cap-short .hint { color:var(--muted);font-size:12.5px; }
+.p-waves .cap-short th, .p-waves .cap-short td { padding:3px 10px 3px 0;text-align:left;white-space:nowrap; }
+.p-waves .cap-short th.num, .p-waves .cap-short td.num { text-align:right; }
+.p-waves .working { display:flex;align-items:center;gap:4px; }
+.p-waves .btn.primary { background:var(--brand-fill);color:var(--on-fill);border-color:transparent;font-weight:600;text-decoration:none; }
+.p-waves .linkish { color:var(--muted);text-decoration:underline;font-size:13px; }
+.p-waves .wave .body { padding:4px 0;min-height:44px; }
+.p-waves .empty { color:var(--muted);font-size:12.5px;padding:10px 16px; }
+.p-waves #warnbar, .p-waves #moved { background:var(--warn-soft);color:var(--warn-on);border-radius:10px;padding:11px 16px;margin:12px 0;display:none;font-size:13.5px; }
+
+/* ── wizard ──────────────────────────────────────── */
+/* step rail */
+.rail { display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap; }
+.rail .st { display:flex;align-items:center;gap:9px;padding:9px 14px;border-radius:11px;background:var(--card); border:1px solid var(--line);font-size:13px;color:var(--muted);flex:1;min-width:170px;box-shadow:var(--shadow); }
+.rail .st .n { width:22px;height:22px;border-radius:50%;background:var(--card-2);color:var(--muted); display:grid;place-items:center;font-size:12px;font-weight:800;flex:0 0 auto; }
+.rail .st.now { border-color:var(--brand);color:var(--ink);font-weight:700; }
+.rail .st.now .n { background:var(--brand-fill);color:var(--on-fill); }
+.rail .st.done .n { background:var(--good-soft);color:var(--good-on); }
+.rail .st.done { color:var(--ink); }
+.p-wizard .card .ch p { margin:0;color:var(--muted);font-size:13px; }
+.p-wizard .cb { padding:18px 20px; }
+.p-wizard label.f { display:block;font-size:12.5px;font-weight:600;color:var(--muted);margin:14px 0 5px; }
+.p-wizard label.f:first-child { margin-top:0; }
+.p-wizard input[type=text], .p-wizard input[type=number], .p-wizard select, .p-wizard textarea { width:100%;border-radius:9px;padding:9px 11px;font-size:13.5px; }
+.p-wizard .choices { display:flex;flex-direction:column;gap:9px; }
+.p-wizard .choices label { display:grid;grid-template-columns:auto 1fr;gap:9px;align-items:start;font-size:13.5px;cursor:pointer;line-height:1.45; }
+.p-wizard .choices .sub { display:block;color:var(--muted);font-size:12.5px; }
+/* KERNEL-UX-1: Linux machines whose network driver choice nobody has looked at
+   yet - an amber notice above the tables, which names no machine, and an amber
+   dot on the Details that holds the choice. */
+.p-wizard .t-kwarn { background:var(--warn-soft);color:var(--warn-on);border-radius:10px;padding:11px 16px;margin:12px 0;font-size:13.5px; }
+/* RHEL-EUS-TARGET-NOTE-1: the note of a machine made from a RHEL image on the
+   EUS repositories, in its network driver choice - the amber pair of .t-kwarn. */
+.p-wizard .t-eus { background:var(--warn-soft);color:var(--warn-on);border-radius:10px;padding:9px 14px;margin:8px 0;font-size:13px;line-height:1.5; }
+/* .rowact.t-kall: .p-wizard .rowact comes later with the same weight. The two
+   long buttons wrap on a narrow screen. */
+.p-wizard .rowact.t-kall { margin-top:8px;gap:8px;flex-wrap:wrap; }
+/* KERNEL-UX-1: an area's machine count reads as a count, not a footnote. */
+.p-wizard .t-area h3 .t-count { margin-left:8px;vertical-align:2px;font-weight:600; }
+.p-wizard .t-kdotx { display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--warn);margin-right:8px;vertical-align:1px; }
+.p-wizard .t-det.t-kdot::before { content:'';display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--warn);margin-right:6px;vertical-align:1px; }
+/* TEMPDISK-UX-1: a size with no temporary disk, on a machine that has one now -
+   the tag under the size (the size cell is mono, the tag is not), and the
+   temporary disk row of Details. The colours are the pair .pill.warn already
+   uses, in both themes. */
+.p-wizard .t-ttag { margin-top:6px;font-family:var(--font); }
+.p-wizard .facts tr.t-trow td { background:var(--warn-soft);color:var(--warn-on);font-weight:600; }
+.p-wizard .facts tr.t-trow td:first-child { padding-left:10px;border-radius:8px 0 0 8px; }
+.p-wizard .facts tr.t-trow td:last-child { border-radius:0 8px 8px 0; }
+/* This is multi-select, so it stays checkboxes - a native <select multiple> needs ctrl-click to pick more than one, which people do not discover. But it should LOOK like the other two pickers, so it borrows the same border, radius and background as a select. */
+.p-wizard .checks { border:1px solid var(--line);border-radius:9px;background:var(--card);max-height:210px;overflow-y:auto; }
+.p-wizard .checks label { display:grid;grid-template-columns:auto 1fr;gap:10px;align-items:start; padding:9px 11px;font-size:13.5px;cursor:pointer;border-bottom:1px solid var(--line); }
+.p-wizard .checks label:last-child { border-bottom:0; }
+.p-wizard .checks label:hover { background:var(--card-2); }
+.p-wizard .checks input { margin-top:2px; }
+/* Step 5 read as five different buckets and formats - a card inside a card inside a card, each with its own padding, and a heading clipped by the nesting. One card, plain sections. */
+.p-wizard .sec { margin:18px 0 0;padding-top:16px;border-top:1px solid var(--line); }
+.p-wizard .sec:first-of-type { margin-top:0;padding-top:0;border-top:0; }
+.p-wizard .sec h3 { margin:0 0 10px;font-size:13px;font-weight:700;letter-spacing:.01em; }
+.p-wizard .facts { width:100%;border-collapse:collapse;font-size:13.5px; }
+.p-wizard .facts td { padding:7px 0;vertical-align:top;border-bottom:1px solid var(--line); }
+.p-wizard .facts tr:last-child td { border-bottom:0; }
+.p-wizard .facts td:first-child { color:var(--muted);padding-right:18px;width:58%; }
+.p-wizard .rowact { display:flex;gap:14px;align-items:center;margin-top:14px; }
+/* ADVISOR-1: the choose-each-target step. A series picker is as wide as v5/v6/v7,
+   not the column or the bar it sits in - .p-wizard select is 100% for form fields. */
+.p-wizard .t-series { width:auto;min-width:88px;padding:6px 10px; }
+.p-wizard .t-bulk { flex-wrap:wrap;gap:10px;margin:14px 0 6px; }
+.p-wizard .t-bulk .sp { flex:1; }
+.p-wizard .t-bulk label { display:flex;align-items:center;gap:8px;font-size:13px;color:var(--muted);white-space:nowrap; }
+.p-wizard .t-detail > td { padding-top:4px;padding-bottom:16px; }
+/* TARGETS-ALIGN-1: a row of a targets table is one table row. Every cell
+   starts on the same top line (a table cell is middle-aligned by default, so
+   a cell with two lines pulled the others down to its middle), and Details is
+   in its own last column at one right edge. The fact of a Preview row sits
+   under its series list, inside that cell. */
+.p-wizard .t-area tbody tr.t-row > td { vertical-align:top; }
+.p-wizard .t-detcell { text-align:right;white-space:nowrap; }
+.p-wizard .t-pfact { margin-top:6px;font-size:12.5px;color:var(--muted);line-height:1.5; }
+/* TARGETS-ALIGN-1: the preview feature of one subscription, once, above the
+   tables: the pill, the sentence, then the (?) and Check again at the right
+   edge. The help opens under them, across the box. Amber while the feature is
+   not registered or not read - the pair .t-kwarn uses, in both themes. */
+.p-wizard .t-psub { display:flex;flex-wrap:wrap;align-items:center;gap:8px 10px;margin:12px 0;padding:9px 14px;border:1px solid var(--line);border-left:3px solid var(--brand);border-radius:8px;font-size:13.5px;color:var(--body); }
+.p-wizard .t-psub.t-pwarn { background:var(--warn-soft);color:var(--warn-on);border-color:var(--warn-soft);border-left-color:var(--warn); }
+.p-wizard .t-psub > .pill { flex:none; }
+.p-wizard .t-ptxt { flex:1 1 320px;min-width:0;line-height:1.5; }
+.p-wizard .t-pact { display:flex;gap:8px;flex:none;margin-left:auto; }
+.p-wizard .t-psub > .t-phelp { flex-basis:100%; }
+/* PREVIEW-RG-SCOPE-1: what to do, under the first line of the box. */
+.p-wizard .t-psub > .t-pmore { flex-basis:100%;line-height:1.5; }
+.p-wizard .t-pmore p { margin:2px 0; }
+.p-wizard .t-pmore ol { margin:2px 0;padding-left:22px; }
+/* The facts of the two kinds of change, behind the (?) of the counts. */
+.p-wizard .t-methods th { text-align:left;font-weight:700;padding:6px 14px 6px 0;vertical-align:bottom; }
+.p-wizard .t-methods td { padding-right:14px; }
+.p-wizard .t-methods td:first-child { width:20%; }
+/* REBUILD-REMOVE-PLAN-1: a subscription whose Preview machines need the preview feature - the amber pair of .t-kwarn. */
+.p-waves .wave .wpwarn { background:var(--warn-soft);color:var(--warn-on);border-radius:8px;padding:8px 12px;margin:8px 14px 0;font-size:12.5px; }
+.p-waves .wave .wpwarn .btn { margin-left:6px; }
+.p-waves .wave .wpwarn .wphelp p { margin:6px 0 0; }
+/* WAVE-NOTE-LAYOUT-1: a note on a wave card is a box with the left edge of the
+   card header and settings: the pill and a title, the sentence, then the names.
+   A name never breaks inside itself; the line wraps between names. */
+.p-waves .wave .wnote { border:1px solid var(--line);border-left:3px solid var(--brand);border-radius:8px;background:var(--card);margin:10px 14px 0;padding:10px 14px;display:grid;gap:6px;font-size:14px;color:var(--ink); }
+.p-waves .wave .wnote p { margin:0;max-width:72ch; }
+.p-waves .wave .wnote-t { display:flex;flex-wrap:wrap;align-items:center;gap:8px;font-weight:600; }
+.p-waves .wave .wnote-vms { overflow-wrap:normal; }
+.p-waves .wave .wnote-vm { white-space:nowrap; }
+/* TARGETS-AREAS-1: Generation 1 is one value; the wide size lists beside it must not break it over two lines. */
+.p-wizard .t-gen { white-space:nowrap; }
+/* MACHINE-PICK-1: the choose-the-machines step. The four filters in one row,
+   the two buttons and the count on the row under them, then the table. */
+.p-wizard .m-filters { display:grid;grid-template-columns:repeat(4, minmax(0, 1fr));gap:10px;margin:14px 0 4px; }
+.p-wizard .m-filters label { display:flex;flex-direction:column;gap:4px;font-size:12.5px;color:var(--muted); }
+.p-wizard .m-bulk { flex-wrap:wrap;gap:10px;margin:10px 0 10px; }
+.p-wizard .m-bulk .sp { flex:1; }
+.p-wizard .m-tags { font-size:12.5px;color:var(--muted); }
+.p-wizard .m-none { color:var(--bad);text-align:right;margin:10px 0 0;font-size:13px; }
+@media (max-width: 720px) { .p-wizard .m-filters { grid-template-columns:1fr 1fr; } }
+.p-wizard .iac-note { margin:0 0 10px; }
+.p-wizard .iac-note p { margin:0 0 6px; }
+.p-wizard .iac-note ul { margin:0 0 6px;padding-left:20px; }
+.p-wizard .ackrow { display:grid;grid-template-columns:auto 1fr;gap:10px;align-items:start;font-size:13.5px;line-height:1.45; }
+/* WIZARD-START-ERROR-OUT-OF-VIEW-1: the error about one field, under that
+   field - the look of the Migrations page dialog error (.m-err). */
+.p-wizard .f-err { background:var(--bad-soft);color:var(--bad-on);border-radius:9px;padding:8px 12px;font-size:12.5px;margin:8px 0 0; }
+.p-wizard textarea[aria-invalid="true"] { border-color:var(--bad); }
+/* the subscription id belongs UNDER the name, not welded to the end of it */
+.p-wizard .checks .sub { display:block;color:var(--muted);font-size:12px;margin-top:2px; }
+.p-wizard .checks .muted { padding:9px 11px;margin:0; }
+.p-wizard .nav { display:flex;gap:10px;align-items:center;margin-top:20px; }
+.p-wizard .nav .sp { flex:1; }
+.p-wizard .working { display:flex;align-items:center;gap:11px;color:var(--muted);font-size:13.5px; }
+.p-wizard .spin { width:15px;height:15px;border:2px solid var(--brand);border-top-color:transparent;border-radius:50%;animation:sp 1s linear infinite; }
+@keyframes sp{to{transform:rotate(360deg);}}
+@media(prefers-reduced-motion:reduce){ .p-wizard .spin{animation:none;} }
+
+/* REACH-2: the capacity gate's answer, beside the wave's capacity lever. */
+.p-waves .cap-answer      { font-size: 12.5px; color: var(--muted); }
+.p-waves .cap-answer.good  { color: var(--good); }
+.p-waves .cap-answer.bad   { color: var(--bad); }
+
+/* POPUP-1: a question asked IN the page, where a browser box used to be. The
+   button becomes this row; Yes or Cancel puts the button back. It sits ON
+   whatever surface the button sat on, so it takes the panel-on-panel token. */
+/* ASKROW-1: the confirmation is ANCHORED to the cell it belongs to, not left
+ * to grow rightwards out of the card.
+ *
+ * MEASURED 2026-09-15 on the Projects page, 1400px wide: the row ran 101px
+ * past the card, and `.card { overflow:hidden }` cut it. "Yes, delete" stayed
+ * on screen and CANCEL DID NOT - so the destructive answer was offered and the
+ * way out was hidden, which is hard rule 11 exactly backwards. */
+.askrow { position:absolute;right:0;z-index:5;display:inline-flex;flex-wrap:wrap;align-items:center;gap:8px;background:var(--card-2);border:1px solid var(--line);border-radius:9px;padding:6px 10px;max-width:min(32ch, calc(100vw - 32px));text-align:left;font-size:13px;white-space:normal;box-shadow:var(--shadow); }
+/* A table cell sizes to its content and may forbid wrapping, so the row
+   bounds its own width and lets its sentences wrap under the question. */
+.askrow .ask { font-weight:600;color:var(--ink);white-space:normal; }
+.askrow .muted { flex-basis:100%;white-space:pre-line; }
+.askrow ul { margin:0;padding-left:18px;flex-basis:100%;color:var(--muted);font-size:12.5px; }
+.askrow input { min-width:220px;flex:1 1 220px; }
+/* ROLE-REMOVE-CONFIRM-1: a question asked under a table row has a row of its
+   own, so it stays in the flow at the full width of the table. On a phone a
+   table can be wider than its card, which cuts it off; the question is held to
+   the card's width (less the cell padding) so all of it shows. */
+tr.askline > td { padding-top:0; }
+.card:has(tr.askline) { container-type:inline-size; }
+.askrow.inrow { position:static;display:flex;max-width:calc(100cqw - 36px);width:100%;box-shadow:none; }
+/* Anywhere else the question is a block right after the element it follows,
+   inset to line up with what is around it. */
+.askrow.askblock { width:auto;max-width:none;margin:8px 0; }
+.card > .askrow.askblock { margin:8px 18px; }
+.p-waves .wave > .askrow.askblock { margin:8px 14px; }

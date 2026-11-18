@@ -1,0 +1,103 @@
+{
+  "_comment": [
+    "AVSET-RESERVE-1. What the engine writes to the log when Reserve capacity runs",
+    "on a wave, and what the wave editor makes of it. Decided in TWO places: the",
+    "engine (New-VmfWaveReservation) writes the events, the page (reserveScan in",
+    "waves.html) reads them. The page used to look for a phrase that only the",
+    "claim note carried, so it never saw the answer and said 'still running'.",
+    "Its own test fed it an event the engine never wrote.",
+    "So this is the one list of cases, and both are held to it:",
+    "tests/unit/AvsetReserve.Tests.ps1 runs the engine on each case and compares",
+    "every odcr event it writes with 'events'; tests/js/reserve-nothing.test.js",
+    "gives the page those same events and checks 'page'.",
+    "Only the fields the page reads are compared: step, outcome, code, wave.",
+    "'page' is 'nothing' when the log alone answers that the wave has nothing to",
+    "reserve, and null when the log does not answer and the claim decides.",
+    "'nothingReservable' is what the engine returns for the wave, and 'pill' is",
+    "what the wave editor shows for those claims as written, before the run",
+    "(loadClaims, then reserveControl): the same rule, decided in both languages.",
+    "'plan' is the machines of the wave in the saved plan: in an availability set, or outside one."
+  ],
+  "_rulesComment": [
+    "What makes a quota record reservable, decided in Test-VmfClaimReservable",
+    "and in the page's claimCount. 'missing' means the field is left out.",
+    "Only a whole number says; anything else is not an answer, so reservable."
+  ],
+  "rules": [
+    { "reservableInstances": 0, "reservable": false },
+    { "reservableInstances": 2, "reservable": true },
+    { "reservableInstances": -1, "reservable": false },
+    { "reservableInstances": null, "reservable": true },
+    { "reservableInstances": "missing", "reservable": true },
+    { "reservableInstances": "0", "reservable": false },
+    { "reservableInstances": " 2 ", "reservable": true },
+    { "reservableInstances": "", "reservable": true },
+    { "reservableInstances": "abc", "reservable": true },
+    { "reservableInstances": 0.5, "reservable": true },
+    { "reservableInstances": -0.5, "reservable": true },
+    { "reservableInstances": 0.0, "reservable": false },
+    { "reservableInstances": true, "reservable": true },
+    { "reservableInstances": false, "reservable": true }
+  ],
+  "wave": "wave-1",
+  "cases": [
+    {
+      "why": "one cell, and every machine in it is in an availability set",
+      "plan": { "inAvset": 2, "outside": 0 },
+      "cells": [ { "name": "a-avset", "instances": 2, "reservable": 0 } ],
+      "events": [
+        { "step": "odcr", "outcome": "warn", "code": null, "wave": "wave-1" },
+        { "step": "odcr", "outcome": "info", "code": "nothingReservable", "wave": "wave-1" }
+      ],
+      "page": "nothing",
+      "nothingReservable": true,
+      "pill": "general"
+    },
+    {
+      "why": "two cells, both only availability-set machines",
+      "plan": { "inAvset": 3, "outside": 0 },
+      "cells": [
+        { "name": "a-avset", "instances": 2, "reservable": 0 },
+        { "name": "b-avset", "instances": 1, "reservable": 0 }
+      ],
+      "events": [
+        { "step": "odcr", "outcome": "warn", "code": null, "wave": "wave-1" },
+        { "step": "odcr", "outcome": "warn", "code": null, "wave": "wave-1" },
+        { "step": "odcr", "outcome": "info", "code": "nothingReservable", "wave": "wave-1" }
+      ],
+      "page": "nothing",
+      "nothingReservable": true,
+      "pill": "general"
+    },
+    {
+      "why": "one availability-set cell and one cell Azure reserves - the claim decides, not the log",
+      "plan": { "inAvset": 2, "outside": 1 },
+      "cells": [
+        { "name": "a-avset", "instances": 2, "reservable": 0 },
+        { "name": "b-open", "instances": 1, "reservable": 1 }
+      ],
+      "events": [
+        { "step": "odcr", "outcome": "warn", "code": null, "wave": "wave-1" },
+        { "step": "odcr", "outcome": "start", "code": null, "wave": null },
+        { "step": "odcr", "outcome": "ok", "code": null, "wave": null }
+      ],
+      "page": null,
+      "nothingReservable": false,
+      "pill": null
+    },
+    {
+      "why": "pressed again after the reservable cell is held - the wave still has something reserved",
+      "plan": { "inAvset": 2, "outside": 1 },
+      "cells": [
+        { "name": "a-avset", "instances": 2, "reservable": 0 },
+        { "name": "b-open", "instances": 1, "reservable": 1, "state": "RESERVED" }
+      ],
+      "events": [
+        { "step": "odcr", "outcome": "warn", "code": null, "wave": "wave-1" }
+      ],
+      "page": null,
+      "nothingReservable": false,
+      "pill": "held"
+    }
+  ]
+}

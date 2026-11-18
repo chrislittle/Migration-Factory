@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://vmf.local/schemas/machine-choices.schema.json",
+  "title": "VMF chosen machines",
+  "description": "MACHINE-PICK-1. The machines a person chose for this migration, saved beside the reviewed assessment (machine-choices.json) by Set-VmfMachineChoice, in the first step of the migrate flow. Only these machines get a target and only these are planned; every other machine stays in the assessment and its report. A machine is chosen only when the target options give it a supported series. Bound to the assessment that was reviewed and to the target options the list was drawn from. An assessment with saved targets and no machine-choices.json (made before this document existed) counts every machine with a saved target as chosen.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "assessmentId", "assessmentHash", "adviceVersion", "savedBy", "savedUtc", "machines"],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "assessmentId": { "type": "string", "minLength": 1 },
+    "assessmentHash": { "type": ["string", "null"], "description": "The hash of the assessment the target options were made from - the one the review approval binds. New-VmfPlan refuses a list saved against a different scan." },
+    "adviceVersion": { "type": "string", "description": "The document version of target-advice.json the list was drawn from (PLANVER-2: Get-VmfDocumentVersion over the stored text, issued by the service). A save quoting another version is refused with 409." },
+    "savedBy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["identity"],
+      "properties": {
+        "identity": { "type": "string", "minLength": 1, "description": "The signed-in user, from the sign-in and never from the request." },
+        "tenantId": { "type": ["string", "null"] }
+      }
+    },
+    "savedUtc": { "type": "string", "format": "date-time" },
+    "machines": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "description": "The vmId of each chosen machine, as the assessment spells it.",
+      "items": { "type": "string", "minLength": 1 }
+    }
+  }
+}

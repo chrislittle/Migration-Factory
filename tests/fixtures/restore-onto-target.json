@@ -1,0 +1,98 @@
+{
+  "about": "ROLLBACK-SIZE-REFUSED-SERIES-1: does Restore this machine from the first safety copy go onto the target size of the plan? The engine (Get-VmfRestoreOntoTarget, RollbackOtherSeries.Tests.ps1) and the run page (restoreOntoTarget, rollback-other-series.test.js) give each answer. onto null: the restore goes to the original size, as before.",
+  "cases": [
+    {
+      "why": "THE CASE: Azure refused the original size, and the plan has v5 now",
+      "doc": { "state": "FAILED_NEEDS_ATTENTION",
+        "history": [ { "tsUtc": "2026-11-14T10:00:00Z", "state": "FAILED_NEEDS_ATTENTION", "outcome": "fail", "reasonCode": "rollbackSizeRefused", "machineState": "changed" } ],
+        "captured": { "vmConfig": { "size": "Standard_D2s_v6" }, "original": { "vmConfig": { "size": "Standard_D2s_v4", "capacityReservationGroupId": null } },
+          "startedTarget": { "size": "Standard_D2s_v6", "target": { "size": "Standard_D2s_v6", "controller": "NVMe" } } } },
+      "entry": { "vmId": "/subscriptions/s/resourceGroups/rg/providers/Microsoft.Compute/virtualMachines/vm1", "path": "A",
+        "target": { "size": "Standard_D2s_v5", "controller": "SCSI", "choice": { "option": "v5", "method": "inPlace" } }, "policy": { "targetGeneration": "v5" } },
+      "onto": { "size": "Standard_D2s_v5", "option": "v5", "originalSize": "Standard_D2s_v4", "refused": false }
+    },
+    {
+      "why": "the copy before the move changed (the prepared copy) keeps its size",
+      "from": "prepared",
+      "doc": { "state": "FAILED_NEEDS_ATTENTION",
+        "history": [ { "tsUtc": "2026-11-14T10:00:00Z", "state": "FAILED_NEEDS_ATTENTION", "outcome": "fail", "reasonCode": "rollbackSizeRefused", "machineState": "changed" } ],
+        "captured": { "original": { "vmConfig": { "size": "Standard_D2s_v4", "capacityReservationGroupId": null } } } },
+      "entry": { "vmId": "/vm1", "path": "A", "target": { "size": "Standard_D2s_v5", "controller": "SCSI", "choice": { "option": "v5" } }, "policy": { "targetGeneration": "v5" } },
+      "onto": null
+    },
+    {
+      "why": "the plan still has the NVMe series: the first copy goes to the original size",
+      "doc": { "state": "FAILED_NEEDS_ATTENTION",
+        "history": [ { "tsUtc": "2026-11-14T10:00:00Z", "state": "FAILED_NEEDS_ATTENTION", "outcome": "fail", "reasonCode": "rollbackSizeRefused", "machineState": "changed" } ],
+        "captured": { "original": { "vmConfig": { "size": "Standard_D2s_v4", "capacityReservationGroupId": null } } } },
+      "entry": { "vmId": "/vm1", "path": "A", "target": { "size": "Standard_D2s_v6", "controller": "NVMe", "choice": { "option": "v6" } }, "policy": { "targetGeneration": "v6" } },
+      "onto": null
+    },
+    {
+      "why": "a restore since the stop ended it (here one to the original size, after a support request)",
+      "doc": { "state": "FAILED_NEEDS_ATTENTION", "restore": { "restoredUtc": "2026-11-14T11:00:00Z" },
+        "history": [ { "tsUtc": "2026-11-14T10:00:00Z", "state": "FAILED_NEEDS_ATTENTION", "outcome": "fail", "reasonCode": "rollbackSizeRefused", "machineState": "changed" } ],
+        "captured": { "original": { "vmConfig": { "size": "Standard_D2s_v4", "capacityReservationGroupId": null } } } },
+      "entry": { "vmId": "/vm1", "path": "A", "target": { "size": "Standard_D2s_v5", "controller": "SCSI", "choice": { "option": "v5" } }, "policy": { "targetGeneration": "v5" } },
+      "onto": null
+    },
+    {
+      "why": "a restore older than the stop does not end it",
+      "doc": { "state": "FAILED_NEEDS_ATTENTION", "restore": { "restoredUtc": "2026-11-14T09:00:00Z" },
+        "history": [ { "tsUtc": "2026-11-14T10:00:00Z", "state": "FAILED_NEEDS_ATTENTION", "outcome": "fail", "reasonCode": "rollbackSizeRefused", "machineState": "changed" } ],
+        "captured": { "original": { "vmConfig": { "size": "Standard_D2s_v4", "capacityReservationGroupId": null } } } },
+      "entry": { "vmId": "/vm1", "path": "A", "target": { "size": "Standard_D2s_v5", "controller": "SCSI", "choice": { "option": "v5" } }, "policy": { "targetGeneration": "v5" } },
+      "onto": { "size": "Standard_D2s_v5", "option": "v5", "originalSize": "Standard_D2s_v4", "refused": false }
+    },
+    {
+      "why": "another stop (the rollback failed) is not this one",
+      "doc": { "state": "FAILED_NEEDS_ATTENTION",
+        "history": [ { "tsUtc": "2026-11-14T10:00:00Z", "state": "FAILED_NEEDS_ATTENTION", "outcome": "fail", "reasonCode": "rollbackFailed", "machineState": "changed" } ],
+        "captured": { "original": { "vmConfig": { "size": "Standard_D2s_v4", "capacityReservationGroupId": null } } } },
+      "entry": { "vmId": "/vm1", "path": "A", "target": { "size": "Standard_D2s_v5", "controller": "SCSI", "choice": { "option": "v5" } }, "policy": { "targetGeneration": "v5" } },
+      "onto": null
+    },
+    {
+      "why": "a v5 target that is the original size is a restore to the original size",
+      "doc": { "state": "FAILED_NEEDS_ATTENTION",
+        "history": [ { "tsUtc": "2026-11-14T10:00:00Z", "state": "FAILED_NEEDS_ATTENTION", "outcome": "fail", "reasonCode": "rollbackSizeRefused", "machineState": "changed" } ],
+        "captured": { "original": { "vmConfig": { "size": "Standard_D2s_v5", "capacityReservationGroupId": null } } } },
+      "entry": { "vmId": "/vm1", "path": "A", "target": { "size": "Standard_D2s_v5", "controller": "SCSI", "choice": { "option": "v5" } }, "policy": { "targetGeneration": "v5" } },
+      "onto": null
+    },
+    {
+      "why": "a capacity reservation group of its own refuses it",
+      "doc": { "state": "FAILED_NEEDS_ATTENTION",
+        "history": [ { "tsUtc": "2026-11-14T10:00:00Z", "state": "FAILED_NEEDS_ATTENTION", "outcome": "fail", "reasonCode": "rollbackSizeRefused", "machineState": "changed" } ],
+        "captured": { "original": { "vmConfig": { "size": "Standard_D2s_v4", "capacityReservationGroupId": "/subscriptions/s/resourceGroups/rg/providers/Microsoft.Compute/capacityReservationGroups/crg1" } } } },
+      "entry": { "vmId": "/vm1", "path": "A", "target": { "size": "Standard_D2s_v5", "controller": "SCSI", "choice": { "option": "v5" } }, "policy": { "targetGeneration": "v5" } },
+      "onto": { "size": "Standard_D2s_v5", "option": "v5", "originalSize": "Standard_D2s_v4", "refused": true }
+    },
+    {
+      "why": "a Preview move refuses it",
+      "doc": { "state": "FAILED_NEEDS_ATTENTION",
+        "history": [ { "tsUtc": "2026-11-14T10:00:00Z", "state": "FAILED_NEEDS_ATTENTION", "outcome": "fail", "reasonCode": "rollbackSizeRefused", "machineState": "changed" } ],
+        "captured": { "original": { "vmConfig": { "size": "Standard_D2ds_v4", "capacityReservationGroupId": null } },
+          "startedTarget": { "size": "Standard_D2s_v6", "target": { "size": "Standard_D2s_v6", "controller": "NVMe", "choice": { "option": "v6", "method": "preview" } } } } },
+      "entry": { "vmId": "/vm1", "path": "A", "target": { "size": "Standard_D2s_v5", "controller": "SCSI", "choice": { "option": "v5", "method": "inPlace" } }, "policy": { "targetGeneration": "v5" } },
+      "onto": { "size": "Standard_D2s_v5", "option": "v5", "originalSize": "Standard_D2ds_v4", "refused": true }
+    },
+    {
+      "why": "a plan that does not move the machine does nothing here",
+      "doc": { "state": "FAILED_NEEDS_ATTENTION",
+        "history": [ { "tsUtc": "2026-11-14T10:00:00Z", "state": "FAILED_NEEDS_ATTENTION", "outcome": "fail", "reasonCode": "rollbackSizeRefused", "machineState": "changed" } ],
+        "captured": { "original": { "vmConfig": { "size": "Standard_D2s_v4", "capacityReservationGroupId": null } } } },
+      "entry": { "vmId": "/vm1", "path": "MANUAL", "target": { "size": "Standard_D2s_v5", "controller": "SCSI", "choice": { "option": "v5" } }, "policy": { "targetGeneration": "v5" } },
+      "onto": null
+    },
+    {
+      "why": "the entry of a retry after the stop does not hide the stop",
+      "doc": { "state": "FAILED_NEEDS_ATTENTION",
+        "history": [ { "tsUtc": "2026-11-14T10:00:00Z", "state": "FAILED_NEEDS_ATTENTION", "outcome": "fail", "reasonCode": "rollbackSizeRefused", "machineState": "changed" },
+                     { "tsUtc": "2026-11-14T10:30:00Z", "state": "FAILED_NEEDS_ATTENTION", "outcome": "ok", "detail": "a note" } ],
+        "captured": { "original": { "vmConfig": { "size": "Standard_D2s_v4", "capacityReservationGroupId": null } } } },
+      "entry": { "vmId": "/vm1", "path": "A", "target": { "size": "Standard_D2s_v5", "controller": "SCSI", "choice": { "option": "v5" } }, "policy": { "targetGeneration": "v5" } },
+      "onto": { "size": "Standard_D2s_v5", "option": "v5", "originalSize": "Standard_D2s_v4", "refused": false }
+    }
+  ]
+}

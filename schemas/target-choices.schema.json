@@ -1,0 +1,46 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://vmf.local/schemas/target-choices.schema.json",
+  "title": "VMF chosen targets",
+  "description": "ADVISOR-1. The target a person chose for each machine, saved beside the reviewed assessment (target-choices.json) by Set-VmfTargetChoice. Bound to the assessment that was reviewed and to the target options the choice was made from. New-VmfPlan plans each machine on its choice; a machine with no choice is not moved. MACHINE-PICK-1: only a chosen machine may have a target, and TARGETS-NO-LIST-1 (v9): no target is saved before machine-choices.json.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "assessmentId", "assessmentHash", "adviceVersion", "machinesVersion", "default", "kernelDefault", "savedBy", "savedUtc", "choices"],
+  "properties": {
+    "schemaVersion": { "const": 9, "description": "9 (TARGETS-NO-LIST-1, 2026-11-12): machinesVersion and kernelDefault are required, and each choice names size, disks, method and kernel, null for none; New-VmfPlan reads this version only. 8 (REBUILD-REMOVE-PLAN-1, 2026-11-07): the method is in-place or preview - the rebuild around the same disks is removed. 7 (REBUILD-PICKER-1, 2026-11-01): each choice records its method - in-place, rebuild or preview. 6 (HDD-OS-1, 2026-10-25): a choice may name os-standard-ssd as its disk types - Standard SSD for an OS disk that is Standard HDD. 5 (MANA-LINUX-KERNEL-1, 2026-10-05): what the product does when the kernel of a Linux machine has no MANA driver - the migration default (kernelDefault) and a choice per machine (kernel). 4 (MACHINE-PICK-1, 2026-10-02): the file records the version of the chosen machines it was saved against. 3 (OLD-SKU-1C, 2026-09-29): a choice may name its disk types. 2 (OLD-SKU-1B, 2026-09-29): a choice may name its size." },
+    "assessmentId": { "type": "string", "minLength": 1 },
+    "assessmentHash": { "type": ["string", "null"], "description": "The hash of the assessment the options were made from - the one the review approval binds." },
+    "adviceVersion": { "type": "string", "description": "The document version of target-advice.json the choices were made from (PLANVER-2: Get-VmfDocumentVersion over the stored text, issued by the service). A save quoting another version is refused with 409." },
+    "machinesVersion": { "type": "string", "minLength": 1, "description": "MACHINE-PICK-1 (v4): the document version of machine-choices.json the targets were saved against (PLANVER-2). Required (v9): no target is saved with no list. A save quoting another version is refused with 409, and New-VmfPlan refuses targets saved against machines that were chosen again since." },
+    "default": { "enum": ["current", "extended"], "description": "The migration's default when the targets were saved, a Microsoft lifecycle stage: current (v6) or extended (v5)." },
+    "kernelDefault": { "enum": ["stop"], "description": "MANA-LINUX-KERNEL-1 (v5): the migration's default for a Linux machine whose target can give MANA, when its kernel has no MANA driver: stop and ask. KERNEL-DEFAULT-EARLIER-1 (narrowed, 2026-11-12): the targets step offers no default and always saves stop, so update left the contract; a machine that is to update its kernel says so in its own kernel choice. Absent: stop." },
+    "savedBy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["identity"],
+      "properties": {
+        "identity": { "type": "string", "minLength": 1, "description": "The signed-in user, from the sign-in and never from the request." },
+        "tenantId": { "type": ["string", "null"] }
+      }
+    },
+    "savedUtc": { "type": "string", "format": "date-time" },
+    "choices": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["vmId", "option", "source", "started", "size", "disks", "method", "kernel"],
+        "properties": {
+          "vmId": { "type": "string", "minLength": 1 },
+          "option": { "enum": ["v5", "v6", "v7"], "description": "A supported option for this machine in the options it was chosen from." },
+          "source": { "enum": ["default", "person"], "description": "default: the machine kept the option it started on under the migration's default. person: somebody changed it." },
+          "started": { "enum": ["v5", "v6", "v7", null], "description": "The option the machine started on under the default." },
+          "size": { "type": ["string", "null"], "description": "OLD-SKU-1B (v2): the v5 size chosen from the option's sizeChoices. Null: the option's target size." },
+          "disks": { "enum": ["os", "all", "os-standard-ssd", null], "description": "OLD-SKU-1C (v3): Premium SSD for the OS disk (os) or every disk (all), changed during the move, only on a size whose premiumDisks is true. HDD-OS-1 (v6): Standard SSD for the OS disk (os-standard-ssd), on any size, only for a machine whose osDiskType is Standard_LRS (Standard HDD). Null: the disk types are kept." },
+          "method": { "enum": ["in-place", "preview"], "description": "REBUILD-PICKER-1 (v7): how the machine moves on the chosen size. in-place: an in-place upgrade, the VM is changed where it stands. preview: the in-place upgrade (Preview), which needs the preview feature VMTempDiskResizePreview on the subscription (TEMP-DISK-PREVIEW-1) - the method of a size that changes the kind of temporary disk of a Windows machine. The save records the method of the chosen size; a request that names another method is refused." },
+          "kernel": { "enum": ["stop", "update", null], "description": "MANA-LINUX-KERNEL-1 (v5): this machine's own choice when its kernel has no MANA driver: stop and ask, or update the kernel during the move. Null: the migration's kernelDefault. Only for a Linux machine whose chosen size can give MANA (the option's or the size choice's acceleratedNetworking.mayUseMana is not false, or the move is an NVMe conversion)." }
+        }
+      }
+    }
+  }
+}

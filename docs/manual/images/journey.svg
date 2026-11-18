@@ -1,0 +1,148 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1400 560" width="1400" height="560" font-family="Segoe UI, -apple-system, Roboto, Helvetica, Arial, sans-serif">
+  <title>The journey from install to report</title>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#446e9b"/>
+    </marker>
+    <style>
+      .band { fill: #446e9b; }
+      .band-text { fill: #ffffff; font-size: 22px; font-weight: 700; }
+      .band-sub { fill: rgba(255,255,255,.9); font-size: 14px; }
+      .card { fill: #ffffff; stroke: #dee2e6; stroke-width: 1.5; }
+      .num { fill: #446e9b; }
+      .num-text { fill: #ffffff; font-size: 16px; font-weight: 700; }
+      .title { fill: #2d2d2d; font-size: 17px; font-weight: 700; }
+      .who { fill: #6c6c6c; font-size: 12px; text-transform: uppercase; letter-spacing: .06em; }
+      .what { fill: #495057; font-size: 13.5px; }
+      .arrow { stroke: #446e9b; stroke-width: 2.5; fill: none; marker-end: url(#arrow); }
+      .phase { fill: #dae2eb; }
+      .phase-text { fill: #1b2c3e; font-size: 12px; font-weight: 700; letter-spacing: .08em; }
+      .good { fill: #d8f0d3; }
+      .good-text { fill: #18480d; }
+    </style>
+  </defs>
+
+  <rect class="band" x="0" y="0" width="1400" height="70" rx="0"/>
+  <text class="band-text" x="32" y="32">A migration from start to finish</text>
+  <text class="band-sub" x="32" y="55">Ten steps. A person approves every one that changes a machine. The product can roll back every machine.</text>
+
+  <!-- phase bands -->
+  <rect class="phase" x="32" y="96" width="384" height="26" rx="13"/><text class="phase-text" x="224" y="114" text-anchor="middle">SET UP, ONCE</text>
+  <rect class="phase" x="440" y="96" width="384" height="26" rx="13"/><text class="phase-text" x="632" y="114" text-anchor="middle">ASSESS AND PLAN</text>
+  <rect class="phase" x="848" y="96" width="520" height="26" rx="13"/><text class="phase-text" x="1108" y="114" text-anchor="middle">MIGRATE, ONE WAVE AT A TIME</text>
+
+  <!-- row 1 -->
+  <g transform="translate(32,140)">
+    <rect class="card" width="176" height="150" rx="10"/>
+    <circle class="num" cx="24" cy="26" r="14"/><text class="num-text" x="24" y="31" text-anchor="middle">1</text>
+    <text class="title" x="48" y="31">Install</text>
+    <text class="who" x="16" y="58">Administrator</text>
+    <text class="what" x="16" y="82">One command:</text>
+    <text class="what" x="16" y="101">azd up. Two choices,</text>
+    <text class="what" x="16" y="120">asked once.</text>
+  </g>
+  <path class="arrow" d="M 216 215 L 240 215"/>
+  <g transform="translate(240,140)">
+    <rect class="card" width="176" height="150" rx="10"/>
+    <circle class="num" cx="24" cy="26" r="14"/><text class="num-text" x="24" y="31" text-anchor="middle">2</text>
+    <text class="title" x="48" y="31">Permission</text>
+    <text class="who" x="16" y="58">Administrator</text>
+    <text class="what" x="16" y="82">On the Admin page:</text>
+    <text class="what" x="16" y="101">where the product may</text>
+    <text class="what" x="16" y="120">look, and who may sign in.</text>
+  </g>
+  <path class="arrow" d="M 424 215 L 448 215"/>
+  <g transform="translate(448,140)">
+    <rect class="card" width="176" height="150" rx="10"/>
+    <circle class="num" cx="24" cy="26" r="14"/><text class="num-text" x="24" y="31" text-anchor="middle">3</text>
+    <text class="title" x="48" y="31">Assess</text>
+    <text class="who" x="16" y="58">Operator</text>
+    <text class="what" x="16" y="82">Find every machine.</text>
+    <text class="what" x="16" y="101">Which can move, which</text>
+    <text class="what" x="16" y="120">cannot yet, and why.</text>
+  </g>
+  <path class="arrow" d="M 632 215 L 656 215"/>
+  <g transform="translate(656,140)">
+    <rect class="card" width="176" height="150" rx="10"/>
+    <circle class="num" cx="24" cy="26" r="14"/><text class="num-text" x="24" y="31" text-anchor="middle">4</text>
+    <text class="title" x="48" y="31">Review</text>
+    <text class="who" x="16" y="58">Approver</text>
+    <text class="what" x="16" y="82">Read the findings.</text>
+    <text class="what" x="16" y="101">Accept the assessment.</text>
+    <text class="what" x="16" y="120">Nothing has changed yet.</text>
+  </g>
+  <path class="arrow" d="M 840 215 L 864 215"/>
+  <g transform="translate(864,140)">
+    <rect class="card" width="176" height="150" rx="10"/>
+    <circle class="num" cx="24" cy="26" r="14"/><text class="num-text" x="24" y="31" text-anchor="middle">5</text>
+    <text class="title" x="48" y="31">Plan</text>
+    <text class="who" x="16" y="58">Operator</text>
+    <text class="what" x="16" y="82">Machines, targets,</text>
+    <text class="what" x="16" y="101">waves and quota.</text>
+    <text class="what" x="16" y="120">Accept each wave.</text>
+  </g>
+  <path class="arrow" d="M 1048 215 L 1072 215"/>
+  <g transform="translate(1072,140)">
+    <rect class="card" width="176" height="150" rx="10"/>
+    <circle class="num" cx="24" cy="26" r="14"/><text class="num-text" x="24" y="31" text-anchor="middle">6</text>
+    <text class="title" x="48" y="31">Approve</text>
+    <text class="who" x="16" y="58">Approver</text>
+    <text class="what" x="16" y="82">Sign off the plan,</text>
+    <text class="what" x="16" y="101">or approve each</text>
+    <text class="what" x="16" y="120">wave, by name.</text>
+  </g>
+
+  <!-- turn -->
+  <path class="arrow" d="M 1160 298 L 1160 330 L 1160 330 L 1240 330 L 1240 362"/>
+
+  <!-- row 2, right to left -->
+  <g transform="translate(1152,370)">
+    <rect class="card" width="176" height="150" rx="10"/>
+    <circle class="num" cx="24" cy="26" r="14"/><text class="num-text" x="24" y="31" text-anchor="middle">7</text>
+    <text class="title" x="48" y="31">Start</text>
+    <text class="who" x="16" y="58">Operator</text>
+    <text class="what" x="16" y="82">Now, or at a time you</text>
+    <text class="what" x="16" y="101">choose, inside a window</text>
+    <text class="what" x="16" y="120">you set.</text>
+  </g>
+  <path class="arrow" d="M 1144 445 L 1120 445"/>
+  <g transform="translate(936,370)">
+    <rect class="card" width="176" height="150" rx="10"/>
+    <circle class="num" cx="24" cy="26" r="14"/><text class="num-text" x="24" y="31" text-anchor="middle">8</text>
+    <text class="title" x="48" y="31">Watch</text>
+    <text class="who" x="16" y="58">Operator</text>
+    <text class="what" x="16" y="82">Every machine, every</text>
+    <text class="what" x="16" y="101">step. Decide when a</text>
+    <text class="what" x="16" y="120">machine asks.</text>
+  </g>
+  <path class="arrow" d="M 928 445 L 904 445"/>
+  <g transform="translate(720,370)">
+    <rect class="card" width="176" height="150" rx="10"/>
+    <circle class="num" cx="24" cy="26" r="14"/><text class="num-text" x="24" y="31" text-anchor="middle">9</text>
+    <text class="title" x="48" y="31">Check</text>
+    <text class="who" x="16" y="58">The people who use it</text>
+    <text class="what" x="16" y="82">Confirm the application</text>
+    <text class="what" x="16" y="101">works. Approve the next</text>
+    <text class="what" x="16" y="120">wave. Repeat 7 to 9.</text>
+  </g>
+  <path class="arrow" d="M 712 445 L 688 445"/>
+  <g transform="translate(504,370)">
+    <rect class="card good" width="176" height="150" rx="10"/>
+    <circle class="num" cx="24" cy="26" r="14"/><text class="num-text" x="24" y="31" text-anchor="middle">10</text>
+    <text class="title good-text" x="48" y="31">Report</text>
+    <text class="who" x="16" y="58">Operator</text>
+    <text class="what" x="16" y="82">What moved, what did</text>
+    <text class="what" x="16" y="101">not, and the evidence.</text>
+    <text class="what" x="16" y="120">Safety copies clean up.</text>
+  </g>
+
+  <!-- rollback -->
+  <g transform="translate(32,370)">
+    <rect width="440" height="150" rx="10" fill="#f6e3cc" stroke="#ac5f00" stroke-width="1.5"/>
+    <text x="20" y="34" fill="#552f00" font-size="17" font-weight="700">Rollback, at every step</text>
+    <text class="what" x="20" y="62" fill="#552f00">Before a machine is touched, the product takes a safety copy of</text>
+    <text class="what" x="20" y="81" fill="#552f00">every disk and locks it. If a machine does not come back healthy,</text>
+    <text class="what" x="20" y="100" fill="#552f00">the product rolls it back to its original hardware from that copy.</text>
+    <text class="what" x="20" y="126" fill="#552f00">A machine that needs a person stops, says why, and waits.</text>
+  </g>
+</svg>

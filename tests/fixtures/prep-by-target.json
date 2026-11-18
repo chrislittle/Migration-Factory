@@ -1,0 +1,80 @@
+{
+  "why": "BSV2-TARGET-1 (review): the preparation a machine gets for a series, once the size of its target is known. On v5 the Windows page file moves when the target size has no temporary disk (Bsv2, or a v5 size with no d), although the scan names pagefile for v6 and v7 only. The engine (Resolve-VmfEntryClassification -TargetDiskArch) and the page (migrations.html judgeForSeries) are both held to these cases.",
+  "cases": [
+    {
+      "name": "Windows B2ms to Bsv2 (no temporary disk)",
+      "prepNeeded": [
+        "stornvme",
+        "pagefile"
+      ],
+      "series": "v5",
+      "targetDiskArch": "diskless",
+      "prep": [
+        "pagefile"
+      ]
+    },
+    {
+      "name": "Windows D4s_v3 to D4s_v5 (no temporary disk)",
+      "prepNeeded": [
+        "stornvme",
+        "pagefile"
+      ],
+      "series": "v5",
+      "targetDiskArch": "diskless",
+      "prep": [
+        "pagefile"
+      ]
+    },
+    {
+      "name": "Windows D4s_v3 to D4ds_v5 (keeps the temporary disk)",
+      "prepNeeded": [
+        "stornvme",
+        "pagefile"
+      ],
+      "series": "v5",
+      "targetDiskArch": "scsi-temp",
+      "prep": []
+    },
+    {
+      "name": "Windows to v5, target not known",
+      "prepNeeded": [
+        "stornvme",
+        "pagefile"
+      ],
+      "series": "v5",
+      "targetDiskArch": null,
+      "prep": []
+    },
+    {
+      "name": "Windows D2ds_v4 to D2ds_v6",
+      "prepNeeded": [
+        "stornvme",
+        "pagefile"
+      ],
+      "series": "v6",
+      "targetDiskArch": "nvme-temp",
+      "prep": [
+        "stornvme",
+        "pagefile"
+      ]
+    },
+    {
+      "name": "Linux B2ms to Bsv2",
+      "prepNeeded": [
+        "linux-nvme-prep"
+      ],
+      "series": "v5",
+      "targetDiskArch": "diskless",
+      "prep": []
+    },
+    {
+      "name": "A machine with no temporary disk to Dsv5",
+      "prepNeeded": [
+        "stornvme"
+      ],
+      "series": "v5",
+      "targetDiskArch": "diskless",
+      "prep": []
+    }
+  ]
+}

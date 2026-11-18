@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Migration Factory - Waves</title>
+<!--
+  WAVE-1 phase 2: the wave editor. The planner's grouping is a starting
+  point; here the migration lead composes the real runbook - create, rename,
+  merge and delete waves, move machines between them, and give each wave its
+  own capacity choice, sign-off rule and the rest of its settings.
+
+  Nothing is saved until "Save the plan" is pressed, and saving goes through
+  the facade (Operator role) where the engine enforces the rules that must
+  never be bypassed: one wave per machine, availability sets never split,
+  no re-waving a machine already under way, and any changed wave loses its
+  approval. ?demo=1 renders bundled sample data.
+-->
+<script src="msal-browser.min.js"></script>
+<!-- DARK-1: one stylesheet, Bootswatch Darkly. Rules in docs/ux.md;
+     the short version is that no page carries CSS of its own. -->
+<script src="theme.js"></script>
+<link rel="icon" href="logo.svg" type="image/svg+xml">
+<link rel="stylesheet" href="app.css">
+</head>
+<body class="p-waves">
+<header class="topbar">
+  <!-- The product name, not a control. It used to link to Migrations,
+       which is ONE of the five areas, so the name of the whole product
+       acted as a shortcut to
+       a part of it. The navigation beside it names every area. -->
+  <span class="brand"><span class="logo" aria-hidden="true"></span><span class="brand-name"><span class="b-1">Migration</span><span class="b-2">Factory</span></span></span>
+  <nav class="topnav"></nav>
+  <span id="demo-tag" class="demo-tag" style="display:none">SAMPLE DATA</span>
+</header>
+
+<main class="wrap">
+  <div id="err"></div>
+  <div id="ok"></div>
+  <div id="warnbar"></div>
+  <!-- WAVE-EDITOR-TICK-1: says which machine a move took out of another wave. -->
+  <div id="moved" role="status"></div>
+  <!-- SIGNIN-1: filled by VmfHelp.showSignIn(). One card, on all of them. -->
+  <div id="login-view"></div>
+  <div id="gate-view"><h2 id="gate-title"></h2><p class="muted" id="gate-copy"></p></div>
+  <!-- LOADING-LINE-1: what the page reads, while it reads. Outside #app, which stays hidden until the plan is read. -->
+  <p class="muted vmf-waiting" id="plan-reading" role="status" hidden></p>
+
+  <div id="app" style="display:none">
+    <!-- WAVE-FLOW-1: shown only when this page IS step 2 of the flow. -->
+    <div class="rail" id="rail" style="display:none"></div>
+    <div class="bar">
+      <h1 id="title"></h1><span class="runid" id="runid"></span>
+      <span class="spacer"></span>
+      <button class="btn ghost small" id="back" style="display:none"></button>
+      <button class="btn ghost small" id="add-wave"></button>
+      <button class="btn ghost small" id="reset"></button>
+      <button class="btn" id="save"></button>
+      <a class="btn" id="continue" style="display:none;text-decoration:none"></a>
+    </div>
+    <!-- CLICKS-LOST-1: what a save waits for, while it waits. -->
+    <p class="muted" id="save-wait" role="status" style="display:none;margin:0 0 10px;text-align:right"></p>
+    <p class="muted" id="howto" style="margin:0 0 14px"></p>
+    <div class="cols">
+      <div>
+        <div class="card">
+          <div class="ch"><h2 id="pool-title"></h2><span class="spacer"></span><span class="pill quiet" id="pool-count"></span></div>
+          <div class="cb" style="padding:10px 16px;display:flex;flex-direction:column;gap:8px">
+            <input id="f-search" class="cap" style="width:100%">
+            <select id="f-scope" class="cap" style="width:100%"></select>
+            <select id="f-rg" class="cap" style="width:100%"></select>
+            <div style="display:flex;gap:6px">
+              <select id="f-tagkey" class="cap" style="flex:1;min-width:0"></select>
+              <select id="f-tagval" class="cap" style="flex:1;min-width:0"></select>
+            </div>
+            <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
+              <button class="btn small ghost" id="f-all"></button>
+              <button class="btn small ghost" id="f-none"></button>
+              <span class="spacer"></span><span class="muted" id="f-count"></span>
+            </div>
+          </div>
+          <div class="machines" id="pool"></div>
+        </div>
+      </div>
+      <!-- QUOTA-PLACE-1: the plan-wide answer, ABOVE the per-wave detail.
+           It used to be appended after the wave cards, which reads as a
+           footnote on one wave and is two pages down on eight. A quota
+           increase can take Azure days, so if this plan needs one that
+           is the first thing to know, not the last.
+
+           WAVES-COL-1: both of these live in ONE child of `.cols`. That grid
+           is `340px 1fr` with exactly two columns, so adding the quota card
+           as a third child gave it the right-hand column and wrapped every
+           wave underneath the machine picker, in a 340px lane. -->
+      <div>
+        <div id="quota"></div>
+        <div id="waves"></div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<!-- QUOTA-PREVIEW-1: the confirmation Request an increase opens. Outside main, so a redraw of the page never touches it. -->
+<div id="q-modal-back"><div class="modal" id="q-modal" role="dialog" aria-modal="true" aria-labelledby="q-m-title"></div></div>
+
+<script src="help.js"></script>
+
+<script src="waves.js"></script>
+  </body>
+</html>

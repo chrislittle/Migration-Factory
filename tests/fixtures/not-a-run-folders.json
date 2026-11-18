@@ -1,0 +1,16 @@
+{
+  "_comment": "PROJECT-3. The folders that sit beside runs in the store and are NOT runs. The service walks the store (Get-VmfFacadeRunIds) and so does the browser (listRunsAcrossProjects, and the overview's own load). Both must agree, or one of them reports a run that is not there. `vmf-claims` is the claim registry at the container root. `logs` is written by the product itself: an event recorded against a path that holds no run leaves one beside the runs, and the retention pass did exactly that on a lab install on 2026-09-16 before PROJECT-2 shipped. The folder it left is permanent, so the rule has to be permanent too.",
+  "schemaVersion": 1,
+  "notRuns": [ "vmf-claims", "logs", "vmf-records" ],
+  "cases": [
+    { "path": "vmf-claims",                      "isRun": false, "why": "the claim registry at the container root" },
+    { "path": "logs",                            "isRun": false, "why": "an event log, never a run" },
+    { "path": "test2/logs",                      "isRun": false, "why": "the same folder one level down, beside a project's runs" },
+    { "path": "test2/assessment-2026-09-15-1829", "isRun": true,  "why": "a run inside a project" },
+    { "path": "assessment-2026-09-15-1829",      "isRun": true,  "why": "a run outside any project" },
+    { "path": "logs-of-war",                     "isRun": true,  "why": "the NAME is matched whole, never as a prefix" },
+    { "path": "my-logs",                         "isRun": true,  "why": "and never as a suffix" },
+    { "path": "test2/vmf-claims",                "isRun": false, "why": "the rule is the folder name, at any level" },
+    { "path": "vmf-records",                     "isRun": false, "why": "ATTEST-1: the migration records, kept beside the runs so a delete cannot take them" }
+  ]
+}

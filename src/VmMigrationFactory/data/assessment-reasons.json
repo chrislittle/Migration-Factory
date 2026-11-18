@@ -1,0 +1,489 @@
+{
+  "schemaVersion": 3,
+  "why": "ASSESS-PAGE-1: what an assessment's blocker and prep codes MEAN, in one place. The codes come from src/VmMigrationFactory/Private/assess/Rules.ps1. schemaVersion 2 (STE-1, 2026-09-01): every entry is written to ASD-STE100 - short sentences, active voice, one meaning per word, technical names used rather than avoided - and every entry carries a 'docs' link to Microsoft's own page. Owner: 'its wordy & not clear with links to the data in MS docs. for example image cannot start on the new disk type. there is no detail on what disk type, why'. The old wording avoided 'NVMe' because a lint banned it as jargon; the result named nothing and sent the reader nowhere. AssessmentReasons.Tests.ps1 fails when the rules learn a code this file has never heard of, and SimplifiedEnglish.Tests.ps1 fails when the wording drifts back. GEN-V5-1 (schemaVersion 3): each blocker and prep item names the size series it applies to. The scan records every reason it finds; the plan judges them against the series the wave chose, because v5 takes Generation 1 machines, Azure Disk Encryption and older Windows, and has no NVMe.",
+  "blockers": {
+    "gen1-requires-redeploy": {
+      "title": "Generation 1 machine",
+      "meaning": "This machine is Generation 1. The v6 and v7 sizes need Generation 2. The v5 sizes take Generation 1 with a resize on SCSI.",
+      "whatToDo": "The Choose each target step shows v5 for this machine when a v5 size fits it. When no v5 size fits it, this machine is outside the scope of this tool.",
+      "docs": {
+        "url": "https://learn.microsoft.com/en-us/azure/virtual-machines/generation-2",
+        "label": "Microsoft: Generation 2 machines"
+      },
+      "appliesTo": [
+        "v6",
+        "v7"
+      ]
+    },
+    "confidential-vm-requires-manual": {
+      "title": "Confidential machine",
+      "meaning": "This is a confidential machine, on a size such as DCasv5 or ECasv5. The product does not move confidential sizes. Confidential sizes have their own upgrade path.",
+      "whatToDo": "Follow Microsoft's confidential computing guidance for this machine. The product does not change it.",
+      "docs": {
+        "url": "https://learn.microsoft.com/en-us/azure/confidential-computing/confidential-vm-overview",
+        "label": "Microsoft: confidential machines"
+      },
+      "appliesTo": [
+        "v5",
+        "v6",
+        "v7"
+      ]
+    },
+    "image-not-supported": {
+      "title": "Image is not on the supported list",
+      "meaning": "This machine's image is not on the product's supported list. The list carries a date and a source, and Azure has no such list of its own.",
+      "whatToDo": "The product does not move this machine. The support matrix in the manual lists the images that the product moves.",
+      "docs": {
+        "url": "https://learn.microsoft.com/en-us/azure/virtual-machines/sizes/lifecycle/sizes-v6-v7-modernization-overview",
+        "label": "Microsoft: migrate to v6 and v7 sizes"
+      },
+      "appliesTo": [
+        "v5",
+        "v6",
+        "v7"
+      ]
+    },
+    "image-cannot-boot-nvme": {
+      "title": "Image does not support NVMe disks",
+      "meaning": "Azure reports that this image supports the SCSI disk controller only. The v6 and v7 sizes attach disks over NVMe, so this machine would not start after the migration.",
+      "whatToDo": "Move this machine to an image that supports NVMe. Azure publishes the disk controllers each image supports. Or choose v5 for this machine in the Choose each target step. v5 keeps the SCSI disk controller.",
+      "docs": {
+        "url": "https://learn.microsoft.com/en-us/azure/virtual-machines/enable-nvme-interface",
+        "label": "Microsoft: NVMe on Azure machines"
+      },
+      "appliesTo": [
+        "v6",
+        "v7"
+      ]
+    },
+    "windows-version-below-2019": {
+      "title": "Windows is older than Windows Server 2019",
+      "meaning": "Azure supports NVMe disks on Windows Server 2019 and later. This machine runs an older version of Windows. The product reads the version that the machine reports it runs. When the machine does not report a version, for example when it is stopped, the product reads the version from its image.",
+      "whatToDo": "For v6 or v7, upgrade Windows to Windows Server 2019 or later. Or deploy the machine again from a newer image. Start the machine, then assess it again. If this machine runs Windows Server 2016, you can choose v5 for it in the Choose each target step.",
+      "docs": {
+        "url": "https://learn.microsoft.com/en-us/azure/virtual-machines/enable-nvme-faqs",
+        "label": "Microsoft: NVMe questions and answers"
+      },
+      "appliesTo": [
+        "v6",
+        "v7"
+      ]
+    },
+    "linux-release-not-on-nvme-list": {
+      "title": "Linux release is not on the NVMe list",
+      "meaning": "Microsoft lists the Linux releases that support NVMe disks. This machine runs a release that is not on that list. The product reads the release that the Azure Linux Agent reports. If the machine is stopped, the agent reports no release. Then the product reads the release from the image of the machine.",
+      "whatToDo": "To move this machine to v6 or v7, upgrade Linux to a release on the list. Then run a new assessment and plan again. Or select v5 for this machine in the Choose each target step. v5 keeps the SCSI disk controller.",
+      "docs": {
+        "url": "https://learn.microsoft.com/en-us/azure/virtual-machines/enable-nvme-interface",
+        "label": "Microsoft: Linux images that support NVMe"
+      },
+      "appliesTo": [
+        "v6",
+        "v7"
+      ]
+    },
+    "windows-version-not-proven": {
+      "title": "Windows version not tested with the product",
+      "meaning": "This machine runs a Windows version older than 2016, which has PowerShell 4.0 or older. The steps the product runs inside a machine have run only on PowerShell 5.1. A move to v5 is held.",
+      "whatToDo": "Keep this machine on its current size. Or upgrade Windows to Windows Server 2016 or later, or deploy it again from a newer image. Then assess it again.",
+      "docs": {
+        "url": "https://learn.microsoft.com/azure/virtual-machines/sizes/lifecycle/sizes-v5-modernization-overview",
+        "label": "Microsoft: modernize to the v5 series"
+      },
+      "appliesTo": [
+        "v5"
+      ]
+    },
+    "unmanaged-os-disk": {
+      "title": "Operating system disk is not a managed disk",
+      "meaning": "This machine starts from an unmanaged disk in a storage account. Every step of this migration works on managed disks.",
+      "whatToDo": "Convert this machine to managed disks. Then assess this machine again.",
+      "docs": {
+        "url": "https://learn.microsoft.com/en-us/azure/virtual-machines/windows/convert-unmanaged-to-managed-disks",
+        "label": "Microsoft: convert to managed disks"
+      },
+      "appliesTo": [
+        "v5",
+        "v6",
+        "v7"
+      ]
+    },
+    "nva-requires-parallel-deployment": {
+      "title": "Network virtual appliance",
+      "meaning": "Network traffic flows through this machine. A migration stops the machine, and the traffic stops with it. The product finds an appliance from its Marketplace image or its Marketplace purchase plan, with the list in a Microsoft Azure Policy definition.",
+      "whatToDo": "Deploy the new appliance beside this machine and move the traffic across. The product does not do that.",
+      "docs": {
+        "url": "https://learn.microsoft.com/en-us/azure/architecture/networking/guide/network-virtual-appliance-high-availability",
+        "label": "Microsoft: appliances that stay available"
+      },
+      "appliesTo": [
+        "v5",
+        "v6",
+        "v7"
+      ]
+    },
+    "disk-encryption-present": {
+      "title": "Azure Disk Encryption is on the operating system disk",
+      "meaning": "Azure Disk Encryption is not available on the v6 and v7 sizes, for Windows or Linux. Its replacement is encryption at host. A machine that has ever had Azure Disk Encryption cannot use encryption at host. Decryption does not lift that restriction, and neither does a snapshot or a disk copy.",
+      "whatToDo": "Choose v5 for this machine in the Choose each target step. A v5 in-place upgrade keeps Azure Disk Encryption. When the move to v5 changes the kind of temporary disk, that step does not offer v5. The product does not move an encrypted machine by the in-place upgrade (Preview). For v6 or v7, do not decrypt the machine first, because that does not make it eligible. Microsoft supports new disks and a new machine. The product does not build machines.",
+      "docs": {
+        "url": "https://learn.microsoft.com/en-us/azure/virtual-machines/disk-encryption",
+        "label": "Microsoft: encryption at host"
+      },
+      "appliesTo": [
+        "v6",
+        "v7"
+      ]
+    },
+    "hpc-or-fpga-size": {
+      "title": "HPC or FPGA size (not in scope)",
+      "meaning": "HPC and FPGA sizes are outside the scope of this tool, so it does not move this machine. Microsoft has its own route for these sizes.",
+      "whatToDo": "Follow the retirement guide from Microsoft for this series. The End of Life list from Microsoft links the guide for each series.",
+      "docs": { "url": "https://learn.microsoft.com/en-us/azure/virtual-machines/sizes/lifecycle/end-of-life-sizes-list", "label": "Microsoft: End of Life size series" },
+      "appliesTo": [ "v5", "v6", "v7" ]
+    },
+    "local-nvme-storage-size": {
+      "title": "Ls or Lsv2 size (not in scope)",
+      "meaning": "Ls and Lsv2 sizes are outside the scope of this tool, so it does not move this machine. Microsoft moves them to newer L series sizes.",
+      "whatToDo": "Follow the modernization guide from Microsoft. It names Lsv3, Lasv3, Lsv4 and Lasv4.",
+      "docs": { "url": "https://learn.microsoft.com/en-us/azure/virtual-machines/sizes/lifecycle/retirement/retired-sizes-modernization-guide", "label": "Microsoft: modernization guide for retired sizes" },
+      "appliesTo": [ "v5", "v6", "v7" ]
+    },
+    "l-series-replacement": {
+      "title": "G or GS size (not in scope)",
+      "meaning": "G and GS sizes are outside the scope of this tool, so it does not move this machine. Microsoft moves them to L series sizes.",
+      "whatToDo": "Follow the modernization guide from Microsoft. It names Lsv3, Lasv3, Lsv4 and Lasv4.",
+      "docs": { "url": "https://learn.microsoft.com/en-us/azure/virtual-machines/sizes/lifecycle/retirement/retired-sizes-modernization-guide", "label": "Microsoft: modernization guide for retired sizes" },
+      "appliesTo": [ "v5", "v6", "v7" ]
+    },
+    "gpu-size": {
+      "title": "GPU size (not in scope)",
+      "meaning": "GPU sizes are outside the scope of this tool, so it does not move this machine. The GPU families are NC, ND, NG and NV.",
+      "whatToDo": "Keep this machine on its GPU size. If its series is End of Life, the End of Life list from Microsoft links the guide for that series.",
+      "docs": { "url": "https://learn.microsoft.com/en-us/azure/virtual-machines/sizes/lifecycle/end-of-life-sizes-list", "label": "Microsoft: End of Life size series" },
+      "appliesTo": [ "v5", "v6", "v7" ]
+    },
+    "size-retired": {
+      "title": "Retired size (not in scope)",
+      "meaning": "Microsoft retires the size series of this machine on a date. For example, the Basic and Standard A-series retired on August 31, 2024. From one day before that date, a machine on that size is outside the scope of this tool, so it does not move this machine.",
+      "whatToDo": "Resize the machine to a size that Microsoft supports, and start it. Then assess the machine again. The modernization guide from Microsoft names the sizes for each retired series.",
+      "docs": { "url": "https://learn.microsoft.com/en-us/azure/virtual-machines/sizes/lifecycle/retirement/retired-sizes-modernization-guide", "label": "Microsoft: modernization guide for retired sizes" },
+      "appliesTo": [ "v5", "v6", "v7" ]
+    },
+    "too-many-data-disks": {
+      "title": "More than 32 data disks (not in scope)",
+      "meaning": "This machine has more than 32 data disks. A machine with more than 32 data disks is outside the scope of this tool, so it does not move this machine.",
+      "whatToDo": "Keep this machine on its size. To move it, detach the data disks that it does not use, until it has 32 or fewer. Then assess the machine again.",
+      "docs": { "url": "https://learn.microsoft.com/en-us/azure/virtual-machines/sizes/overview", "label": "Microsoft: sizes for virtual machines, with the data disk limit of each size" },
+      "appliesTo": [ "v5", "v6", "v7" ]
+    },
+    "sap-needs-a-certified-size": {
+      "title": "SAP workload",
+      "meaning": "SAP supports its software only on the sizes SAP certifies. That list is SAP Note 1928533, and it needs an SAP account to read. The product cannot read it, so it cannot say whether the new size is certified.",
+      "whatToDo": "Migrate this machine the SAP way. Read SAP Note 1928533, choose a certified size, and follow the SAP guidance. The product does not move SAP machines.",
+      "docs": {
+        "url": "https://learn.microsoft.com/en-us/azure/sap/workloads/certifications",
+        "label": "Microsoft: Azure certifications for SAP"
+      },
+      "appliesTo": [
+        "v5",
+        "v6",
+        "v7"
+      ]
+    },
+    "ephemeral-os-disk": {
+      "title": "The operating system disk is ephemeral",
+      "meaning": "This machine keeps its operating system disk on the host, not in a disk resource. The disk is empty again every time the machine stops, and the product cannot copy it or move it.",
+      "whatToDo": "Deploy this machine again on the new size, from whatever builds it. Nothing on an ephemeral disk is kept, so there is nothing to carry across.",
+      "docs": {
+        "url": "https://learn.microsoft.com/en-us/azure/virtual-machines/ephemeral-os-disks",
+        "label": "Microsoft: ephemeral operating system disks"
+      },
+      "appliesTo": [
+        "v5",
+        "v6",
+        "v7"
+      ]
+    },
+    "storage-appliance-needs-vendor": {
+      "title": "Storage or backup appliance",
+      "meaning": "This machine is a storage or backup appliance from a vendor. The vendor certifies the sizes that the appliance supports. Microsoft says to treat these appliances like network virtual appliances. The product finds them from its own list of Marketplace images, which is not a Microsoft list.",
+      "whatToDo": "Ask the vendor which sizes they support, and how to move the appliance. This machine is outside the scope of this tool.",
+      "docs": { "url": "https://learn.microsoft.com/en-us/azure/virtual-machines/sizes/lifecycle/sizes-v6-v7-modernization-plan", "label": "Microsoft: storage and backup virtual appliances" },
+      "appliesTo": [ "v5", "v6", "v7" ]
+    },
+    "managed-application-needs-vendor": {
+      "title": "Machine in an Azure managed application",
+      "meaning": "An Azure managed application manages the resource group of this machine. The vendor of the application owns the machine, and the vendor certifies its sizes.",
+      "whatToDo": "Ask the vendor of the managed application to change the size. This machine is outside the scope of this tool.",
+      "docs": { "url": "https://learn.microsoft.com/en-us/azure/azure-resource-manager/managed-applications/overview", "label": "Microsoft: Azure managed applications" },
+      "appliesTo": [ "v5", "v6", "v7" ]
+    },
+    "purchase-plan-out-of-scope": {
+      "title": "Machine with a Marketplace purchase plan",
+      "meaning": "Azure records a Marketplace purchase plan on this machine. The publisher of the image sells it under that plan. Examples are Ubuntu Pro, RHEL BYOS and the SUSE offers with a name that ends in -llc. The assessment names the plan publisher, the plan product and the plan name.",
+      "whatToDo": "Move this machine in the way that the publisher of the plan tells you. A machine with a purchase plan is outside the scope of this tool.",
+      "docs": { "url": "https://learn.microsoft.com/en-us/azure/virtual-machines/marketplace-images", "label": "Microsoft: Marketplace purchase plan information" },
+      "appliesTo": [ "v5", "v6", "v7" ]
+    },
+    "shared-disk-cluster-node": {
+      "title": "Failover cluster on a shared disk",
+      "meaning": "A data disk of this machine is a shared disk. Its maxShares setting is more than 1, so other machines use the same disk. A migration stops this machine as if it were alone in the cluster.",
+      "whatToDo": "Move the cluster one machine at a time, in the way that the cluster software tells you. This machine is outside the scope of this tool.",
+      "docs": { "url": "https://learn.microsoft.com/en-us/azure/virtual-machines/disks-shared", "label": "Microsoft: shared disks" },
+      "appliesTo": [ "v5", "v6", "v7" ]
+    },
+    "sql-availability-group-member": {
+      "title": "SQL Server Always On availability group member",
+      "meaning": "This machine is a member of a SQL Server Always On availability group. Its SQL virtual machine resource in Azure names the group.",
+      "whatToDo": "Move the availability group one machine at a time. Fail over before you move a machine. This machine is outside the scope of this tool.",
+      "docs": { "url": "https://learn.microsoft.com/en-us/azure/azure-sql/virtual-machines/windows/availability-group-overview", "label": "Microsoft: availability groups for SQL Server on Azure virtual machines" },
+      "appliesTo": [ "v5", "v6", "v7" ]
+    },
+    "sizes-not-read": {
+      "title": "Sizes not read for this subscription",
+      "meaning": "The scan could not read the list of sizes that Azure offers in the subscription and region of this machine. The scan cannot tell which sizes this machine can use.",
+      "whatToDo": "Read why the list was not read under What this scan could not read. Correct the cause, then start a new assessment.",
+      "docs": { "url": "https://learn.microsoft.com/en-us/rest/api/compute/resource-skus/list", "label": "Microsoft: Resource Skus - List" },
+      "appliesTo": [ "v5", "v6", "v7" ]
+    }
+  },
+  "prep": {
+    "stornvme": {
+      "title": "Windows NVMe driver is not enabled",
+      "meaning": "Windows starts the NVMe driver only when that driver is enabled. Without it, Windows cannot find its disks on a v6 or v7 size.",
+      "whatToDo": "Do nothing. The product enables the driver immediately before it stops the machine.",
+      "docs": {
+        "url": "https://learn.microsoft.com/en-us/azure/virtual-machines/enable-nvme-interface",
+        "label": "Microsoft: NVMe on Azure machines"
+      },
+      "appliesTo": [
+        "v6",
+        "v7"
+      ]
+    },
+    "pagefile": {
+      "title": "Page file is on the temporary disk",
+      "meaning": "The Windows page file sits on the temporary disk. On a v6 or v7 size that disk arrives empty, and Windows must prepare it at every start. A v5 or Bsv2 size with no temporary disk, such as D4s_v5 or B2s_v2, has no place for it.",
+      "whatToDo": "Do nothing. The product moves the page file before it stops the machine.",
+      "docs": {
+        "url": "https://learn.microsoft.com/en-us/azure/virtual-machines/enable-nvme-temp-faqs",
+        "label": "Microsoft: NVMe temporary disks"
+      },
+      "appliesTo": [
+        "v6",
+        "v7"
+      ]
+    },
+    "linux-nvme-prep": {
+      "title": "Linux start-up image needs the NVMe driver",
+      "meaning": "The Linux start-up image must load the NVMe driver. Without it, the machine cannot find its root disk after the migration.",
+      "whatToDo": "Do nothing. The product rebuilds the start-up image before it stops the machine.",
+      "docs": {
+        "url": "https://learn.microsoft.com/en-us/azure/virtual-machines/enable-nvme-interface",
+        "label": "Microsoft: NVMe on Azure machines"
+      },
+      "appliesTo": [
+        "v6",
+        "v7"
+      ]
+    },
+    "verify-generation": {
+      "title": "Generation is unknown",
+      "meaning": "Azure reported no generation for this machine. Azure reports it for a running machine and for a stopped machine, so this is rare. Unknown is not the same as unsupported, so the product assumes nothing.",
+      "whatToDo": "Start this machine, then assess this machine again.",
+      "docs": {
+        "url": "https://learn.microsoft.com/en-us/azure/virtual-machines/generation-2",
+        "label": "Microsoft: Generation 2 machines"
+      },
+      "appliesTo": [
+        "v6",
+        "v7"
+      ]
+    },
+    "verify-custom-image-nvme-ready": {
+      "title": "Machine comes from a custom image",
+      "meaning": "This machine comes from your own image. Azure publishes NVMe support for its own images only, so Azure has no answer about your image.",
+      "whatToDo": "The product does not move a machine that comes from a custom image. The support matrix in the manual lists the images that the product moves.",
+      "docs": {
+        "url": "https://learn.microsoft.com/en-us/azure/virtual-machines/enable-nvme-interface",
+        "label": "Microsoft: NVMe on Azure machines"
+      },
+      "appliesTo": [
+        "v6",
+        "v7"
+      ]
+    },
+    "mana-kernel-floor": {
+      "title": "The kernel is checked against the MANA driver floor",
+      "meaning": "The v6 and v7 sizes, and some Intel v5 and Bsv2 hosts, use the Microsoft Azure Network Adapter (MANA) for accelerated networking. Microsoft publishes a minimum kernel version for each Linux distribution, and Azure does not update this driver inside the machine. The product reads the kernel from inside this machine when it migrates, because that is the only place the version can be read.",
+      "whatToDo": "Check now whether this machine's kernel meets the published minimum for its distribution, and patch it if not. Or choose Update the kernel in its Details on the Choose each target step. A machine below the floor stops before anything is changed during the migration. Without the driver, accelerated networking does not work. Nobody can accept this stop. Update the kernel, or leave the machine out.",
+      "docs": {
+        "url": "https://learn.microsoft.com/en-us/azure/virtual-network/accelerated-networking-mana-linux",
+        "label": "Microsoft: MANA on Linux, and the minimum kernel for each distribution"
+      },
+      "appliesTo": [
+        "v5",
+        "v6",
+        "v7"
+      ]
+    }
+  },
+  "excluded": {
+    "scale-set-member": {
+      "title": "Member of a virtual machine scale set",
+      "meaning": "The scale set owns this machine. The scale set decides its size and its image.",
+      "whatToDo": "Change the size in the scale set model, then let the scale set roll the change out.",
+      "docs": {
+        "url": "https://learn.microsoft.com/en-us/azure/virtual-machine-scale-sets/virtual-machine-scale-sets-upgrade-scale-set",
+        "label": "Microsoft: change a scale set"
+      }
+    },
+    "managed-resource-group": {
+      "title": "Machine in a resource group that a platform manages",
+      "meaning": "A service declares this resource group as its own: an AKS cluster, an Azure Red Hat OpenShift cluster, a Databricks workspace or another service. The service creates and replaces the machines in it.",
+      "whatToDo": "Change the size in the settings of the cluster, the workspace or the service. The service then replaces its machines.",
+      "docs": {
+        "url": "https://learn.microsoft.com/en-us/azure/aks/resize-node-pool",
+        "label": "Microsoft: change the size of a Kubernetes cluster's machines"
+      }
+    },
+    "avd-session-host": {
+      "title": "Virtual Desktop session host",
+      "meaning": "A Virtual Desktop host pool lists this machine as a session host. People sign in to it for their desktops.",
+      "whatToDo": "Add new session hosts on the new size to the host pool, drain the old ones, then remove them.",
+      "docs": {
+        "url": "https://learn.microsoft.com/en-us/azure/virtual-desktop/add-session-hosts-host-pool",
+        "label": "Microsoft: add session hosts to a host pool"
+      }
+    },
+    "client-operating-system": {
+      "title": "Client operating system",
+      "meaning": "The machine runs Windows 10, Windows 11 or a Virtual Desktop image. The product migrates server operating systems only.",
+      "whatToDo": "Do nothing in the product. Manage the machine with the software that manages your desktops.",
+      "docs": {
+        "url": "https://learn.microsoft.com/en-us/azure/virtual-machines/windows/client-images",
+        "label": "Microsoft: Windows client images in Azure"
+      }
+    },
+    "cyclecloud-cluster-node": {
+      "title": "Machine in an Azure CycleCloud cluster",
+      "meaning": "Azure CycleCloud adds tags to each machine of its clusters: CycleCloudCluster and CycleCloudNodeArray, or ClusterId with ClusterName on CycleCloud 8.2 and earlier. This machine has them, in the form that CycleCloud gives. CycleCloud makes and changes the machines of its cluster.",
+      "whatToDo": "Change the size in the settings of the CycleCloud cluster. CycleCloud then makes its machines on the new size.",
+      "docs": {
+        "url": "https://learn.microsoft.com/en-us/azure/cyclecloud/how-to/tag-nodes",
+        "label": "Microsoft: tagging nodes in Azure CycleCloud"
+      }
+    },
+    "dedicated-host": {
+      "title": "Machine on a dedicated host",
+      "meaning": "Azure records a dedicated host or a host group on this machine. A machine on a dedicated host is outside the scope of this tool.",
+      "whatToDo": "Do nothing in the product.",
+      "docs": {
+        "url": "https://learn.microsoft.com/en-us/azure/virtual-machines/dedicated-hosts/overview",
+        "label": "Microsoft: Azure Dedicated Hosts"
+      }
+    },
+    "hibernation-enabled": {
+      "title": "Machine with hibernation enabled",
+      "meaning": "Azure records that hibernation is enabled on this machine. A machine with hibernation enabled is outside the scope of this tool.",
+      "whatToDo": "Do nothing in the product.",
+      "docs": {
+        "url": "https://learn.microsoft.com/en-us/azure/virtual-machines/hibernate-resume",
+        "label": "Microsoft: hibernation overview"
+      }
+    }
+  },
+  "warnings": {
+    "sql-server-agree-downtime": {
+      "title": "SQL Server runs on this machine",
+      "meaning": "This machine runs SQL Server. The migration stops the machine, and its databases are not available while it is stopped. The machine can still move.",
+      "whatToDo": "Agree the downtime with the database owner before the move. Make sure that the database backups are current.",
+      "docs": { "url": "https://learn.microsoft.com/en-us/azure/azure-sql/virtual-machines/windows/sql-server-on-azure-vm-iaas-what-is-overview", "label": "Microsoft: SQL Server on Azure virtual machines" },
+      "appliesTo": [ "v5", "v6", "v7" ]
+    },
+    "cluster-node-confirm": {
+      "title": "This machine may be a cluster node",
+      "meaning": "A fact in Azure shows that this machine may be a cluster node. Its network interface can be in a load balancer backend pool, or have more than one IP configuration. Or the machine has the SQL IaaS Agent extension. The scan cannot see inside the machine, so this is not proof. The machine can still move. Before the move, Checking runs a check inside the machine, and stops a cluster node before anything changes.",
+      "whatToDo": "Ask the owner of this machine if it is a cluster node. The product does not move a cluster node, so do not put a cluster node in a wave.",
+      "docs": { "url": "https://learn.microsoft.com/en-us/windows-server/failover-clustering/failover-clustering-overview", "label": "Microsoft: failover clustering" },
+      "appliesTo": [ "v5", "v6", "v7" ]
+    },
+    "workload-type-not-checked": {
+      "title": "Workload type not checked",
+      "meaning": "The scan could not read all the facts that find the workload type of this machine. Unknown is not the same as a standalone machine. The machine can still move.",
+      "whatToDo": "Check how this machine is used before the move. Look for a cluster, a shared disk, SQL Server or a vendor appliance.",
+      "docs": { "url": "https://learn.microsoft.com/en-us/azure/virtual-machines/sizes/lifecycle/sizes-v6-v7-modernization-discover", "label": "Microsoft: workload modernization categories" },
+      "appliesTo": [ "v5", "v6", "v7" ]
+    },
+    "os-disk-standard-hdd": {
+      "title": "The OS disk is Standard HDD",
+      "meaning": "The OS disk of this machine is a Standard HDD disk. Azure stops support for Standard HDD OS disks on 8 September 2028. On that date, Azure changes each Standard HDD OS disk to Standard SSD of the same size. The workload can stop during that change. This does not apply to a Standard HDD OS disk that Azure Site Recovery made. The machine can still move.",
+      "whatToDo": "On the targets step, choose Standard SSD: OS disk. The move then changes the OS disk while the machine is stopped, and you do not stop it again later.",
+      "docs": { "url": "https://learn.microsoft.com/en-us/azure/virtual-machines/disks-hdd-os-retirement", "label": "Microsoft: migrate Standard HDD OS disks by 8 September 2028" },
+      "appliesTo": [ "v5", "v6", "v7" ]
+    },
+    "mana-driver-download": {
+      "title": "The move can download the MANA driver",
+      "meaning": "The v6 and v7 sizes, and some Intel v5 and Bsv2 hosts, use the Microsoft Azure Network Adapter (MANA) for accelerated networking. When the Windows driver store of this machine has no MANA driver, the product downloads one from download.microsoft.com during the move. The scan reads Azure, so it cannot read the driver store. The machine can still move.",
+      "whatToDo": "Make sure that this machine can connect to download.microsoft.com over HTTPS during the move. If the download fails, the machine stops with the reason The MANA driver could not be installed. It keeps its current size.",
+      "docs": { "url": "https://learn.microsoft.com/en-us/azure/virtual-network/accelerated-networking-mana-windows", "label": "Microsoft: MANA on Windows" },
+      "appliesTo": [ "v5", "v6", "v7" ]
+    },
+    "linux-release-nvme-not-read": {
+      "title": "Linux release not compared with the NVMe list",
+      "meaning": "Microsoft lists the Linux releases that support NVMe disks. The scan cannot compare the release of this machine with that list. The product does not read an unknown release as supported. The machine can still move.",
+      "whatToDo": "Start the machine. Then assess it again. Before you select v6 or v7, make sure that the machine runs a release on the list.",
+      "docs": { "url": "https://learn.microsoft.com/en-us/azure/virtual-machines/enable-nvme-interface", "label": "Microsoft: Linux images that support NVMe" },
+      "appliesTo": [ "v6", "v7" ]
+    },
+    "linux-release-past-standard-support": {
+      "title": "The Linux release is past the end of standard support",
+      "meaning": "The vendor of this Linux release ended its standard support. Microsoft supports accelerated networking only on releases that the vendor has not marked as end of life. The vendor can sell extended support after the end of standard support. The machine can still move.",
+      "whatToDo": "Upgrade the release. Or make sure that the machine has extended support from its vendor. Before the move, Checking stops the machine. Then an approver can accept the release for this machine.",
+      "docs": { "url": "https://learn.microsoft.com/en-us/azure/virtual-network/accelerated-networking-overview", "label": "Microsoft: accelerated networking" },
+      "appliesTo": [ "v5", "v6", "v7" ]
+    },
+    "linux-release-end-of-support-not-known": {
+      "title": "End of support of the Linux release not known",
+      "meaning": "The scan cannot compare the release of this machine with the end of standard support from its vendor. The product does not read an unknown release as supported. The machine can still move.",
+      "whatToDo": "Start the machine. Then assess it again. Or read the end of standard support of the release on the page of its vendor.",
+      "docs": { "url": "https://learn.microsoft.com/en-us/azure/virtual-network/accelerated-networking-overview", "label": "Microsoft: accelerated networking" },
+      "appliesTo": [ "v5", "v6", "v7" ]
+    }
+  },
+  "workloadTypes": {
+    "node-pool-or-scale-set": {
+      "title": "Node pool or scale set",
+      "meaning": "AKS, Azure Red Hat OpenShift or a scale set owns this machine. Add a new node pool or scale set at the new size, move the workload, then remove the old one."
+    },
+    "pooled-avd-host": {
+      "title": "Pooled AVD host",
+      "meaning": "This machine is a session host in a pooled Azure Virtual Desktop host pool. Make new session hosts at the new size, move the users, then remove the old hosts."
+    },
+    "managed-by-a-service": {
+      "title": "Managed by a service",
+      "meaning": "A service manages this machine: Azure Databricks or another service manages its resource group, or the machine is in an Azure CycleCloud cluster. Change the node type or the size in the service."
+    },
+    "standalone-vm": {
+      "title": "Standalone machine",
+      "meaning": "You manage this machine yourself, and no fact in Azure shows another workload type. The findings of the machine, not its type, decide whether it can migrate."
+    },
+    "cluster-or-database": {
+      "title": "Cluster or database",
+      "meaning": "This machine holds state or is part of a cluster: SQL Server, a shared disk or SAP. Move a cluster one machine at a time, after a failover."
+    },
+    "vendor-appliance": {
+      "title": "Vendor appliance",
+      "meaning": "This machine is a vendor appliance. Ask the vendor which sizes they certify. Deploy a new appliance beside the old appliance, then move the traffic."
+    },
+    "may-be-cluster-node": {
+      "title": "May be a cluster node",
+      "meaning": "A fact in Azure shows that this machine may be a cluster node. Each of these is such a fact: a load balancer backend pool, more than one IP configuration, the SQL IaaS Agent extension. Before the move, Checking runs a check inside the machine and stops a cluster node."
+    },
+    "not-checked": {
+      "title": "Type not checked",
+      "meaning": "The scan could not read all the facts that find the workload type. Check how this machine is used before the move."
+    }
+  }
+}

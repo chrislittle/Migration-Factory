@@ -1,0 +1,118 @@
+{
+  "_comment": [
+    "WAVE-LEVER-OVERRIDE-1. Which machines of a wave hold their OWN value for a",
+    "setting, decided in TWO places: the wave editor (JavaScript, waveCard and",
+    "keepsOwn in src/dashboard/waves.html) names them on the card, and the",
+    "engine (PowerShell, Get-VmfWaveSettingWrites) keeps them when the setting",
+    "is changed. If the two disagree, the card says a machine keeps its value",
+    "and the save writes over it - the defect this item fixes.",
+    "Each case: the machines of wave w, what the card shows (card), which",
+    "machines hold their own value (own), and one change made on the card",
+    "(change). writes and kept are what the engine does with that change.",
+    "Held by tests/js/wave-lever-override.test.js and",
+    "tests/unit/WaveLeverOverride.Tests.ps1."
+  ],
+  "wave": "w",
+  "cases": [
+    {
+      "name": "a decision on the first machine does not set the card",
+      "entries": [
+        { "name": "a", "policy": { "onDDataFound": "proceed" }, "decisions": [ { "setting": "onDDataFound", "by": "approver@example.com", "utc": "2026-10-03T09:00:00Z" } ] },
+        { "name": "b", "policy": { "onDDataFound": "stop" } },
+        { "name": "c", "policy": { "onDDataFound": "stop" } }
+      ],
+      "card": { "onDDataFound": "stop", "keepSnapshotDays": 7 },
+      "own": { "onDDataFound": [ "a" ], "keepSnapshotDays": [] },
+      "change": { "field": "onDDataFound", "to": "proceed" },
+      "writes": [ "b", "c" ],
+      "kept": []
+    },
+    {
+      "name": "the decided machine keeps its answer when the card goes back",
+      "entries": [
+        { "name": "a", "policy": { "onDDataFound": "proceed" }, "decisions": [ { "setting": "onDDataFound", "by": "approver@example.com", "utc": "2026-10-03T09:00:00Z" } ] },
+        { "name": "b", "policy": { "onDDataFound": "proceed" } }
+      ],
+      "card": { "onDDataFound": "proceed" },
+      "own": { "onDDataFound": [ "a" ] },
+      "change": { "field": "onDDataFound", "to": "stop" },
+      "writes": [ "b" ],
+      "kept": [ "a" ]
+    },
+    {
+      "name": "a value set by hand is the machine's own",
+      "entries": [
+        { "name": "a", "policy": { "keepSnapshotDays": 7 } },
+        { "name": "b", "policy": { "keepSnapshotDays": 14 } },
+        { "name": "c", "policy": { "keepSnapshotDays": 7 } }
+      ],
+      "card": { "keepSnapshotDays": 7 },
+      "own": { "keepSnapshotDays": [ "b" ] },
+      "change": { "field": "keepSnapshotDays", "to": 30 },
+      "writes": [ "a", "c" ],
+      "kept": [ "b" ]
+    },
+    {
+      "name": "a decision that holds the wave value is still the machine's own, and a tie takes the first machine",
+      "entries": [
+        { "name": "a", "policy": { "keepSnapshotDays": 7 }, "decisions": [ { "setting": "keepSnapshotDays", "by": "approver@example.com", "utc": "2026-10-03T09:00:00Z" } ] },
+        { "name": "b", "policy": { "keepSnapshotDays": 7 } },
+        { "name": "c", "policy": { "keepSnapshotDays": 14 } }
+      ],
+      "card": { "keepSnapshotDays": 7 },
+      "own": { "keepSnapshotDays": [ "a", "c" ] },
+      "change": { "field": "keepSnapshotDays", "to": 30 },
+      "writes": [ "b" ],
+      "kept": [ "a", "c" ]
+    },
+    {
+      "name": "every machine decided: the card shows their value and a change writes nothing",
+      "entries": [
+        { "name": "a", "policy": { "onDDataFound": "proceed" }, "decisions": [ { "setting": "onDDataFound", "by": "approver@example.com", "utc": "2026-10-03T09:00:00Z" } ] }
+      ],
+      "card": { "onDDataFound": "proceed" },
+      "own": { "onDDataFound": [ "a" ] },
+      "change": { "field": "onDDataFound", "to": "stop" },
+      "writes": [],
+      "kept": [ "a" ]
+    },
+    {
+      "name": "a setting of the wave is read as the engine reads it, and a change writes every machine",
+      "entries": [
+        { "name": "a", "policy": { "throttle": 15, "capacityGate": "BestEffort", "requireApproval": false } },
+        { "name": "b", "policy": { "throttle": 5, "capacityGate": "Reserved", "requireApproval": true } },
+        { "name": "c", "policy": { "throttle": 5, "capacityGate": "Reserved", "requireApproval": false } }
+      ],
+      "card": { "throttle": 15, "capacityGate": "BestEffort", "requireApproval": true },
+      "own": { "throttle": [], "capacityGate": [], "requireApproval": [] },
+      "change": { "field": "throttle", "to": 30 },
+      "writes": [ "a", "b", "c" ],
+      "kept": []
+    },
+    {
+      "name": "a missing value reads as the engine default",
+      "entries": [
+        { "name": "a", "policy": {} },
+        { "name": "b", "policy": { "onDDataFound": "stop", "throttle": "30" } }
+      ],
+      "card": { "onDDataFound": "stop", "throttle": 30, "requireApproval": true },
+      "own": { "onDDataFound": [], "throttle": [], "requireApproval": [] },
+      "change": { "field": "onDDataFound", "to": "proceed" },
+      "writes": [ "a", "b" ],
+      "kept": []
+    },
+    {
+      "name": "SIGNOFF-NULL-1: a stored null or 0 sign-off reads as required, so taking it off writes those machines",
+      "entries": [
+        { "name": "a", "policy": { "requireApproval": null } },
+        { "name": "b", "policy": { "requireApproval": 0 } },
+        { "name": "c", "policy": { "requireApproval": false } }
+      ],
+      "card": { "requireApproval": true },
+      "own": { "requireApproval": [] },
+      "change": { "field": "requireApproval", "to": false },
+      "writes": [ "a", "b" ],
+      "kept": []
+    }
+  ]
+}

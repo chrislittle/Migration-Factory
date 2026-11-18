@@ -1,0 +1,89 @@
+{
+  "why": "BSV2-TARGET-1: the size names a page reads as Bsv2, and the ones it must not. The engine reads them by their series (Get-VmfBurstableTarget, from target-families.json burstableTargets) and the pages by VmfHelp.seriesLabel; a test in each language holds its reading to this list. Basv2 (AMD) and Bpsv2 (Arm64) are never a target, and must never read as Bsv2.",
+  "sizes": [
+    {
+      "size": "Standard_B2ts_v2",
+      "bsv2": true
+    },
+    {
+      "size": "Standard_B2ls_v2",
+      "bsv2": true
+    },
+    {
+      "size": "Standard_B2s_v2",
+      "bsv2": true
+    },
+    {
+      "size": "Standard_B4ls_v2",
+      "bsv2": true
+    },
+    {
+      "size": "Standard_B16ls_v2",
+      "bsv2": true
+    },
+    {
+      "size": "Standard_B32s_v2",
+      "bsv2": true
+    },
+    {
+      "size": "standard_b8s_v2",
+      "bsv2": true
+    },
+    {
+      "size": "Standard_B2as_v2",
+      "bsv2": false
+    },
+    {
+      "size": "Standard_B2als_v2",
+      "bsv2": false
+    },
+    {
+      "size": "Standard_B2ats_v2",
+      "bsv2": false
+    },
+    {
+      "size": "Standard_B2ps_v2",
+      "bsv2": false
+    },
+    {
+      "size": "Standard_B2pls_v2",
+      "bsv2": false
+    },
+    {
+      "size": "Standard_B2pts_v2",
+      "bsv2": false
+    },
+    {
+      "size": "Standard_B2ms",
+      "bsv2": false
+    },
+    {
+      "size": "Standard_B1ls",
+      "bsv2": false
+    },
+    {
+      "size": "Standard_B2s",
+      "bsv2": false
+    },
+    {
+      "size": "Standard_D2s_v5",
+      "bsv2": false
+    },
+    {
+      "size": "Standard_D2ls_v5",
+      "bsv2": false
+    },
+    {
+      "size": "Standard_DS2_v2",
+      "bsv2": false
+    },
+    {
+      "size": "Standard_E2s_v5",
+      "bsv2": false
+    },
+    {
+      "size": "",
+      "bsv2": false
+    }
+  ]
+}

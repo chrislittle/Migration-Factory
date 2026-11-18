@@ -1,0 +1,910 @@
+{
+  "why": "BSV2-TARGET-1: every B size Azure offers in centralus - B v1 (the sources), Bsv2 (the target of a B v1 machine), and Basv2 and Bpsv2, which are never offered (AMD and Arm64). Real figures, so a test can run every B v1 size against the Bsv2 sizes Azure offers. Trimmed to the capabilities the planner reads, and the family the quota check reads. No size reports DiskControllerTypes.",
+  "region": "centralus",
+  "readUtc": "2026-10-09",
+  "command": "az vm list-skus -l centralus --resource-type virtualMachines --size Standard_B --all -o json",
+  "sizes": [
+    {
+      "name": "Standard_B12ms",
+      "family": "standardBSFamily",
+      "zones": [
+        "1",
+        "2",
+        "3"
+      ],
+      "restrictions": [],
+      "capabilities": {
+        "MaxResourceVolumeMB": "98304",
+        "vCPUs": "12",
+        "HyperVGenerations": "V1,V2",
+        "MemoryGB": "48",
+        "MaxDataDiskCount": "16",
+        "CpuArchitectureType": "x64",
+        "PremiumIO": "True",
+        "vCPUsAvailable": "12",
+        "AcceleratedNetworkingEnabled": "True",
+        "MaxNetworkInterfaces": "6"
+      }
+    },
+    {
+      "name": "Standard_B16als_v2",
+      "family": "standardBasv2Family",
+      "zones": [
+        "1",
+        "2",
+        "3"
+      ],
+      "restrictions": [],
+      "capabilities": {
+        "MaxResourceVolumeMB": "0",
+        "vCPUs": "16",
+        "HyperVGenerations": "V1,V2",
+        "MemoryGB": "32",
+        "MaxDataDiskCount": "32",
+        "CpuArchitectureType": "x64",
+        "PremiumIO": "True",
+        "vCPUsAvailable": "16",
+        "AcceleratedNetworkingEnabled": "True",
+        "MaxNetworkInterfaces": "4"
+      }
+    },
+    {
+      "name": "Standard_B16as_v2",
+      "family": "standardBasv2Family",
+      "zones": [
+        "1",
+        "2",
+        "3"
+      ],
+      "restrictions": [],
+      "capabilities": {
+        "MaxResourceVolumeMB": "0",
+        "vCPUs": "16",
+        "HyperVGenerations": "V1,V2",
+        "MemoryGB": "64",
+        "MaxDataDiskCount": "32",
+        "CpuArchitectureType": "x64",
+        "PremiumIO": "True",
+        "vCPUsAvailable": "16",
+        "AcceleratedNetworkingEnabled": "True",
+        "MaxNetworkInterfaces": "4"
+      }
+    },
+    {
+      "name": "Standard_B16ls_v2",
+      "family": "standardBsv2Family",
+      "zones": [
+        "1",
+        "2",
+        "3"
+      ],
+      "restrictions": [],
+      "capabilities": {
+        "MaxResourceVolumeMB": "0",
+        "vCPUs": "16",
+        "HyperVGenerations": "V1,V2",
+        "MemoryGB": "32",
+        "MaxDataDiskCount": "32",
+        "CpuArchitectureType": "x64",
+        "PremiumIO": "True",
+        "vCPUsAvailable": "16",
+        "AcceleratedNetworkingEnabled": "True",
+        "MaxNetworkInterfaces": "4"
+      }
+    },
+    {
+      "name": "Standard_B16ms",
+      "family": "standardBSFamily",
+      "zones": [
+        "1",
+        "2",
+        "3"
+      ],
+      "restrictions": [],
+      "capabilities": {
+        "MaxResourceVolumeMB": "131072",
+        "vCPUs": "16",
+        "HyperVGenerations": "V1,V2",
+        "MemoryGB": "64",
+        "MaxDataDiskCount": "32",
+        "CpuArchitectureType": "x64",
+        "PremiumIO": "True",
+        "vCPUsAvailable": "16",
+        "AcceleratedNetworkingEnabled": "True",
+        "MaxNetworkInterfaces": "8"
+      }
+    },
+    {
+      "name": "Standard_B16pls_v2",
+      "family": "standardBpsv2Family",
+      "zones": [
+        "1",
+        "2",
+        "3"
+      ],
+      "restrictions": [],
+      "capabilities": {
+        "MaxResourceVolumeMB": "0",
+        "vCPUs": "16",
+        "HyperVGenerations": "V1,V2",
+        "MemoryGB": "32",
+        "MaxDataDiskCount": "32",
+        "CpuArchitectureType": "Arm64",
+        "PremiumIO": "True",
+        "vCPUsAvailable": "16",
+        "AcceleratedNetworkingEnabled": "True",
+        "MaxNetworkInterfaces": "4"
+      }
+    },
+    {
+      "name": "Standard_B16ps_v2",
+      "family": "standardBpsv2Family",
+      "zones": [
+        "1",
+        "2",
+        "3"
+      ],
+      "restrictions": [],
+      "capabilities": {
+        "MaxResourceVolumeMB": "0",
+        "vCPUs": "16",
+        "HyperVGenerations": "V1,V2",
+        "MemoryGB": "64",
+        "MaxDataDiskCount": "32",
+        "CpuArchitectureType": "Arm64",
+        "PremiumIO": "True",
+        "vCPUsAvailable": "16",
+        "AcceleratedNetworkingEnabled": "True",
+        "MaxNetworkInterfaces": "4"
+      }
+    },
+    {
+      "name": "Standard_B16s_v2",
+      "family": "standardBsv2Family",
+      "zones": [
+        "1",
+        "2",
+        "3"
+      ],
+      "restrictions": [],
+      "capabilities": {
+        "MaxResourceVolumeMB": "0",
+        "vCPUs": "16",
+        "HyperVGenerations": "V1,V2",
+        "MemoryGB": "64",
+        "MaxDataDiskCount": "32",
+        "CpuArchitectureType": "x64",
+        "PremiumIO": "True",
+        "vCPUsAvailable": "16",
+        "AcceleratedNetworkingEnabled": "True",
+        "MaxNetworkInterfaces": "4"
+      }
+    },
+    {
+      "name": "Standard_B1ls",
+      "family": "standardBSFamily",
+      "zones": [
+        "1",
+        "2",
+        "3"
+      ],
+      "restrictions": [],
+      "capabilities": {
+        "MaxResourceVolumeMB": "4096",
+        "vCPUs": "1",
+        "HyperVGenerations": "V1,V2",
+        "MemoryGB": "0.5",
+        "MaxDataDiskCount": "2",
+        "CpuArchitectureType": "x64",
+        "PremiumIO": "True",
+        "vCPUsAvailable": "1",
+        "AcceleratedNetworkingEnabled": "False",
+        "MaxNetworkInterfaces": "2"
+      }
+    },
+    {
+      "name": "Standard_B1ms",
+      "family": "standardBSFamily",
+      "zones": [
+        "1",
+        "2",
+        "3"
+      ],
+      "restrictions": [],
+      "capabilities": {
+        "MaxResourceVolumeMB": "4096",
+        "vCPUs": "1",
+        "HyperVGenerations": "V1,V2",
+        "MemoryGB": "2",
+        "MaxDataDiskCount": "2",
+        "CpuArchitectureType": "x64",
+        "PremiumIO": "True",
+        "vCPUsAvailable": "1",
+        "AcceleratedNetworkingEnabled": "False",
+        "MaxNetworkInterfaces": "2"
+      }
+    },
+    {
+      "name": "Standard_B1s",
+      "family": "standardBSFamily",
+      "zones": [
+        "1",
+        "2",
+        "3"
+      ],
+      "restrictions": [],
+      "capabilities": {
+        "MaxResourceVolumeMB": "4096",
+        "vCPUs": "1",
+        "HyperVGenerations": "V1,V2",
+        "MemoryGB": "1",
+        "MaxDataDiskCount": "2",
+        "CpuArchitectureType": "x64",
+        "PremiumIO": "True",
+        "vCPUsAvailable": "1",
+        "AcceleratedNetworkingEnabled": "False",
+        "MaxNetworkInterfaces": "2"
+      }
+    },
+    {
+      "name": "Standard_B20ms",
+      "family": "standardBSFamily",
+      "zones": [
+        "1",
+        "2",
+        "3"
+      ],
+      "restrictions": [],
+      "capabilities": {
+        "MaxResourceVolumeMB": "163840",
+        "vCPUs": "20",
+        "HyperVGenerations": "V1,V2",
+        "MemoryGB": "80",
+        "MaxDataDiskCount": "32",
+        "CpuArchitectureType": "x64",
+        "PremiumIO": "True",
+        "vCPUsAvailable": "20",
+        "AcceleratedNetworkingEnabled": "True",
+        "MaxNetworkInterfaces": "8"
+      }
+    },
+    {
+      "name": "Standard_B2als_v2",
+      "family": "standardBasv2Family",
+      "zones": [
+        "1",
+        "2",
+        "3"
+      ],
+      "restrictions": [],
+      "capabilities": {
+        "MaxResourceVolumeMB": "0",
+        "vCPUs": "2",
+        "HyperVGenerations": "V1,V2",
+        "MemoryGB": "4",
+        "MaxDataDiskCount": "4",
+        "CpuArchitectureType": "x64",
+        "PremiumIO": "True",
+        "vCPUsAvailable": "2",
+        "AcceleratedNetworkingEnabled": "True",
+        "MaxNetworkInterfaces": "2"
+      }
+    },
+    {
+      "name": "Standard_B2as_v2",
+      "family": "standardBasv2Family",
+      "zones": [
+        "1",
+        "2",
+        "3"
+      ],
+      "restrictions": [],
+      "capabilities": {
+        "MaxResourceVolumeMB": "0",
+        "vCPUs": "2",
+        "HyperVGenerations": "V1,V2",
+        "MemoryGB": "8",
+        "MaxDataDiskCount": "4",
+        "CpuArchitectureType": "x64",
+        "PremiumIO": "True",
+        "vCPUsAvailable": "2",
+        "AcceleratedNetworkingEnabled": "True",
+        "MaxNetworkInterfaces": "2"
+      }
+    },
+    {
+      "name": "Standard_B2ats_v2",
+      "family": "standardBasv2Family",
+      "zones": [
+        "1",
+        "2",
+        "3"
+      ],
+      "restrictions": [],
+      "capabilities": {
+        "MaxResourceVolumeMB": "0",
+        "vCPUs": "2",
+        "HyperVGenerations": "V1,V2",
+        "MemoryGB": "1",
+        "MaxDataDiskCount": "4",
+        "CpuArchitectureType": "x64",
+        "PremiumIO": "True",
+        "vCPUsAvailable": "2",
+        "AcceleratedNetworkingEnabled": "True",
+        "MaxNetworkInterfaces": "2"
+      }
+    },
+    {
+      "name": "Standard_B2ls_v2",
+      "family": "standardBsv2Family",
+      "zones": [
+        "1",
+        "2",
+        "3"
+      ],
+      "restrictions": [],
+      "capabilities": {
+        "MaxResourceVolumeMB": "0",
+        "vCPUs": "2",
+        "HyperVGenerations": "V1,V2",
+        "MemoryGB": "4",
+        "MaxDataDiskCount": "4",
+        "CpuArchitectureType": "x64",
+        "PremiumIO": "True",
+        "vCPUsAvailable": "2",
+        "AcceleratedNetworkingEnabled": "True",
+        "MaxNetworkInterfaces": "2"
+      }
+    },
+    {
+      "name": "Standard_B2ms",
+      "family": "standardBSFamily",
+      "zones": [
+        "1",
+        "2",
+        "3"
+      ],
+      "restrictions": [],
+      "capabilities": {
+        "MaxResourceVolumeMB": "16384",
+        "vCPUs": "2",
+        "HyperVGenerations": "V1,V2",
+        "MemoryGB": "8",
+        "MaxDataDiskCount": "4",
+        "CpuArchitectureType": "x64",
+        "PremiumIO": "True",
+        "vCPUsAvailable": "2",
+        "AcceleratedNetworkingEnabled": "False",
+        "MaxNetworkInterfaces": "3"
+      }
+    },
+    {
+      "name": "Standard_B2pls_v2",
+      "family": "standardBpsv2Family",
+      "zones": [
+        "1",
+        "2",
+        "3"
+      ],
+      "restrictions": [],
+      "capabilities": {
+        "MaxResourceVolumeMB": "0",
+        "vCPUs": "2",
+        "HyperVGenerations": "V1,V2",
+        "MemoryGB": "4",
+        "MaxDataDiskCount": "4",
+        "CpuArchitectureType": "Arm64",
+        "PremiumIO": "True",
+        "vCPUsAvailable": "2",
+        "AcceleratedNetworkingEnabled": "True",
+        "MaxNetworkInterfaces": "2"
+      }
+    },
+    {
+      "name": "Standard_B2ps_v2",
+      "family": "standardBpsv2Family",
+      "zones": [
+        "1",
+        "2",
+        "3"
+      ],
+      "restrictions": [],
+      "capabilities": {
+        "MaxResourceVolumeMB": "0",
+        "vCPUs": "2",
+        "HyperVGenerations": "V1,V2",
+        "MemoryGB": "8",
+        "MaxDataDiskCount": "4",
+        "CpuArchitectureType": "Arm64",
+        "PremiumIO": "True",
+        "vCPUsAvailable": "2",
+        "AcceleratedNetworkingEnabled": "True",
+        "MaxNetworkInterfaces": "2"
+      }
+    },
+    {
+      "name": "Standard_B2pts_v2",
+      "family": "standardBpsv2Family",
+      "zones": [
+        "1",
+        "2",
+        "3"
+      ],
+      "restrictions": [],
+      "capabilities": {
+        "MaxResourceVolumeMB": "0",
+        "vCPUs": "2",
+        "HyperVGenerations": "V1,V2",
+        "MemoryGB": "1",
+        "MaxDataDiskCount": "4",
+        "CpuArchitectureType": "Arm64",
+        "PremiumIO": "True",
+        "vCPUsAvailable": "2",
+        "AcceleratedNetworkingEnabled": "True",
+        "MaxNetworkInterfaces": "2"
+      }
+    },
+    {
+      "name": "Standard_B2s",
+      "family": "standardBSFamily",
+      "zones": [
+        "1",
+        "2",
+        "3"
+      ],
+      "restrictions": [],
+      "capabilities": {
+        "MaxResourceVolumeMB": "8192",
+        "vCPUs": "2",
+        "HyperVGenerations": "V1,V2",
+        "MemoryGB": "4",
+        "MaxDataDiskCount": "4",
+        "CpuArchitectureType": "x64",
+        "PremiumIO": "True",
+        "vCPUsAvailable": "2",
+        "AcceleratedNetworkingEnabled": "False",
+        "MaxNetworkInterfaces": "3"
+      }
+    },
+    {
+      "name": "Standard_B2s_v2",
+      "family": "standardBsv2Family",
+      "zones": [
+        "1",
+        "2",
+        "3"
+      ],
+      "restrictions": [],
+      "capabilities": {
+        "MaxResourceVolumeMB": "0",
+        "vCPUs": "2",
+        "HyperVGenerations": "V1,V2",
+        "MemoryGB": "8",
+        "MaxDataDiskCount": "4",
+        "CpuArchitectureType": "x64",
+        "PremiumIO": "True",
+        "vCPUsAvailable": "2",
+        "AcceleratedNetworkingEnabled": "True",
+        "MaxNetworkInterfaces": "2"
+      }
+    },
+    {
+      "name": "Standard_B2ts_v2",
+      "family": "standardBsv2Family",
+      "zones": [
+        "1",
+        "2",
+        "3"
+      ],
+      "restrictions": [],
+      "capabilities": {
+        "MaxResourceVolumeMB": "0",
+        "vCPUs": "2",
+        "HyperVGenerations": "V1,V2",
+        "MemoryGB": "1",
+        "MaxDataDiskCount": "4",
+        "CpuArchitectureType": "x64",
+        "PremiumIO": "True",
+        "vCPUsAvailable": "2",
+        "AcceleratedNetworkingEnabled": "True",
+        "MaxNetworkInterfaces": "2"
+      }
+    },
+    {
+      "name": "Standard_B32als_v2",
+      "family": "standardBasv2Family",
+      "zones": [
+        "1",
+        "2",
+        "3"
+      ],
+      "restrictions": [],
+      "capabilities": {
+        "MaxResourceVolumeMB": "0",
+        "vCPUs": "32",
+        "HyperVGenerations": "V1,V2",
+        "MemoryGB": "64",
+        "MaxDataDiskCount": "32",
+        "CpuArchitectureType": "x64",
+        "PremiumIO": "True",
+        "vCPUsAvailable": "32",
+        "AcceleratedNetworkingEnabled": "True",
+        "MaxNetworkInterfaces": "4"
+      }
+    },
+    {
+      "name": "Standard_B32as_v2",
+      "family": "standardBasv2Family",
+      "zones": [
+        "1",
+        "2",
+        "3"
+      ],
+      "restrictions": [],
+      "capabilities": {
+        "MaxResourceVolumeMB": "0",
+        "vCPUs": "32",
+        "HyperVGenerations": "V1,V2",
+        "MemoryGB": "128",
+        "MaxDataDiskCount": "32",
+        "CpuArchitectureType": "x64",
+        "PremiumIO": "True",
+        "vCPUsAvailable": "32",
+        "AcceleratedNetworkingEnabled": "True",
+        "MaxNetworkInterfaces": "4"
+      }
+    },
+    {
+      "name": "Standard_B32ls_v2",
+      "family": "standardBsv2Family",
+      "zones": [
+        "1",
+        "2",
+        "3"
+      ],
+      "restrictions": [],
+      "capabilities": {
+        "MaxResourceVolumeMB": "0",
+        "vCPUs": "32",
+        "HyperVGenerations": "V1,V2",
+        "MemoryGB": "64",
+        "MaxDataDiskCount": "32",
+        "CpuArchitectureType": "x64",
+        "PremiumIO": "True",
+        "vCPUsAvailable": "32",
+        "AcceleratedNetworkingEnabled": "True",
+        "MaxNetworkInterfaces": "4"
+      }
+    },
+    {
+      "name": "Standard_B32s_v2",
+      "family": "standardBsv2Family",
+      "zones": [
+        "1",
+        "2",
+        "3"
+      ],
+      "restrictions": [],
+      "capabilities": {
+        "MaxResourceVolumeMB": "0",
+        "vCPUs": "32",
+        "HyperVGenerations": "V1,V2",
+        "MemoryGB": "128",
+        "MaxDataDiskCount": "32",
+        "CpuArchitectureType": "x64",
+        "PremiumIO": "True",
+        "vCPUsAvailable": "32",
+        "AcceleratedNetworkingEnabled": "True",
+        "MaxNetworkInterfaces": "4"
+      }
+    },
+    {
+      "name": "Standard_B4als_v2",
+      "family": "standardBasv2Family",
+      "zones": [
+        "1",
+        "2",
+        "3"
+      ],
+      "restrictions": [],
+      "capabilities": {
+        "MaxResourceVolumeMB": "0",
+        "vCPUs": "4",
+        "HyperVGenerations": "V1,V2",
+        "MemoryGB": "8",
+        "MaxDataDiskCount": "8",
+        "CpuArchitectureType": "x64",
+        "PremiumIO": "True",
+        "vCPUsAvailable": "4",
+        "AcceleratedNetworkingEnabled": "True",
+        "MaxNetworkInterfaces": "3"
+      }
+    },
+    {
+      "name": "Standard_B4as_v2",
+      "family": "standardBasv2Family",
+      "zones": [
+        "1",
+        "2",
+        "3"
+      ],
+      "restrictions": [],
+      "capabilities": {
+        "MaxResourceVolumeMB": "0",
+        "vCPUs": "4",
+        "HyperVGenerations": "V1,V2",
+        "MemoryGB": "16",
+        "MaxDataDiskCount": "8",
+        "CpuArchitectureType": "x64",
+        "PremiumIO": "True",
+        "vCPUsAvailable": "4",
+        "AcceleratedNetworkingEnabled": "True",
+        "MaxNetworkInterfaces": "3"
+      }
+    },
+    {
+      "name": "Standard_B4ls_v2",
+      "family": "standardBsv2Family",
+      "zones": [
+        "1",
+        "2",
+        "3"
+      ],
+      "restrictions": [],
+      "capabilities": {
+        "MaxResourceVolumeMB": "0",
+        "vCPUs": "4",
+        "HyperVGenerations": "V1,V2",
+        "MemoryGB": "8",
+        "MaxDataDiskCount": "8",
+        "CpuArchitectureType": "x64",
+        "PremiumIO": "True",
+        "vCPUsAvailable": "4",
+        "AcceleratedNetworkingEnabled": "True",
+        "MaxNetworkInterfaces": "3"
+      }
+    },
+    {
+      "name": "Standard_B4ms",
+      "family": "standardBSFamily",
+      "zones": [
+        "1",
+        "2",
+        "3"
+      ],
+      "restrictions": [],
+      "capabilities": {
+        "MaxResourceVolumeMB": "32768",
+        "vCPUs": "4",
+        "HyperVGenerations": "V1,V2",
+        "MemoryGB": "16",
+        "MaxDataDiskCount": "8",
+        "CpuArchitectureType": "x64",
+        "PremiumIO": "True",
+        "vCPUsAvailable": "4",
+        "AcceleratedNetworkingEnabled": "False",
+        "MaxNetworkInterfaces": "4"
+      }
+    },
+    {
+      "name": "Standard_B4pls_v2",
+      "family": "standardBpsv2Family",
+      "zones": [
+        "1",
+        "2",
+        "3"
+      ],
+      "restrictions": [],
+      "capabilities": {
+        "MaxResourceVolumeMB": "0",
+        "vCPUs": "4",
+        "HyperVGenerations": "V1,V2",
+        "MemoryGB": "8",
+        "MaxDataDiskCount": "8",
+        "CpuArchitectureType": "Arm64",
+        "PremiumIO": "True",
+        "vCPUsAvailable": "4",
+        "AcceleratedNetworkingEnabled": "True",
+        "MaxNetworkInterfaces": "2"
+      }
+    },
+    {
+      "name": "Standard_B4ps_v2",
+      "family": "standardBpsv2Family",
+      "zones": [
+        "1",
+        "2",
+        "3"
+      ],
+      "restrictions": [],
+      "capabilities": {
+        "MaxResourceVolumeMB": "0",
+        "vCPUs": "4",
+        "HyperVGenerations": "V1,V2",
+        "MemoryGB": "16",
+        "MaxDataDiskCount": "8",
+        "CpuArchitectureType": "Arm64",
+        "PremiumIO": "True",
+        "vCPUsAvailable": "4",
+        "AcceleratedNetworkingEnabled": "True",
+        "MaxNetworkInterfaces": "2"
+      }
+    },
+    {
+      "name": "Standard_B4s_v2",
+      "family": "standardBsv2Family",
+      "zones": [
+        "1",
+        "2",
+        "3"
+      ],
+      "restrictions": [],
+      "capabilities": {
+        "MaxResourceVolumeMB": "0",
+        "vCPUs": "4",
+        "HyperVGenerations": "V1,V2",
+        "MemoryGB": "16",
+        "MaxDataDiskCount": "8",
+        "CpuArchitectureType": "x64",
+        "PremiumIO": "True",
+        "vCPUsAvailable": "4",
+        "AcceleratedNetworkingEnabled": "True",
+        "MaxNetworkInterfaces": "3"
+      }
+    },
+    {
+      "name": "Standard_B8als_v2",
+      "family": "standardBasv2Family",
+      "zones": [
+        "1",
+        "2",
+        "3"
+      ],
+      "restrictions": [],
+      "capabilities": {
+        "MaxResourceVolumeMB": "0",
+        "vCPUs": "8",
+        "HyperVGenerations": "V1,V2",
+        "MemoryGB": "16",
+        "MaxDataDiskCount": "16",
+        "CpuArchitectureType": "x64",
+        "PremiumIO": "True",
+        "vCPUsAvailable": "8",
+        "AcceleratedNetworkingEnabled": "True",
+        "MaxNetworkInterfaces": "4"
+      }
+    },
+    {
+      "name": "Standard_B8as_v2",
+      "family": "standardBasv2Family",
+      "zones": [
+        "1",
+        "2",
+        "3"
+      ],
+      "restrictions": [],
+      "capabilities": {
+        "MaxResourceVolumeMB": "0",
+        "vCPUs": "8",
+        "HyperVGenerations": "V1,V2",
+        "MemoryGB": "32",
+        "MaxDataDiskCount": "16",
+        "CpuArchitectureType": "x64",
+        "PremiumIO": "True",
+        "vCPUsAvailable": "8",
+        "AcceleratedNetworkingEnabled": "True",
+        "MaxNetworkInterfaces": "4"
+      }
+    },
+    {
+      "name": "Standard_B8ls_v2",
+      "family": "standardBsv2Family",
+      "zones": [
+        "1",
+        "2",
+        "3"
+      ],
+      "restrictions": [],
+      "capabilities": {
+        "MaxResourceVolumeMB": "0",
+        "vCPUs": "8",
+        "HyperVGenerations": "V1,V2",
+        "MemoryGB": "16",
+        "MaxDataDiskCount": "16",
+        "CpuArchitectureType": "x64",
+        "PremiumIO": "True",
+        "vCPUsAvailable": "8",
+        "AcceleratedNetworkingEnabled": "True",
+        "MaxNetworkInterfaces": "4"
+      }
+    },
+    {
+      "name": "Standard_B8ms",
+      "family": "standardBSFamily",
+      "zones": [
+        "1",
+        "2",
+        "3"
+      ],
+      "restrictions": [],
+      "capabilities": {
+        "MaxResourceVolumeMB": "65536",
+        "vCPUs": "8",
+        "HyperVGenerations": "V1,V2",
+        "MemoryGB": "32",
+        "MaxDataDiskCount": "16",
+        "CpuArchitectureType": "x64",
+        "PremiumIO": "True",
+        "vCPUsAvailable": "8",
+        "AcceleratedNetworkingEnabled": "False",
+        "MaxNetworkInterfaces": "4"
+      }
+    },
+    {
+      "name": "Standard_B8pls_v2",
+      "family": "standardBpsv2Family",
+      "zones": [
+        "1",
+        "2",
+        "3"
+      ],
+      "restrictions": [],
+      "capabilities": {
+        "MaxResourceVolumeMB": "0",
+        "vCPUs": "8",
+        "HyperVGenerations": "V1,V2",
+        "MemoryGB": "16",
+        "MaxDataDiskCount": "16",
+        "CpuArchitectureType": "Arm64",
+        "PremiumIO": "True",
+        "vCPUsAvailable": "8",
+        "AcceleratedNetworkingEnabled": "True",
+        "MaxNetworkInterfaces": "2"
+      }
+    },
+    {
+      "name": "Standard_B8ps_v2",
+      "family": "standardBpsv2Family",
+      "zones": [
+        "1",
+        "2",
+        "3"
+      ],
+      "restrictions": [],
+      "capabilities": {
+        "MaxResourceVolumeMB": "0",
+        "vCPUs": "8",
+        "HyperVGenerations": "V1,V2",
+        "MemoryGB": "32",
+        "MaxDataDiskCount": "16",
+        "CpuArchitectureType": "Arm64",
+        "PremiumIO": "True",
+        "vCPUsAvailable": "8",
+        "AcceleratedNetworkingEnabled": "True",
+        "MaxNetworkInterfaces": "2"
+      }
+    },
+    {
+      "name": "Standard_B8s_v2",
+      "family": "standardBsv2Family",
+      "zones": [
+        "1",
+        "2",
+        "3"
+      ],
+      "restrictions": [],
+      "capabilities": {
+        "MaxResourceVolumeMB": "0",
+        "vCPUs": "8",
+        "HyperVGenerations": "V1,V2",
+        "MemoryGB": "32",
+        "MaxDataDiskCount": "16",
+        "CpuArchitectureType": "x64",
+        "PremiumIO": "True",
+        "vCPUsAvailable": "8",
+        "AcceleratedNetworkingEnabled": "True",
+        "MaxNetworkInterfaces": "4"
+      }
+    }
+  ]
+}

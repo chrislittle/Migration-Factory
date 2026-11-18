@@ -1,0 +1,12 @@
+# Dependabot reports a newer release of each GitHub Action the workflows use,
+# and a security update when an advisory names one.
+#
+# This repository receives its code from releases. A Dependabot pull request
+# here is read, and the change is made in the next release, which carries the
+# same pin in every workflow and in infra/part-versions.json.
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule:
+      interval: weekly

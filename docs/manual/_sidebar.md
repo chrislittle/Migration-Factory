@@ -1,0 +1,61 @@
+- [Start here](/README.md)
+
+- Understand
+  - [What this product does](/understand/what-it-does.md)
+  - [Disclaimer](/understand/disclaimer.md)
+  - [How a machine moves](/understand/how-a-machine-moves.md)
+  - [Safety copies and rollback](/understand/safety-copies.md)
+  - [Who does what](/understand/roles.md)
+  - [Words used in this manual](/understand/words.md)
+
+- Install
+  - [Before you install](/install/before-you-install.md)
+  - [The choices you make first](/install/choices.md)
+  - [Install step by step](/install/step-by-step.md)
+  - [After the install](/install/after-install.md)
+  - [Update the product](/install/update.md)
+  - [Remove the product](/install/remove.md)
+  - [If the install fails](/install/if-it-fails.md)
+
+- Use the dashboard
+  - [Sign in and find your way](/use/sign-in.md)
+  - [The Overview page](/use/overview.md)
+  - [Projects](/use/projects.md)
+  - [Assess an estate](/use/assess.md)
+  - [Read an assessment](/use/read-an-assessment.md)
+  - [Plan a migration](/use/plan.md)
+  - [Arrange the waves](/use/waves.md)
+  - [Choose how a wave runs](/use/wave-settings.md)
+  - [Capacity and quota](/use/capacity.md)
+  - [Start a migration](/use/start.md)
+  - [The Migrations page](/use/migrations.md)
+  - [Watch a migration](/use/watch.md)
+  - [When a machine stops](/use/when-a-machine-stops.md)
+  - [Restore a machine](/use/put-back.md)
+  - [Finish a migration](/use/finish.md)
+  - [Reports](/use/reports.md)
+  - [The Admin page](/use/admin.md)
+  - [Get help](/use/get-help.md)
+
+- A migration from start to finish
+  - [The whole journey](/journey/the-whole-journey.md)
+
+- Reference
+  - [Support matrix](/reference/support-matrix.md)
+  - [What an assessment can find](/reference/assessment-findings.md)
+  - [Checks before a machine moves](/reference/before-a-machine-moves.md)
+  - [Why a machine stopped](/reference/stop-reasons.md)
+  - [Wave settings](/reference/wave-settings.md)
+  - [Limits](/reference/limits.md)
+  - [What the product may do in Azure](/reference/permissions.md)
+  - [Costs](/reference/costs.md)
+
+- Technical
+  - [Architecture](/technical/architecture.md)
+  - [How a machine moves, in detail](/technical/machine-state-machine.md)
+  - [The run store](/technical/run-store.md)
+  - [The perimeter around the run store](/technical/the-perimeter.md)
+  - [Security](/technical/security.md)
+  - [Security and permissions questions](/technical/security-faq.md)
+  - [Scale](/technical/scale.md)
+  - [The install, inside](/technical/install-internals.md)

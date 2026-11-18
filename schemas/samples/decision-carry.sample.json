@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 1,
+  "vmId": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-app/providers/Microsoft.Compute/virtualMachines/app-01",
+  "wave": "wave-1",
+  "decidedBy": "approver@example.com",
+  "decidedUtc": "2026-11-02T15:10:00.0000000Z",
+  "change": "onDDataFound=proceed",
+  "carryWaveApproval": true,
+  "before": {
+    "optionsHash": "3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b8550",
+    "planVersion": "0f7e35d68f83f24d92a48fc604a41a1e3f4f7e35d68f83f24d92a48fc604a41a",
+    "waveVersion": "7c1d2e5a9b0f4c3d8e6a1b2c3d4e5f60718293a4b5c6d7e8f9a0b1c2d3e4f5a6"
+  },
+  "afterPlanVersion": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+}

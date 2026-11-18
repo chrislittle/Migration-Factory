@@ -1,0 +1,56 @@
+{
+  "schemaVersion": 1,
+  "repo": "Azure/SAP-on-Azure-Scripts-and-Utilities",
+  "branch": "main",
+  "pinnedCommit": "f27603bf4189f436da577ba3e945b3857d508c9c",
+  "pinnedUtc": "2026-08-27T14:54:18.2806267Z",
+  "comment": "UPST-1: upstream sources our guest assets were extracted from. On drift, review the upstream changelog, port what applies into src/guest (bump versions + regenerate manifest), then re-pin via tools/Test-UpstreamDrift.ps1 -UpdateBaseline.",
+  "files": [
+    {
+      "path": "Azure-NVMe-Utils/Azure-NVMe-Conversion.ps1",
+      "sha256": "fbf1d7e61a6f40be669b438e4cee3a82040fe86cba6212eba18baa68ffcfc4d5",
+      "localDerivatives": [
+        "engine:pathA",
+        "engine:pathB",
+        "src/guest/windows/Set-NvmeReady.ps1",
+        "src/guest/linux/nvme-fix.sh"
+      ]
+    },
+    {
+      "path": "Azure-NVMe-Utils/windows-manual-nvme-prepare.ps1",
+      "sha256": "f4080a1f9cbaa4e0fea876b3dddfb313c21300fe75f87ed9f524de7dd1622e1a",
+      "localDerivatives": [
+        "src/guest/windows/Set-NvmeReady.ps1",
+        "src/guest/windows/Test-NvmeReady.ps1"
+      ]
+    },
+    {
+      "path": "Azure-NVMe-Utils/88-azure-nvme-data-disk.rules",
+      "sha256": "48dd491ff6c388556dd9ecaa97e25b222d23fa7a6244bcb30ba614d8f2819cbd",
+      "localDerivatives": [
+        "src/guest/linux/nvme-check.sh",
+        "src/guest/linux/data-disk-verify.sh"
+      ]
+    },
+    {
+      "path": "Azure-NVMe-Utils/version.json",
+      "sha256": "4243d747e6a779cdf283b29b0f7cede8f84f2df5912e41467205d1cb58056e0c",
+      "localDerivatives": [
+        "engine:upstream-release-signal"
+      ]
+    }
+  ],
+  "downloads": [
+    {
+      "name": "MANA driver for Windows (aka.ms/manawindowsdrivers)",
+      "link": "https://aka.ms/manawindowsdrivers",
+      "pinnedIn": "src/guest/windows/Install-ManaDriver.ps1",
+      "page": "https://learn.microsoft.com/azure/virtual-network/accelerated-networking-mana-windows",
+      "comment": "MANA-WIN-1: the pin (URL, version, sha256, size) lives in pinnedIn, so the guest manifest covers it. Not re-pinned by -UpdateBaseline: pin a new version on purpose with tools/Update-VmfManaDriverPin.ps1.",
+      "localDerivatives": [
+        "src/guest/windows/Install-ManaDriver.ps1",
+        "src/guest/manifest.json"
+      ]
+    }
+  ]
+}

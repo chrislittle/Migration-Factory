@@ -1,0 +1,22 @@
+{
+  "_comment": [
+    "EVENTLOG-1. A run log that fills rolls into a next part, and the name of",
+    "that part is decided in TWO places: the engine (PowerShell) writes it, the",
+    "dashboard (JavaScript) reads it. If the two ever disagree the log silently",
+    "stops at part one and nobody is told.",
+    "So this is the one list of cases, and both are held to it:",
+    "Get-VmfStoreLinePartName in tests/unit/StoreBackend.Tests.ps1, and",
+    "nextLogPart in tests/js/log-parts.test.js."
+  ],
+  "cases": [
+    { "from": "logs/events.jsonl", "to": "logs/events-2.jsonl", "why": "the first roll, which is the one that happens" },
+    { "from": "logs/events-2.jsonl", "to": "logs/events-3.jsonl", "why": "and the next, and the next" },
+    { "from": "logs/events-9.jsonl", "to": "logs/events-10.jsonl", "why": "nine to ten, not nine to 9-2" },
+    { "from": "logs/events-99.jsonl", "to": "logs/events-100.jsonl", "why": "two digits to three" },
+    { "from": "deletions.jsonl", "to": "deletions-2.jsonl", "why": "a document at the root of the run, with no folder" },
+    { "from": "logs/a-b.jsonl", "to": "logs/a-b-2.jsonl", "why": "a hyphen in the name is not a part number" },
+    { "from": "logs/a-b-2.jsonl", "to": "logs/a-b-3.jsonl", "why": "and the number after it still is" },
+    { "from": "2026.09/logs/events.jsonl", "to": "2026.09/logs/events-2.jsonl", "why": "a dot in a FOLDER is not the extension" },
+    { "from": "logs/events", "to": "logs/events-2", "why": "no extension at all" }
+  ]
+}

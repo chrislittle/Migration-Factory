@@ -1,0 +1,114 @@
+{
+  "about": "PAGE-LOAD-1: one store and the answers GET store/docs gives for it. tests/unit/StoreDocs.Tests.ps1 builds the store from `files` (an object is written as a document, a string as raw text) and holds the service to `cases`; tests/js/page-load.test.js answers the pages with the same cases, so the service and the pages are held to one list.",
+  "files": {
+    "retention-status.json": { "schemaVersion": 1, "lastPassUtc": "2026-11-05T03:30:00Z", "runsExamined": 2, "machinesDue": 0, "executionsStarted": [], "failures": [] },
+    "proj/project.json": { "projectId": "proj", "name": "Contoso estate", "createdUtc": "2026-11-01T00:00:00Z" },
+    "proj/a1/run.json": { "runId": "a1", "kind": "assessment", "project": "proj", "createdUtc": "2026-11-02T00:00:00Z" },
+    "proj/a1/assessment.json": { "generatedUtc": "2026-11-02T00:05:00Z", "vms": [ { "vmId": "vm1" }, { "vmId": "vm2" } ] },
+    "proj/a1/approval.json": { "approvedUtc": "2026-11-02T01:00:00Z" },
+    "proj/a2/run.json": { "runId": "a2", "kind": "assessment", "project": "proj", "createdUtc": "2026-11-03T00:00:00Z" },
+    "proj/a2/assessment.json": "{ this document was cut short",
+    "proj/m1/run.json": { "runId": "m1", "kind": "migration", "project": "proj", "fromAssessment": "a1", "createdUtc": "2026-11-04T00:00:00Z" },
+    "proj/m1/run-status.json": { "schemaVersion": 4, "runId": "m1", "updatedUtc": "2026-11-04T02:00:00Z", "stateCounts": { "MIGRATED": 1 }, "running": [] },
+    "proj/m1/plan.json": { "schemaVersion": 24, "entries": [ { "vmId": "vm1", "wave": "wave-1", "path": "A" } ] },
+    "proj/m1/state/vm1.json": { "vmId": "vm1", "state": "MIGRATED" },
+    "proj/m1/approvals/wave-1.json": { "approvedUtc": "2026-11-04T01:00:00Z" },
+    "proj/m1/logs/events.jsonl": "{\"event\":\"started\"}",
+    "old1/run.json": { "runId": "old1", "createdUtc": "2026-08-01T00:00:00Z" },
+    "old1/state/vm9.json": { "vmId": "vm9", "state": "MIGRATED" },
+    "vmf-claims/claims/x.json": { "holder": "m1" }
+  },
+  "cases": [
+    {
+      "name": "the documents a page draws first",
+      "query": { "depth": 3, "read": [ "project.json", "run.json", "run-status.json", "assessment.json", "approval.json" ] },
+      "names": [
+        "old1/run.json",
+        "old1/state/vm9.json",
+        "proj/a1/approval.json",
+        "proj/a1/assessment.json",
+        "proj/a1/run.json",
+        "proj/a2/assessment.json",
+        "proj/a2/run.json",
+        "proj/m1/plan.json",
+        "proj/m1/run-status.json",
+        "proj/m1/run.json",
+        "proj/project.json",
+        "retention-status.json",
+        "vmf-claims/claims/x.json"
+      ],
+      "folders": [
+        "old1",
+        "old1/state",
+        "proj",
+        "proj/a1",
+        "proj/a2",
+        "proj/m1",
+        "proj/m1/approvals",
+        "proj/m1/logs",
+        "proj/m1/state",
+        "vmf-claims",
+        "vmf-claims/claims"
+      ],
+      "docs": [
+        "old1/run.json",
+        "proj/a1/approval.json",
+        "proj/a1/assessment.json",
+        "proj/a1/run.json",
+        "proj/a2/assessment.json",
+        "proj/a2/run.json",
+        "proj/m1/run-status.json",
+        "proj/m1/run.json",
+        "proj/project.json"
+      ]
+    },
+    {
+      "name": "the machine records and plans, one level further down",
+      "query": { "depth": 4, "read": [ "plan.json", "state/*.json", "retention-status.json" ] },
+      "names": [
+        "old1/run.json",
+        "old1/state/vm9.json",
+        "proj/a1/approval.json",
+        "proj/a1/assessment.json",
+        "proj/a1/run.json",
+        "proj/a2/assessment.json",
+        "proj/a2/run.json",
+        "proj/m1/approvals/wave-1.json",
+        "proj/m1/logs/events.jsonl",
+        "proj/m1/plan.json",
+        "proj/m1/run-status.json",
+        "proj/m1/run.json",
+        "proj/m1/state/vm1.json",
+        "proj/project.json",
+        "retention-status.json",
+        "vmf-claims/claims/x.json"
+      ],
+      "folders": [
+        "old1",
+        "old1/state",
+        "proj",
+        "proj/a1",
+        "proj/a2",
+        "proj/m1",
+        "proj/m1/approvals",
+        "proj/m1/logs",
+        "proj/m1/state",
+        "vmf-claims",
+        "vmf-claims/claims"
+      ],
+      "docs": [
+        "old1/state/vm9.json",
+        "proj/m1/plan.json",
+        "proj/m1/state/vm1.json",
+        "retention-status.json"
+      ]
+    },
+    {
+      "name": "one level only",
+      "query": { "depth": 1, "read": [ "*.json" ] },
+      "names": [ "retention-status.json" ],
+      "folders": [ "old1", "proj", "vmf-claims" ],
+      "docs": [ "retention-status.json" ]
+    }
+  ]
+}

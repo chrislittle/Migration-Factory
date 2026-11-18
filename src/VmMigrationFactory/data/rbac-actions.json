@@ -1,0 +1,436 @@
+{
+  "schemaVersion": 1,
+  "updatedUtc": "2026-09-05T00:00:00Z",
+  "why": "PERM-1: the least-privilege role, DERIVED rather than hand-written. Every ARM call the product can make is enumerable from the module, so that list is the specification for the role. A test fails the build when a call appears here that the map has never heard of - without it the role silently falls behind the code, and the usual fix for that is somebody reaching for Contributor again.",
+  "roles": {
+    "assess": {
+      "roleName": "VMF Assessment",
+      "description": "Read-only. Discovers and inspects machines so a migration can be planned. Contains nothing that can change anything, which is what makes it safe to grant broadly - across a subscription or a management group - when someone wants fleet-wide scanning."
+    },
+    "execute": {
+      "roleName": "VMF Migration",
+      "description": "Everything assessment can do, plus the writes a migration actually performs: stop, resize, snapshot, swap disks, run scripts inside the guest. Grant this as narrowly as the estate allows - ideally only where machines in a wave actually live."
+    }
+  },
+  "restoreLesson": "RESTORE-PERM-MACHINE-1: an operation marked restore is one that Restore this machine can call once it made a disk or stopped the machine. Before it makes a disk or stops the machine, the restore reads the effective permissions of the product's managed identity at the machine (Get-VmfRequiredActions -Restore, the PERM-3 way) and stops untouched when one is missing. Not marked: what only a move or a scan uses (the preview feature read, the safety copy writes, the quota, the locks, the capacity reservation group writes), and the reads the restore makes before any change, which stop it untouched when Azure refuses them. Not marked either: runCommand, which only the volume check after the restore uses, with the machine running again.",
+  "removedLesson": "IDENTITY-4, 2026-09-11: the assess role LOST Microsoft.Authorization/roleAssignments/read and Microsoft.KeyVault/vaults/read. They existed for one feature - reading what a machine's system-assigned identity could reach - and that research is out of scope: the product does not find every dependency of a system-assigned identity; it shows the risk, and the customer approves and assesses the impact. The list could never be complete anyway, because the Entra half (group membership, application roles) needs a standing directory grant this product does not hold. A permission asked for and not needed is a permission a customer's security team is right to refuse.",
+  "verificationLesson": "DERIVING THE ROLE FROM THE CODE IS NECESSARY BUT NOT SUFFICIENT. The PERM-1 drill found Microsoft.Compute/virtualMachines/extensions/write missing - an action no cmdlet in this module names. New-AzVM asked for it on a Windows rebuild because it installs the BGInfo extension itself unless the call says -DisableBginfoExtension. BGINFO-ADD-1 gave the switch, and BGINFO-PERM-1 measured on 2026-10-24 that a Windows rebuild and a restore rebuild then work without the action, so it left the role. A single ARM call can demand permissions on resources the caller never mentions. Every future addition to this map, and every removal, should be treated as a hypothesis until a drill has run on the role alone - and the drill must change this map too, because the pre-move permission check reads the map and refuses before Azure is asked.",
+  "verification": "Deploying the role is itself a check: Azure validates every action string against real provider operations and rejects unknown ones. That caught 'Microsoft.ResourceGraph/resources/action' on the first attempt - it does not exist. What remains unproven is whether the set is SUFFICIENT, which only a real migration holding only these roles can show. The QUOTA FAMILY QUIRK in CLAUDE.md is the precedent: map it from the API, then verify empirically, and treat the first real failure as ground truth. ONBOARD-1 should run one lab migration with Contributor removed before this is called finished.",
+  "operatorWhy": {
+    "Microsoft.Compute/virtualMachines/read": "Each step of a move, a rollback or a restore reads the size, disks, settings, status and power state of the machine. An assessment reads the machines in the scan scope. Checking also reads the power state of the other machines in its availability set. Before the daily cleanup, Delete these disks or Delete these disks now deletes a disk, it reads if the machine still exists. Before a restore of an in-place upgrade (Preview), the web service reads the size of the machine.",
+    "Microsoft.Compute/virtualMachines/extensions/read": "Checking reads the extensions of the machine and records them. Before a move to v6 or v7, or an in-place upgrade (Preview), Checking reads them again to find Azure Disk Encryption. After the move, Verifying compares the extensions with the record from Checking.",
+    "Microsoft.Compute/disks/read": "Checking, Backing up, Moving and Verifying read the type, size, encryption and attachment of each managed disk. The rollback, Restore this machine, Finish the rollback and Finish the restore also read these values. An assessment, the daily cleanup, Delete these disks, Delete these disks now and Delete the copies as well also read the disks.",
+    "Microsoft.Compute/snapshots/read": "Backing up and Moving read the safety copies, which are snapshots. Before the daily cleanup or Delete the copies as well deletes a safety copy, it reads the copy. After the delete, it reads the copy again to make sure that Azure deleted it. For a safety copy of a Premium SSD v2 or Ultra Disk, the rollback and Restore this machine read the copy first.",
+    "Microsoft.Network/networkInterfaces/read": "An assessment, Checking and Verifying read each network interface of the machine and its accelerated networking setting. Moving, the rollback and Restore this machine read an interface again before they change that setting.",
+    "Microsoft.Compute/skus/read": "An assessment, the Choose each target step and Build the waves read the sizes and limits that Azure offers in each region. Check the quota, Reserve capacity and Start this wave also read them. Checking, the rollback and Restore this machine read them for the old size and the new size of the machine. Preparing reads them for the new size.",
+    "Microsoft.Compute/locations/usages/read": "Check the quota, Build the waves, Reserve capacity and Start this wave read the limit and usage of each vCPU quota. The product reads every quota with this action, not with Microsoft.Quota/quotas/read.",
+    "Microsoft.Authorization/locks/read": "Checking reads the locks that can block the move. Backing up reads the lock of each safety copy before it puts a lock on the copy. After the daily cleanup or Delete the copies as well removes the lock of a copy, it reads the lock again. If Azure refuses to delete a rollback disk, the product reads the locks that block the delete. If a person chose to give the disk names to the new disks, Restore this machine reads the delete locks first.",
+    "Microsoft.Authorization/locks/write": "Backing up puts a CanNotDelete lock on each safety copy. The lock stops a delete of the copy before the retention of its wave ends. If Azure refuses to delete a copy, the daily cleanup or Delete the copies as well puts the lock back.",
+    "Microsoft.Authorization/locks/delete": "Before the daily cleanup or Delete the copies as well deletes a safety copy, it removes the lock that the product put on it.",
+    "Microsoft.Compute/capacityReservationGroups/read": "Reserve capacity in the wave editor reads the capacity reservation group of the wave before it makes the group.",
+    "Microsoft.Compute/capacityReservationGroups/capacityReservations/read": "Reserve capacity, Release and the end of a wave read the on-demand capacity reservation of the wave. Every 5 minutes, the web service reads an on-demand capacity reservation that the product asked for and did not record. If a machine is in a capacity reservation group that this migration did not make, Checking reads the sizes that the group reserves.",
+    "Microsoft.Resources/subscriptions/read": "The step Where does the scan look? lists the subscriptions that the product can see. An assessment of a management group lists the subscriptions under it, to find the Azure Virtual Desktop host pools.",
+    "Microsoft.Resources/subscriptions/resourceGroups/read": "The step Where does the scan look? lists the resource groups of a subscription. An assessment reads each resource group in the subscriptions of its machines, to find a group that another Azure service manages.",
+    "Microsoft.Management/managementGroups/read": "The step Where does the scan look? lists the management groups that the product can see, so that you can choose one.",
+    "Microsoft.Management/managementGroups/subscriptions/read": "An assessment of a management group reads the subscriptions under it through Azure Resource Graph.",
+    "Microsoft.Compute/locations/publishers/read": "For a machine from an Azure Marketplace image, an assessment reads the latest version of that image. The assessment uses it to find if the image supports the NVMe disk controller.",
+    "Microsoft.DesktopVirtualization/hostpools/read": "An assessment lists the Azure Virtual Desktop host pools to find their session hosts, which are outside the scope of this tool.",
+    "Microsoft.DesktopVirtualization/hostpools/sessionhosts/read": "An assessment lists the session hosts of each host pool, and the product does not move a machine that is a session host.",
+    "Microsoft.ContainerService/managedClusters/read": "An assessment reads the AKS clusters to find the resource groups of their machines, because the product does not move a machine that AKS manages.",
+    "Microsoft.Databricks/workspaces/read": "An assessment reads the Azure Databricks workspaces to find their managed resource groups, because the product does not move those machines.",
+    "Microsoft.SqlVirtualMachine/sqlVirtualMachines/read": "An assessment reads the SQL IaaS Agent records in the subscriptions of its machines. The product does not move a member of an Always On availability group. For another machine that runs SQL Server, the assessment shows a warning.",
+    "Microsoft.Features/providers/features/read": "The Choose each target step reads if the preview feature VMTempDiskResizePreview is registered on the subscriptions of the machines. The wave editor reads it for each subscription that has a machine with an in-place upgrade (Preview). For an in-place upgrade (Preview) only, Checking, the rollback and Restore this machine read it again. Before a restore of an in-place upgrade (Preview), the web service reads it too.",
+    "Microsoft.Compute/availabilitySets/read": "Checking reads the other machines in the availability set of the machine and their power state, before it changes anything.",
+    "Microsoft.Compute/availabilitySets/vmSizes/read": "Checking asks Azure for the sizes that the hardware of the availability set offers, before it changes the machine.",
+    "Microsoft.Quota/quotas/write": "The product uses this action only when a person selects Request an increase in the wave editor, then Request in the confirmation. Check the quota reads quota with Microsoft.Compute/locations/usages/read, not with this action.",
+    "Microsoft.Quota/quotaRequests/read": "After a person selects Request an increase, then Request, the product reads each quota increase request that Azure did not answer at once. It reads each one for 2 minutes, to find if Azure accepted or refused it.",
+    "Microsoft.Quota/quotas/read": "No step of the product calls this action. If a quota is too low, Check the quota reads the actions that the product holds on the subscription. Request an increase needs this action and Microsoft.Quota/quotas/write. If no subscription with a low quota gives both actions, the wave editor does not show Request an increase.",
+    "Microsoft.Compute/virtualMachines/write": "Moving changes the size of the machine and, when the move needs it, its disk controller. If the wave has an on-demand capacity reservation, Moving puts the machine in its capacity reservation group. The rollback and Restore this machine return the original size, disks and capacity reservation group. Finish the rollback and Finish the restore swap the data disks. Release and the end of a wave remove each machine that the product put in the capacity reservation group.",
+    "Microsoft.Network/networkInterfaces/join/action": "Moving, the rollback, Restore this machine, Finish the rollback and Finish the restore write the machine. At each of these writes, Azure checks this action on each network interface of the machine.",
+    "Microsoft.Compute/capacityReservationGroups/deploy/action": "Moving puts the machine in the capacity reservation group of the wave, and a rollback or a restore returns it to its earlier group.",
+    "Microsoft.ManagedIdentity/userAssignedIdentities/assign/action": "Moving, the rollback, Restore this machine, Finish the rollback and Finish the restore write the machine. At each of these writes, Azure checks this action on each user-assigned managed identity of the machine.",
+    "Microsoft.Compute/virtualMachines/start/action": "Backing up, Preparing, Starting up, the rollback and Restore this machine start the machine. Finish the rollback and Finish the restore also start the machine. If the machine is stopped, Checking starts it for the cluster check. If a person chose Update the kernel, Preparing starts the machine again after the update. If the machine was in the power state Running at Checking, the product starts it again when the run stops.",
+    "Microsoft.Compute/virtualMachines/deallocate/action": "Backing up, Shutting down, the rollback and Restore this machine stop the machine before a snapshot or a change. Finish the rollback and Finish the restore also stop the machine before they swap the data disks. If a person chose Update the kernel, Preparing stops the machine for the update. After a move, or when the run stops, the product returns the machine to the power state that Checking found.",
+    "Microsoft.Compute/virtualMachines/powerOff/action": "When Checking found the machine in the power state Stopped and started it, the product returns it to Stopped after the move or a stop.",
+    "Microsoft.Compute/virtualMachines/runCommand/action": "Checking, Preparing, Shutting down, Starting up and Verifying run the guest scripts of the product inside the machine with Azure Run Command. The rollback and Restore this machine run a script that checks the volumes.",
+    "Microsoft.Compute/disks/write": "Backing up makes the rollback disks from the safety copies. Moving sets the disk controller types of the OS disk, and a disk type that a person chose. The rollback and Restore this machine return each disk to its recorded disk type. If a rollback disk is not there, the rollback makes a disk from the safety copy. Restore this machine makes disks from the safety copies and sets their disk controller types.",
+    "Microsoft.Compute/disks/beginGetAccess/action": "Azure checks this action on the safety copy when Backing up, the rollback or Restore this machine makes a managed disk from that copy.",
+    "Microsoft.Compute/diskEncryptionSets/read": "Azure checks this action only for a disk that has a disk encryption set. Azure checks it on the set when Backing up, the rollback or Restore this machine makes a copy or a disk from that disk.",
+    "Microsoft.Compute/disks/delete": "The product deletes only the disks that it made or that a person chose to delete. The daily cleanup, Delete these disks, Delete these disks now and Delete the copies as well delete disks. Restore this machine deletes the current disks only when a person chooses to give their names to the new disks.",
+    "Microsoft.Compute/snapshots/write": "Backing up takes each safety copy, a snapshot of every disk, before anything changes and again after Shutting down.",
+    "Microsoft.Compute/snapshots/delete": "The daily cleanup deletes the safety copies when the retention of the wave ends, or when a person selects Delete the copies as well.",
+    "Microsoft.Network/networkInterfaces/write": "If the accelerated networking setting of a network interface must change, Moving changes it while the machine is stopped. The rollback and Restore this machine return the setting to its recorded value.",
+    "Microsoft.Network/virtualNetworks/subnets/join/action": "When Moving, the rollback or Restore this machine writes a network interface, Azure checks this action on its subnet. The subnet does not change.",
+    "Microsoft.Network/networkSecurityGroups/join/action": "When Moving, the rollback or Restore this machine writes a network interface, Azure checks this action on its network security group. The network security group does not change.",
+    "Microsoft.Network/publicIPAddresses/join/action": "When Moving, the rollback or Restore this machine writes a network interface, Azure checks this action on its public IP address. The public IP address does not change.",
+    "Microsoft.Network/loadBalancers/backendAddressPools/join/action": "When Moving, the rollback or Restore this machine writes a network interface, Azure checks this action on its load balancer backend pool. The backend pool does not change.",
+    "Microsoft.Network/loadBalancers/inboundNatRules/join/action": "When Moving, the rollback or Restore this machine writes a network interface, Azure checks this action on its load balancer inbound NAT rule. The inbound NAT rule does not change.",
+    "Microsoft.Network/applicationGateways/backendAddressPools/join/action": "When Moving, the rollback or Restore this machine writes a network interface, Azure checks this action on its Application Gateway backend pool. The backend pool does not change.",
+    "Microsoft.Network/applicationSecurityGroups/joinIpConfiguration/action": "When Moving, the rollback or Restore this machine writes a network interface, Azure checks this action on its application security group. The application security group does not change.",
+    "Microsoft.Compute/capacityReservationGroups/write": "Reserve capacity in the wave editor makes the capacity reservation group of the wave.",
+    "Microsoft.Compute/capacityReservationGroups/capacityReservations/write": "Reserve capacity makes the on-demand capacity reservation of a wave, and a release sets its quantity to 0 before it deletes it.",
+    "Microsoft.Compute/capacityReservationGroups/capacityReservations/delete": "The product deletes the on-demand capacity reservation of a wave when you select Release, or when every machine of the wave has ended. Reserve capacity also deletes what it reserved when it cannot reserve the whole wave.",
+    "Microsoft.Compute/capacityReservationGroups/delete": "The product deletes the capacity reservation group of a wave after it deletes its on-demand capacity reservation. This happens at Release, when every machine of the wave has ended, or when Reserve capacity cannot reserve the whole wave."
+  },
+  "operations": [
+    {
+      "cmdlet": "Get-AzContext",
+      "role": "none",
+      "actions": [],
+      "why": "reads the local session, not Azure - no permission applies"
+    },
+    {
+      "cmdlet": "Get-AzAccessToken",
+      "role": "none",
+      "actions": [],
+      "why": "acquires a token for the caller; the token's own permissions are what matter"
+    },
+    {
+      "cmdlet": "Update-AzConfig",
+      "role": "none",
+      "actions": [],
+      "why": "FACADE-PASS-SHARE-1: turns Azure PowerShell's own data collection off for the process; a local setting, not Azure"
+    },
+    {
+      "cmdlet": "Get-AzConfig",
+      "role": "none",
+      "actions": [],
+      "why": "FACADE-PASS-SHARE-1: reads that setting back; a local setting, not Azure"
+    },
+    {
+      "cmdlet": "New-AzDiskConfig",
+      "role": "none",
+      "actions": [],
+      "why": "builds a disk object in memory"
+    },
+    {
+      "cmdlet": "New-AzSnapshotConfig",
+      "role": "none",
+      "actions": [],
+      "why": "builds a snapshot object in memory"
+    },
+    {
+      "cmdlet": "Get-AzVM",
+      "role": "assess",
+      "restore": true,
+      "actions": [
+        "Microsoft.Compute/virtualMachines/read"
+      ],
+      "why": "the machine inventory and its live configuration"
+    },
+    {
+      "cmdlet": "Get-AzVMExtension",
+      "role": "assess",
+      "actions": [
+        "Microsoft.Compute/virtualMachines/extensions/read"
+      ],
+      "why": "detects Azure Disk Encryption, which blocks NVMe"
+    },
+    {
+      "cmdlet": "Get-AzDisk",
+      "role": "assess",
+      "restore": true,
+      "actions": [
+        "Microsoft.Compute/disks/read"
+      ],
+      "why": "disk names, sizes and controller capabilities"
+    },
+    {
+      "cmdlet": "Get-AzSnapshot",
+      "role": "assess",
+      "actions": [
+        "Microsoft.Compute/snapshots/read"
+      ],
+      "why": "finds the safety copy when a restore is asked for"
+    },
+    {
+      "cmdlet": "Get-AzNetworkInterface",
+      "role": "assess",
+      "restore": true,
+      "actions": [
+        "Microsoft.Network/networkInterfaces/read"
+      ],
+      "why": "NIC identity, order and accelerated-networking state (NIC-1)"
+    },
+    {
+      "cmdlet": "Get-AzComputeResourceSku",
+      "role": "assess",
+      "actions": [
+        "Microsoft.Compute/skus/read"
+      ],
+      "why": "size capabilities - NIC and data-disk limits, host caching, quota family"
+    },
+    {
+      "cmdlet": "Get-AzVMUsage",
+      "role": "assess",
+      "actions": [
+        "Microsoft.Compute/locations/usages/read"
+      ],
+      "why": "quota headroom for the quota check"
+    },
+    {
+      "cmdlet": "Get-AzResourceLock",
+      "role": "assess",
+      "actions": [
+        "Microsoft.Authorization/locks/read"
+      ],
+      "why": "a delete lock makes a restore impossible - RESTORE-1 checks first"
+    },
+    {
+      "cmdlet": "New-AzResourceLock",
+      "role": "execute",
+      "actions": [
+        "Microsoft.Authorization/locks/write"
+      ],
+      "why": "SAFETY-3: locks each safety copy (CanNotDelete) the moment it is taken, so nothing deletes the restore chain before its accepted retention ends. Lock write is not in Contributor; it is in this role because the product removes the lock itself at retention.",
+      "optional": true,
+      "whenMissing": "the copies are taken but not locked, and the run page says so"
+    },
+    {
+      "cmdlet": "Remove-AzResourceLock",
+      "role": "execute",
+      "actions": [
+        "Microsoft.Authorization/locks/delete"
+      ],
+      "why": "SAFETY-3: removes the product's own lock from a safety copy when its retention has ended, just before deleting it",
+      "optional": true,
+      "whenMissing": "a copy that was never locked has nothing to remove; a locked one is left for a person with the right"
+    },
+    {
+      "cmdlet": "Get-AzCapacityReservationGroup",
+      "role": "assess",
+      "actions": [
+        "Microsoft.Compute/capacityReservationGroups/read"
+      ],
+      "why": "existing reservations for the capacity gate"
+    },
+    {
+      "cmdlet": "Get-AzCapacityReservation",
+      "role": "assess",
+      "actions": [
+        "Microsoft.Compute/capacityReservationGroups/capacityReservations/read"
+      ],
+      "why": "reserved instance counts. CRG-MOVE-1: PRECHECK reads the capacity reservations of a group the machine is in that this migration did not make, by the id of the group, and asks only the size each one reserves (Microsoft's check before a resize of a machine in a group). The VMF Migration role holds every action of the VMF Assessment role, so the role does not change."
+    },
+    {
+      "cmdlet": "Invoke-AzRestMethod",
+      "role": "assess",
+      "actions": [
+        "Microsoft.Resources/subscriptions/read",
+        "Microsoft.Resources/subscriptions/resourceGroups/read",
+        "Microsoft.Management/managementGroups/read",
+        "Microsoft.Management/managementGroups/subscriptions/read",
+        "Microsoft.Compute/locations/publishers/read",
+        "Microsoft.DesktopVirtualization/hostpools/read",
+        "Microsoft.DesktopVirtualization/hostpools/sessionhosts/read",
+        "Microsoft.ContainerService/managedClusters/read",
+        "Microsoft.Databricks/workspaces/read",
+        "Microsoft.SqlVirtualMachine/sqlVirtualMachines/read"
+      ],
+      "why": "the fleet inventory query and the scan-scope pickers, plus the image features that answer whether an image supports NVMe (IMAGE-1). NOTE: Resource Graph has NO action of its own - Azure REJECTED 'Microsoft.ResourceGraph/resources/action' as unsupported when this role was first deployed. It authorises off read access to the underlying resources, so what it actually needs is the subscription and management-group reads listed here plus the per-resource reads elsewhere in this map. WORKLOAD-1 adds the DesktopVirtualization reads: session-host membership is asked of the provider that owns it, never a tag. AKS/Databricks: the managed-groups query authorises off these reads. SAP-1 needs NOTHING ADDED. It reads the Azure VM extension for SAP solutions through Resource Graph, which authorises off the machine reads already listed, plus the licence type and the image, which the inventory query already returns. SAP-2 REMOVED four Microsoft.Workloads reads that an earlier version asked for: sapVirtualInstances/read returns properties.configuration, which for a system deployed through Azure Center for SAP solutions carries a per-tier osProfile documented as holding adminUsername, adminPassword and sshKeyPair.privateKey. Whether ARM redacts those on read was never proven, and a grant is not justified by assuming it does. The signal was ruled out rather than take the access. DETECT-PATTERNS-1 ADDS Microsoft.SqlVirtualMachine/sqlVirtualMachines/read: the SQL IaaS Agent record names the machine (virtualMachineResourceId) and its Always On availability group (sqlVirtualMachineGroupResourceId), which is ruled a refusal. It is listed per subscription from the provider rather than Resource Graph, because Resource Graph silently drops a type the caller cannot read and the scan would then call an availability group member a single machine. THE SAP-2 QUESTION, ASKED HERE TOO: the record carries more than the scan needs. The REST specification marks the backup storage key and password write-only (create and update only), so they are not returned on read; it does NOT mark wsfcDomainCredentials (cluster account passwords) that way. SQLVM-READ-PROBE-1 MEASURED it on 2026-11-10 (one run, centralus, SQL IaaS Agent 2.0.230), on a real availability group built through Azure: no password and no storage key came back in 17 responses - each SQL record returns no wsfc property at all, the group returns wsfcDomainProfile with no password or key in it (the domain, the account names, the witness URL, the subnet type and whether the service account is a gMSA), and a probe identity holding only this role gets HTTP 403 on the group. The scan keeps four fields of the record and drops the rest at once. The shared disks and the resource group owners (managedBy) need nothing added: they are Resource Graph reads of disks and resource groups, already listed."
+    },
+    {
+      "cmdlet": "Invoke-AzRestMethod",
+      "role": "assess",
+      "actions": [
+        "Microsoft.Features/providers/features/read"
+      ],
+      "requiredFor": "preview",
+      "why": "TEMP-DISK-PREVIEW-1 (2026-11-02): the targets step (through the web service, which holds this role) and Checking read whether the subscription has the preview feature Microsoft.Compute/VMTempDiskResizePreview registered (Get-VmfPreviewFeatureState, one GET at the subscription). With it, Azure resizes a Windows machine with a SCSI temporary disk in place to a size with an NVMe temporary disk or none (measured 2026-11-01 and 2026-11-02, docs/research/temp-disk-in-place-preview.md). Without the feature, Azure refuses that resize, and the targets step does not let a person choose the in-place upgrade (Preview) for the machine, unless it is already the machine's saved target (then Checking reads the feature again and stops the machine before any change); a move to a v5 size with a SCSI temporary disk needs no feature. It is a read: it returns the state of one feature and changes nothing. The product never registers the feature, and neither role holds Microsoft.Features/providers/features/register/action or Microsoft.Features/register/action: a person with Contributor or Owner on the subscription registers it, outside the product. requiredFor preview: Checking requires it only of a machine whose saved method is preview (Get-VmfRequiredActions -For preview), so an installation whose role predates it still moves every other machine. The read is of a resource of the SUBSCRIPTION (/subscriptions/{id}/providers/Microsoft.Features/providers/Microsoft.Compute/features/VMTempDiskResizePreview). A grant of the role on the subscription covers it. A grant on resource groups only was enough too: MEASURED 2026-11-13 in the final lab (PREVIEW-RG-SCOPE-LAB-1, PREVIEW-ACCESS-WORDS-1), on a new installation, one subscription, one tenant, with the roles given on ONE resource group only (Assess and migrate from the Admin page). The installation held subscription grants earlier the same night; they were removed at about 00:33 UTC and read back as 0 for both identities, and the reads and the move came more than an hour later. Microsoft's Troubleshoot Azure RBAC page (2026-10-19) says a role assignment change takes up to 10 minutes; the cache of around 24 hours applies to a managed identity that gets its roles through a group (also Microsoft's managed identity best practice page), and these identities hold their roles directly. Then: the web service (the targets step) and the engine (Checking) read VMTempDiskResizePreview as Registered, and an in-place upgrade (Preview) of a Windows machine completed through the app. Why Azure allows it is unverified: Microsoft's preview features page (learn.microsoft.com/azure/azure-resource-manager/management/preview-features, 2026-02-27) says only that listing, registering or unregistering a preview feature needs the Microsoft.Features/* actions (Contributor and Owner hold them), and no Microsoft page found says a grant on a resource group covers this read of the subscription. So no page says the Preview needs the subscription (PREVIEW-ACCESS-WORDS-1): the Admin page says nothing about it, and on AuthorizationFailed the targets step says Azure did not let the product read the feature state and gives Assess on the subscription as the step. The rollback's read is the same call by the same identity; it was not measured on a resource group grant (PREVIEW-ROLLBACK-RG-LAB-1). TEMP-DISK-PREVIEW-ROLE-1, MEASURED 2026-11-08 in the lab, through the installed app, with the VMF roles alone, granted at the subscription: the targets step (and Check again) and Checking read VMTempDiskResizePreview as Registered, with no warning, and three Preview moves passed Checking. So this action is enough for the read when the role is on the subscription. A read that fails is not checked, never registered or not; it carries the error code Azure gave to the targets step, and the HTTP status and the code to the stop of Checking. A rollback or a restore of a Preview move reads it too - the automatic rollback and Restore this machine from the first copy, before they make a disk or stop the machine - because that resize back changes the temporary disk again. The web service reads it too before it starts Restore this machine from the first copy of a Preview move (PREVIEW-RESTORE-UPFRONT-1), and when it is not registered it reads the machine's size (Microsoft.Compute/virtualMachines/read, one GET of the machine, Get-VmfVmSizeByArm): it refuses the restore before a job starts only when the feature is not registered and the machine is not on its original size. A read it cannot make is left to the engine."
+    },
+    {
+      "cmdlet": "Invoke-AzRestMethod",
+      "role": "execute",
+      "actions": [
+        "Microsoft.Quota/quotas/write",
+        "Microsoft.Quota/quotas/read"
+      ],
+      "why": "Request-VmfQuota raises a quota limit when the quota check says a wave will not fit - a size family, or the Total Regional vCPUs quota (cores, REGIONAL-QUOTA-REQUEST-1), the same PUT on another quota name; listed separately from the read use of the same cmdlet because it belongs to a different role"
+    },    {
+      "cmdlet": "Invoke-AzRestMethod",
+      "role": "execute",
+      "actions": [
+        "Microsoft.Quota/quotaRequests/read"
+      ],
+      "why": "QUOTA-REQUEST-POLL-1: after Request-VmfQuota files a quota increase request that Azure takes with HTTP 202, the engine reads the request (Get-VmfQuotaRequestState, the Quota Request Status GET, .../providers/Microsoft.Quota/quotaRequests/{id}?api-version=2023-02-01) for 2 minutes, to say if Azure approved it or refused it. Microsoft names the action Microsoft.Quota/quotaRequests/read, 'Get any service limit request for the specified resource' (Azure permissions for General, Microsoft.Quota). Neither role held it before: the execute role held only Microsoft.Quota/quotas/write and quotas/read. It is a read of one request and changes nothing. MEASURED 2026-11-16 in the final lab: the GET answered InProgress, then Failed with QuotaNotAvailableForResource about 80 seconds after the request was filed. Not yet measured on the role alone (an installation whose role predates it reads 403, and the page says the product could not read the answer).",
+      "optional": true,
+      "whenMissing": "the request is filed, and the page says that the product could not read the answer of Azure and to look on the Quotas page of the Azure portal"
+    },
+    {
+      "cmdlet": "Update-AzVM",
+      "role": "execute",
+      "restore": true,
+      "actions": [
+        "Microsoft.Compute/virtualMachines/write",
+        "Microsoft.Network/networkInterfaces/join/action",
+        "Microsoft.Compute/capacityReservationGroups/deploy/action",
+        "Microsoft.ManagedIdentity/userAssignedIdentities/assign/action"
+      ],
+      "why": "resize, controller change, OS disk swap - the Path A migration. ROLLBACK-CRG-1: it also puts a machine in a capacity reservation group (Set-VmfVmCapacityReservationGroup) - the wave's group, and on a rollback or a restore the group the machine was in before the move. Azure checks capacityReservationGroups/deploy/action on that group, a linked scope that can be in another resource group (Microsoft's capacity-reservation-group-share page names it for a machine owner), so PRECHECK asks for it on the group itself (Test-VmfReservationJoinPermissions). The role already carried it through New-AzCapacityReservationGroup, so the role does not change. ROLLBACK-CRG-PERM-1, MEASURED 2026-11-09 in the lab, as the installation's engine identity with only the product's roles: Update-AzVM joined a deallocated machine to a capacity reservation group in another resource group of the same subscription, and Azure accepted it. Azure did not ask for capacityReservationGroups/capacityReservations/deploy/action, so the role does not carry it. UAMI-ASSIGN-1, MEASURED 2026-11-01 in the lab, through the app, with this role alone: on a machine with a user-assigned managed identity, every write of the machine assigns that identity again, and Azure checks Microsoft.ManagedIdentity/userAssignedIdentities/assign/action on the IDENTITY, a linked scope that can be in another resource group or subscription. Without it the first write was refused (LinkedAuthorizationFailed) on Path A and Path B, and the automatic rollback was refused the same way, which left the machine stopped. Microsoft's managed identities FAQ names userAssignedIdentities/*/assign/action over the identity, carried by the built-in Managed Identity Operator role; Azure's refusal names the operation userAssignedIdentities/assign/action, which is what the role carries. PRECHECK asks for it on each identity itself (Test-VmfIdentityAssignPermissions). REBUILD-REMOVE-ROLE-1 (2026-11-07): Microsoft.Network/networkInterfaces/join/action moved here from New-AzVM, which left the map with the rebuild. It stays in the role: Microsoft names it Attach a network interface to a virtual machine (the network interface page), and Update-AzVM sends the whole definition of the machine, its network interfaces included, so Azure checks it on each interface as a linked scope - Microsoft Q&A 596739 shows a PowerShell resize refused with LinkedAuthorizationFailed for this action on the interface, the class UAMI-ASSIGN-1 measured here for the identity. Not yet measured on the role alone without it, and it is not removed on a guess. NIC-JOIN-SCOPE-1 (2026-11-07): PRECHECK asks for it on each network interface itself, at its own scope, for every move (Test-VmfNicJoinPermissions), because an interface can be in another resource group than its machine and the rollback is the same Update-AzVM call. Whether Azure checks it on an interface whose reference the resize does not change is owed to the lab (TESTMATRIX-1). Remove-AzVM (Microsoft.Compute/virtualMachines/delete) and New-AzVM left the map with the rebuild: no remaining path deletes or creates a machine."
+    },
+    {
+      "cmdlet": "Start-AzVM",
+      "role": "execute",
+      "restore": true,
+      "actions": [
+        "Microsoft.Compute/virtualMachines/start/action"
+      ],
+      "why": "brings the machine back after conversion, and after a failed restore"
+    },
+    {
+      "cmdlet": "Stop-AzVM",
+      "role": "execute",
+      "restore": true,
+      "actions": [
+        "Microsoft.Compute/virtualMachines/deallocate/action",
+        "Microsoft.Compute/virtualMachines/powerOff/action"
+      ],
+      "why": "a resize or disk swap requires the machine deallocated"
+    },
+    {
+      "cmdlet": "Invoke-AzVMRunCommand",
+      "role": "execute",
+      "actions": [
+        "Microsoft.Compute/virtualMachines/runCommand/action"
+      ],
+      "why": "guest preparation and validation run inside the machine"
+    },
+    {
+      "cmdlet": "New-AzDisk",
+      "role": "execute",
+      "restore": true,
+      "actions": [
+        "Microsoft.Compute/disks/write",
+        "Microsoft.Compute/disks/beginGetAccess/action",
+        "Microsoft.Compute/diskEncryptionSets/read"
+      ],
+      "why": "SAFETY-CMK-1: a disk made from a safety copy names the disk encryption set of the disk it replaces, which makes the set a second linked scope. diskEncryptionSets/read is the action Microsoft's own built-in roles that make disks with a customer-managed key carry (Azure Migrate Execute Expert, Azure Red Hat OpenShift Disk Storage Operator); PRECHECK asks for it on each set itself (Test-VmfDiskEncryptionSetPermissions), because a set can be in another resource group. Not yet measured: the SAFETY-CMK-1 lab test removes it and records Azure's words. RESTORE-1 creates a disk from the safety copy. ROLE-SNAP-1, MEASURED on a live install 2026-09-18: writing the disk is not enough. Creating a disk FROM a snapshot makes that snapshot a LINKED SCOPE, and Azure evaluates a SECOND action against it. Without this the restore failed with LinkedAuthorizationFailed after the machine had already been stopped - and no restore had ever succeeded in any install. Azure's own words: 'has permission to perform Microsoft.Compute/disks/write ... however, it does not have permission to perform Microsoft.Compute/disks/beginGetAccess/action on the linked scope(s) .../snapshots/...'. The action name looks wrong for a snapshot and is not: Microsoft's own built-in Disk Snapshot Contributor carries Microsoft.Compute/disks/beginGetAccess/action for exactly this case, which is what settles it as the right action rather than snapshots/beginGetAccess."
+    },
+    {
+      "cmdlet": "Invoke-AzRestMethod",
+      "role": "execute",
+      "actions": [
+        "Microsoft.Compute/disks/read",
+        "Microsoft.Compute/disks/write",
+        "Microsoft.Compute/disks/delete"
+      ],
+      "why": "OLD-SKU-1C: reads a disk's type and changes it to Premium SSD while the machine is stopped, when the person chose that for the machine, and sets the recorded type back on a disk a rollback or a restore keeps. By the disk's resource id, like every other disk action here. ROLLBACK-DISKS-FIRST-1: reads each rollback disk before a rollback or a restore stops the machine (Get-VmfManagedDiskAttachment), and deletes one nothing uses once the move is complete, or by retention (Remove-VmfManagedDiskById). disks/delete was already in the role through Remove-AzDisk, so the role does not change; making the disks before the move uses the same disks/write, disks/beginGetAccess/action and diskEncryptionSets/read as a rollback (New-AzDisk)."
+    },    {
+      "cmdlet": "Update-AzDisk",
+      "role": "execute",
+      "restore": true,
+      "actions": [
+        "Microsoft.Compute/disks/write"
+      ],
+      "why": "sets the disk's supported controller types before an NVMe boot"
+    },
+    {
+      "cmdlet": "Remove-AzDisk",
+      "role": "execute",
+      "restore": true,
+      "actions": [
+        "Microsoft.Compute/disks/delete"
+      ],
+      "why": "restore with preserve naming must delete the old disk to reuse its name"
+    },
+    {
+      "cmdlet": "New-AzSnapshot",
+      "role": "execute",
+      "actions": [
+        "Microsoft.Compute/snapshots/write",
+        "Microsoft.Compute/diskEncryptionSets/read"
+      ],
+      "why": "the safety copy taken before anything is changed. SAFETY-CMK-1: the copy names the disk encryption set of its disk (Microsoft: a disk and all of its incremental snapshots must have the same disk encryption set), so the set is a linked scope here too."
+    },
+    {
+      "cmdlet": "Invoke-AzRestMethod",
+      "role": "execute",
+      "actions": [
+        "Microsoft.Compute/snapshots/delete",
+        "Microsoft.Compute/snapshots/read",
+        "Microsoft.Compute/snapshots/write",
+        "Microsoft.Compute/diskEncryptionSets/read"
+      ],
+      "why": "SAFETY-CMK-1: the instant access copy names the disk encryption set of its disk, as New-AzSnapshot does. SAFETY-ULTRA-1: takes the first safety copy of a Premium SSD v2 or Ultra Disk data disk as an instant access snapshot (New-VmfInstantAccessSnapshot, a PUT by the snapshot's resource id), and reads its access state (Get-VmfSnapshotAccess) before anything changes, before the move and before a rollback. snapshots/write was already in the role through New-AzSnapshot, so the role does not change. WAVE-2 lever 7: deletes a safety copy once the machine has been migrated longer than its wave keeps them, and reads one to answer \"is it still there?\" before the point of no return. SEC-1 / F10 moved both from Remove-AzSnapshot and Get-AzSnapshot to ARM by the snapshot's own resource id: a resource group and a name are unique only inside one subscription, so addressing by that pair could delete a same-named snapshot elsewhere - and a delete that found nothing was reported as success, which then marked the safety copies gone and refused every later restore. The actions are unchanged; only what performs them is."
+    },
+    {
+      "cmdlet": "Set-AzNetworkInterface",
+      "role": "execute",
+      "restore": true,
+      "actions": [
+        "Microsoft.Network/networkInterfaces/write",
+        "Microsoft.Network/virtualNetworks/subnets/join/action",
+        "Microsoft.Network/networkSecurityGroups/join/action",
+        "Microsoft.Network/publicIPAddresses/join/action",
+        "Microsoft.Network/loadBalancers/backendAddressPools/join/action",
+        "Microsoft.Network/loadBalancers/inboundNatRules/join/action",
+        "Microsoft.Network/applicationGateways/backendAddressPools/join/action",
+        "Microsoft.Network/applicationSecurityGroups/joinIpConfiguration/action"
+      ],
+      "why": "accelerated networking is set on the NIC while deallocated. NIC-JOIN-1, MEASURED 2026-09-27: Azure checks a JOIN on every resource the interface links to on any write - the subnet refused it (LinkedAuthorizationFailed) inside the stopped window on the first end-to-end run, and the machine was rolled back. The joins are Microsoft's own set from the built-in Virtual Machine Contributor role, plus the application security group join, which Azure lists as an operation. PRECHECK asks for them on the linked resources themselves, because a network in another resource group is outside a narrow grant."
+    },
+    {
+      "cmdlet": "New-AzCapacityReservationGroup",
+      "role": "execute",
+      "actions": [
+        "Microsoft.Compute/capacityReservationGroups/write",
+        "Microsoft.Compute/capacityReservationGroups/deploy/action"
+      ],
+      "why": "reserved capacity for a guaranteed wave (CAP-3)"
+    },
+    {
+      "cmdlet": "New-AzCapacityReservation",
+      "role": "execute",
+      "actions": [
+        "Microsoft.Compute/capacityReservationGroups/capacityReservations/write"
+      ],
+      "why": "reserves the instances a wave needs"
+    },
+    {
+      "cmdlet": "Update-AzCapacityReservation",
+      "role": "execute",
+      "actions": [
+        "Microsoft.Compute/capacityReservationGroups/capacityReservations/write"
+      ],
+      "why": "a release (Remove-VmfCapacityReservations, Set-VmfCapacityReservationQuantity) sets the reserved quantity to 0 first, so the machines leave the group without a stop, and then deletes the reservation. PERMISSIONS-WHY-1 (2026-11-14): this said it adjusts reserved counts between waves; no code does that."
+    },
+    {
+      "cmdlet": "Remove-AzCapacityReservation",
+      "role": "execute",
+      "actions": [
+        "Microsoft.Compute/capacityReservationGroups/capacityReservations/delete"
+      ],
+      "why": "reservations bill while they exist - releasing them is part of the run"
+    },
+    {
+      "cmdlet": "Remove-AzCapacityReservationGroup",
+      "role": "execute",
+      "actions": [
+        "Microsoft.Compute/capacityReservationGroups/delete"
+      ],
+      "why": "cleans up the group once its reservations are released"
+    },
+    {
+      "cmdlet": "Get-AzAvailabilitySet",
+      "role": "assess",
+      "actions": [
+        "Microsoft.Compute/availabilitySets/read"
+      ],
+      "why": "AVSET-1: reads which machines share an availability set, so PRECHECK can tell an operator that starting this machine may fail while the others are running. Read-only, and it belongs to the assessment role because knowing the shape of the estate is not a change to it."
+    },
+    {
+      "cmdlet": "Get-AzVMSize",
+      "role": "assess",
+      "actions": [
+        "Microsoft.Compute/availabilitySets/vmSizes/read"
+      ],
+      "why": "AVSET-NOTE-1: asks which sizes the availability set's current hardware offers. Microsoft makes stopping every machine in a set conditional on the new size being missing from that hardware, so PRECHECK warns only when it is. Read-only."
+    },
+    {
+      "cmdlet": "Set-AzContext",
+      "role": "none",
+      "actions": [],
+      "why": "ODCR-SUB-1: switches the LOCAL session to another subscription so a capacity call can be made against it, then puts the caller's context back. No Azure permission applies to the switch itself - whether the identity can see that subscription is decided by its own role assignments there, and failing to is an answer the caller reports rather than works around."
+    }
+  ]
+}
