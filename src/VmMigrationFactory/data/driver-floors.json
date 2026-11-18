@@ -1,0 +1,143 @@
+{
+  "schemaVersion": 1,
+  "updatedUtc": "2026-11-14",
+  "why": "DRIVER-1: validate accelerated-networking DRIVER readiness, not just presence. The reason this matters is stated by Microsoft directly: 'The Azure platform doesn't update the Mellanox NIC or MANA drivers in the VM.' The guest owns its driver, so a machine can migrate onto Boost hardware and lose its accelerated networking with nothing on the platform side to catch it.",
+  "sources": [
+    {
+      "url": "https://learn.microsoft.com/en-us/azure/virtual-network/accelerated-networking-overview",
+      "retrievedUtc": "2026-09-26",
+      "pageDate": "2026-08-11",
+      "pageUpdated": "2026-09-25",
+      "carries": "the per-distribution minimum kernel table for MANA, the supported Windows list, and the Mellanox rule. The 2026-09-25 revision added Ubuntu 26.04 and the Oracle Linux UEK rows"
+    },
+    {
+      "url": "https://learn.microsoft.com/en-us/azure/virtual-network/accelerated-networking-mana-linux",
+      "retrievedUtc": "2026-08-26",
+      "pageDate": "2026-02-02",
+      "carries": "MANA upstream from kernel 5.15; how to verify the VF is actually carrying traffic"
+    },
+    {
+      "url": "https://docs.oracle.com/en/operating-systems/uek/8/relnotes8.0/uek8.0-ObtainingPackagesforInstallation.html",
+      "retrievedUtc": "2026-11-11",
+      "carries": "ORACLE-UEK7-KERNEL-STOP-1: UEK R8 is given for Oracle Linux 9 and Oracle Linux 10 only, in the ol9_UEKR8 and ol10_UEKR8 repositories, as the kernel-uek package"
+    },
+    {
+      "url": "https://docs.oracle.com/en/operating-systems/oracle-linux/9/relnotes9.8/ol9-features-Installation.html",
+      "retrievedUtc": "2026-11-11",
+      "carries": "ORACLE-UEK7-KERNEL-STOP-1: an update does not switch a machine from UEK R7 to UEK R8 ('switching to UEK R8 isn't automatic'); the steps disable ol9_UEKR7, enable ol9_UEKR8, then install kernel-uek"
+    },
+    {
+      "url": "https://learn.microsoft.com/en-us/troubleshoot/azure/virtual-machines/linux/troubleshoot-linux-rhui-certificate-issues",
+      "retrievedUtc": "2026-11-14",
+      "pageDate": "2025-07-17",
+      "pageUpdated": "2026-06-11",
+      "carries": "RHUI-REFRESH-1: an expired RHUI client certificate is fixed by updating the RHUI client package from the Microsoft repository, 'sudo yum update -y --disablerepo='*' --enablerepo='*microsoft-azure*''. KERNEL-OFFER-EDGES-1: the EUS, SAP and HA RHUI clients lock the releasever variable (/etc/dnf/vars/releasever or /etc/yum/vars/releasever) to one minor release"
+    },
+    {
+      "url": "https://packages.debian.org/bookworm/linux-image-cloud-amd64",
+      "retrievedUtc": "2026-11-14",
+      "carries": "KERNEL-OFFER-EDGES-1: Debian 12 (bookworm) main gives linux-image-cloud-amd64 6.1.190-1, 'Linux 6.1 for x86-64 cloud'"
+    },
+    {
+      "url": "https://packages.debian.org/bookworm-backports/linux-image-cloud-amd64",
+      "retrievedUtc": "2026-11-14",
+      "carries": "KERNEL-OFFER-EDGES-1: bookworm-backports gives linux-image-cloud-amd64 6.12.95-1~bpo12+1"
+    },
+    {
+      "url": "https://backports.debian.org/Instructions/",
+      "retrievedUtc": "2026-11-15",
+      "carries": "KERNEL-OFFER-EDGES-1 (review): 'all backported packages are pinned to priority 100 via ButAutomaticUpgrades: yes' - an installed backports kernel gets newer versions from bookworm-backports, so a Debian 12 machine on a 6.12 backports kernel is not refused"
+    },
+    {
+      "url": "https://ftp.suse.com/pub/projects/security/cvrf/cvrf-suse-su-2024:1801-1.xml",
+      "retrievedUtc": "2026-11-14",
+      "carries": "KERNEL-OFFER-EDGES-1: SUSE-SU-2024:1801-1 gives kernel-azure-5.14.21-150500.33.54.1 for SUSE Linux Enterprise 15 SP5 - kernel-azure has its own release numbers (150500.33), below the kernel-default numbers of Microsoft's SP5 row (150500.55.121.2)"
+    }
+  ],
+  "mana": {
+    "linux": {
+      "note": "Minimum RECOMMENDED kernel per distribution, copied verbatim from the source table. Each row names the MINIMUM release, so a later minor release of the same major is covered by it (RHEL8-MANA-1; measured: Red Hat 9.8 got MANA). A distribution or release the table does not list is NOT supported for MANA, unless its kernel meets fallbackForUnlistedDistros (RHEL8-MANA-1; measured: Red Hat 8.10, not listed, loaded mana and bound nothing).",
+      "fallbackForUnlistedDistros": {
+        "minKernel": "6.14",
+        "note": "Microsoft, verbatim: 'For users of non endorsed Linux distributions or utilizing custom kernels, we recommend the Linux Kernel 6.14 or later'. RHEL8-MANA-1: an unlisted distribution or release counts as supported for MANA only when its kernel is at least this."
+      },
+      "minorReachedByUpdate": {
+        "ids": ["rhel", "almalinux", "rocky"],
+        "note": "AN-MANA-DRIVER-RULE-1, design of 2026-11-06 ('RHEL 9.4 -> 9.6, Rocky/Alma 9.x'): on these distributions a normal package update within the major reaches a later minor release, and its kernel. So a minor release BELOW the lowest row of a major the table lists is judged against that row: its kernel must meet the row's minimum, and Update the kernel brings it there (the kernel package from the repositories the machine already has). A machine whose repositories hold no such kernel finds none, and its move stops untouched (kernelNotInRepositories). RHEL-PINNED-KERNEL-ADVICE-1: Microsoft (Red Hat Update Infrastructure) says a RHEL pay-as-you-go image with a minor version in its SKU, such as 94_gen2, is on EUS repositories locked to that minor release, so it reaches no later minor by an update. SUSE is not here: a service pack is not a normal update."
+      },
+      "uekR8": {
+        "kernelSeries": "6.12",
+        "package": "kernel-uek",
+        "repositories": [
+          { "versionId": "9", "repository": "ol9_UEKR8" },
+          { "versionId": "10", "repository": "ol10_UEKR8" }
+        ],
+        "sources": [
+          "https://docs.oracle.com/en/operating-systems/uek/8/relnotes8.0/uek8.0-ObtainingPackagesforInstallation.html",
+          "https://docs.oracle.com/en/operating-systems/oracle-linux/9/relnotes9.8/ol9-features-Installation.html"
+        ],
+        "note": "ORACLE-UEK7-KERNEL-STOP-1. The UEK row below is UEK R8. Oracle gives UEK R8 for Oracle Linux 9 and 10 only, each release in its own repository, and an update does not switch a machine from UEK R7 to it: a person disables the UEK R7 repository and enables the UEK R8 one. kernel-update.sh never changes a repository. ORACLE-UEK-UPDATE-1 (2026-11-14; lab 2026-11-14, Oracle Linux 9.7: with ol9_UEKR8 enabled, kernel-uek is 6.12 and it starts): on a UEK kernel below UEK R8 with no row, the product runs the update only when mana-check.sh reports the repository for its release in uekRepositories. Else the machine stops untouched (uekKernelNotListedForMana), and the stop names the repository for its release, from this list, and says it is not enabled."
+      },
+      "updateCannotReach": {
+        "note": "KERNEL-OFFER-EDGES-1 (2026-11-14: never offer, and never run, an update that cannot succeed). Where Update the kernel cannot reach the minimum of a row, the engine refuses it before any change (kernelUpdateCannotReachMinimum). kernel-update.sh uses only the repositories the machine has, without a target release, and keeps the kernel flavour it runs. releases: the repositories of the release give a kernel series below the row's minimum. flavours: a kernel flavour whose release numbers are not the numbers of the rows, so an updated kernel of that flavour is still read below the minimum - only on the releases (versionIds) its source covers. A release here is refused only while the running kernel is of a series below the minimum's series; a kernel already of that series (Debian 12 on a bookworm-backports 6.12 kernel) is not refused: Debian pins backports with ButAutomaticUpgrades, so an installed backports package gets newer versions from there (backports.debian.org/Instructions), and the reading after the restart judges the result. The targets step bars nothing: the scan does not read the kernel or the releasever setting (review, 2026-11-14).",
+        "releases": [
+          {
+            "id": "debian",
+            "versionId": "12",
+            "repositoryKernelSeries": "6.1",
+            "maker": "Debian",
+            "laterSeries": "6.12",
+            "laterIn": "bookworm-backports",
+            "sources": [
+              "https://packages.debian.org/bookworm/linux-image-cloud-amd64",
+              "https://packages.debian.org/bookworm-backports/linux-image-cloud-amd64",
+              "https://backports.debian.org/Instructions/"
+            ]
+          }
+        ],
+        "flavours": [
+          {
+            "id": "sles",
+            "versionIds": ["15.5"],
+            "kernelSuffix": "-azure",
+            "package": "kernel-azure",
+            "sources": [
+              "https://ftp.suse.com/pub/projects/security/cvrf/cvrf-suse-su-2024:1801-1.xml"
+            ]
+          }
+        ]
+      },
+      "distros": [
+        { "id": "almalinux", "versionId": "9.6", "kernelSeries": "5.14", "minKernel": "5.14.0-570.52.1" },
+        { "id": "almalinux", "versionId": "10.0", "kernelSeries": "6.12", "minKernel": "6.12.0-108" },
+        { "id": "azurelinux", "versionId": "3", "kernelSeries": "6.6", "minKernel": null, "note": "any version of this kernel series is listed as supported" },
+        { "id": "azurelinux", "versionId": "4", "kernelSeries": "6.18", "minKernel": null, "note": "any version of this kernel series is listed as supported" },
+        { "id": "debian", "versionId": "12", "kernelSeries": "6.12", "minKernel": "6.12.21" },
+        { "id": "debian", "versionId": "13", "kernelSeries": "6.12", "minKernel": "6.12.21" },
+        { "id": "ol", "versionId": "9", "kernelSeries": "5.14", "minKernel": "5.14.0-570.52.1", "note": "Oracle Linux on the Red Hat kernel" },
+        { "id": "ol", "versionId": "10", "kernelSeries": "6.12", "minKernel": "6.12.0-108", "note": "Oracle Linux on the Red Hat kernel" },
+        { "id": "rocky", "versionId": "9.6", "kernelSeries": "5.14", "minKernel": "5.14.0-570.52.1" },
+        { "id": "rocky", "versionId": "10.0", "kernelSeries": "6.12", "minKernel": "6.12.0-108" },
+        { "id": "rhel", "versionId": "9.6", "kernelSeries": "5.14", "minKernel": "5.14.0-570.52.1" },
+        { "id": "rhel", "versionId": "10.0", "kernelSeries": "6.12", "minKernel": "6.12.0-108" },
+        { "id": "sles", "versionId": "15.5", "kernelSeries": "5.14", "minKernel": "5.14.21-150500.55.121.2" },
+        { "id": "sles", "versionId": "15.6", "kernelSeries": "6.4", "minKernel": "6.4.0-150600.23.73.1" },
+        { "id": "sles", "versionId": "15.7", "kernelSeries": "6.4", "minKernel": "6.4.0-150700.53.16.1" },
+        { "id": "sles", "versionId": "16", "kernelSeries": "6.12", "minKernel": "6.12.0-160000.5.1" },
+        { "id": "ubuntu", "versionId": "22.04", "kernelSeries": "5.15", "minKernel": "5.15.0-1096.105" },
+        { "id": "ubuntu", "versionId": "24.04", "kernelSeries": "6.8", "minKernel": "6.8.0-1041.47" },
+        { "id": "ubuntu", "versionId": "26.04", "kernelSeries": "7.0", "minKernel": "7.0.0-14.14" },
+        { "id": "ol", "versionId": "*", "kernelFlavor": "uek", "kernelSeries": "6.12", "minKernel": "6.12.0-100.28.2", "note": "Oracle Linux UEK R8 (UEK 8/U1), on any Oracle Linux release. The table also has a UEK R7 row whose minimum reads 'Not listed above', so UEK R7 is not listed." }
+      ]
+    },
+    "windows": {
+      "minDriverVersion": null,
+      "note": "Microsoft publishes NO minimum MANA driver version for Windows. The guidance is that current Windows Server images carry the in-box driver and that updates should be applied. So the driver version is recorded as a FACT and never judged against an invented floor. The gate that actually protects the machine is behavioural: VALIDATING requires the accelerated adapter to be bound and healthy after the move.",
+      "supportedProducts": ["Windows 11", "Windows Server 2016", "Windows Server 2019", "Windows Server 2022", "Windows Server 2025"]
+    }
+  },
+  "mellanox": {
+    "minDriverVersion": null,
+    "note": "There is no version floor to check. The published rule is that every Azure Endorsed Linux Distribution is supported so long as the vendor has not marked it end of life - which is a SUPPORT question, already enforced by IMAGE-1's publisher matrix, not a driver-version question. Recording an invented number here would be worse than recording nothing."
+  }
+}

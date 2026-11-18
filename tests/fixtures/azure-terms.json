@@ -1,0 +1,55 @@
+{
+  "_comment": [
+    "DOCS-NAME-2: the words this product is not allowed to invent.",
+    "",
+    "The rule is not 'avoid jargon': use the product's",
+    "own nouns and AZURE'S OWN TECHNICAL NAMES, and never invent a softer word",
+    "for something that already has one. Vagueness is not plain language.",
+    "",
+    "This list exists because Test-SimplifiedEnglish cannot see the difference.",
+    "'The network is on the faster adapter' is short, active, and made of",
+    "common words, so the wording gate had nothing to object to - and it was on",
+    "four pages before anybody noticed (DOCS-NAME-1).",
+    "",
+    "A list of banned phrases only catches what somebody already thought of, so",
+    "this is NOT the whole answer - it is the part a test can carry. Add a row",
+    "when a sweep finds another one. Both the manual and the dashboard strings",
+    "are checked, because every word an operator reads is in scope.",
+    "",
+    "Checked by tests/unit/Manual.Tests.ps1."
+  ],
+  "avoid": [
+    {
+      "phrase": "network card",
+      "use": "network interface",
+      "why": "Azure's own name - the resource is a network interface, the portal says network interface, and this manual's own reference pages and the dashboard already said it. Seven places in the narrative pages invented a synonym."
+    },
+    {
+      "phrase": "disk connection",
+      "use": "disk controller",
+      "why": "Azure's own name. The property is the disk controller type, and this manual's reference and technical pages already said disk controller."
+    },
+    {
+      "phrase": "faster adapter",
+      "use": "accelerated networking, on MANA",
+      "why": "DOCS-NAME-1. Azure names both the feature and the adapter, and the same page named the adapter correctly eleven lines above."
+    },
+    {
+      "phrase": "from the inside",
+      "use": "what the check or the step actually does",
+      "why": "DOCS-NAME-1. 'The machine answers from the inside' named nothing. The check runs a script inside the machine and reads the disk it starts from."
+    },
+    {
+      "phrase": "before the day",
+      "use": "when the product actually verifies it",
+      "why": "DOCS-NAME-1. It claimed capacity was settled in advance. Quota is verified and a restricted size is named; capacity itself is only guaranteed by a reservation."
+    }
+  ],
+  "_notAvoided": [
+    "'network adapter' is NOT on this list on purpose: MANA is the Microsoft",
+    "Azure Network Adapter, so the words are correct there.",
+    "'cores' is not banned either - Container Apps quota really is measured in",
+    "cores. Only the VM quota definitions were wrong, and those are pinned by a",
+    "positive assertion instead."
+  ]
+}

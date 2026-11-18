@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Migration Factory - Access</title>
+<!--
+  S3-6 (ROLE-1): the access console. A static page, like the dashboard.
+  Admins manage who holds which role by calling Microsoft Graph AS THEMSELVES
+  (delegated permissions on the SPA registration, admin-consented once by
+  Deploy-VmfDashboard.ps1). Nothing is stored here and no service identity can
+  change access - only a person who already holds directory rights can, and
+  every change lands in the Entra audit log. Roles live as app roles on the
+  vmf-api registration; the facade enforces them on every action.
+-->
+<script src="msal-browser.min.js"></script>
+<!-- DARK-1: one stylesheet, Bootswatch Darkly. Rules in docs/ux.md;
+     the short version is that no page carries CSS of its own. -->
+<script src="theme.js"></script>
+<link rel="icon" href="logo.svg" type="image/svg+xml">
+<link rel="stylesheet" href="app.css">
+</head>
+<body class="p-access">
+<header class="topbar">
+  <!-- The product name, not a control. It used to link to Migrations,
+       which is ONE of the five areas, so the name of the whole product
+       acted as a shortcut to
+       a part of it. The navigation beside it names every area. -->
+  <span class="brand"><span class="logo" aria-hidden="true"></span><span class="brand-name"><span class="b-1">Migration</span><span class="b-2">Factory</span></span></span>
+  <nav class="topnav"></nav>
+  <span id="demo-tag" class="demo-tag" style="display:none">SAMPLE DATA</span>
+</header>
+
+<main class="wrap">
+  <div id="err"></div>
+  <div id="ok"></div>
+  <!-- SIGNIN-1: filled by VmfHelp.showSignIn(). One card, on all of them. -->
+  <div id="login-view"></div>
+  <div id="gate-view"><h2 id="gate-title"></h2><p class="muted" id="gate-copy"></p></div>
+
+  <div id="app" style="display:none">
+    <!-- CONSENT-SPLIT-1: the two cards below read and write the DIRECTORY, and
+         a directory administrator has to approve that once. The card after
+         them grants access in AZURE, which needs nothing from the directory.
+         They are separated here so the second works when the first cannot. -->
+    <div class="card">
+      <div class="ch"><h2 id="who-title"></h2><span class="hint" id="who-hint"></span></div>
+      <div class="cardbody" id="dir-blocked" style="display:none"></div>
+      <table id="who-table"><thead><tr><th id="th-who"></th><th id="th-type"></th><th id="th-roles"></th></tr></thead><tbody></tbody></table>
+    </div>
+    <div class="card" id="add-card">
+      <div class="ch"><h2 id="add-title"></h2><span class="hint" id="add-hint"></span></div>
+      <div class="cardbody">
+        <input id="search" class="searchbox" type="search">
+        <div id="results"></div>
+        <div class="rolepick" id="rolepick" style="display:none"></div>
+        <div style="margin-top:14px;display:none" id="add-actions"><button class="btn" id="add-btn"></button></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="ch"><h2 id="scope-title"></h2><span class="hint" id="scope-hint"></span></div>
+      <div class="cardbody">
+        <div id="scope-list"></div>
+        <div id="scope-add" style="margin-top:16px;border-top:0.5px solid var(--line);padding-top:14px">
+          <!-- PERM-2: "where the product may work" offered only subscriptions,
+               not resource groups or management groups.
+               A subscription was the only choice on offer, so a customer who
+               wanted the product in ONE resource group had to give it the whole
+               subscription - which is the opposite of what this page is for. -->
+          <div class="rolepick" id="scope-level"></div>
+          <div id="scope-sub-row" style="margin-top:12px">
+            <label for="scope-pick" id="scope-picklabel" style="display:block;font-size:13px;margin-bottom:6px"></label>
+            <select id="scope-pick" style="min-width:340px"></select>
+          </div>
+          <div id="scope-rg-row" style="margin-top:12px;display:none">
+            <label for="scope-rg" id="scope-rglabel" style="display:block;font-size:13px;margin-bottom:6px"></label>
+            <select id="scope-rg" style="min-width:340px"></select>
+          </div>
+          <div id="scope-mg-row" style="margin-top:12px;display:none">
+            <label for="scope-mg" id="scope-mglabel" style="display:block;font-size:13px;margin-bottom:6px"></label>
+            <select id="scope-mg" style="min-width:340px"></select>
+            <!-- Reading management groups needs rights above a subscription.
+                 Most accounts do not have them, and that is an ordinary answer
+                 with a way forward, not an error. -->
+            <div class="muted" id="scope-mg-note" style="margin-top:6px;font-size:12px;max-width:56ch"></div>
+          </div>
+          <div class="rolepick" id="scope-mode" style="margin-top:12px"></div>
+          <div style="margin-top:14px"><button class="btn" id="scope-btn"></button></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<script src="help.js"></script>
+
+<script src="access.js"></script>
+  </body>
+</html>

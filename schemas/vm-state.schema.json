@@ -1,0 +1,1076 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://vmf.local/schemas/vm-state.schema.json",
+  "title": "VMF per-VM runtime state document",
+  "description": "The state machine document for one VM in one run. Atomic writes; one file/row per VM.",
+  "type": "object",
+  "required": [
+    "schemaVersion",
+    "runId",
+    "vmId",
+    "state",
+    "history"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schemaVersion": {
+      "const": 51
+    },
+    "runId": {
+      "type": "string",
+      "minLength": 1
+    },
+    "vmId": {
+      "type": "string"
+    },
+    "wave": {
+      "type": "string"
+    },
+    "state": {
+      "type": "string",
+      "enum": [
+        "PLANNED",
+        "PRECHECK",
+        "SAFETY_PRISTINE",
+        "GUEST_PREP",
+        "SAFETY_COPY",
+        "STOPPED",
+        "CONVERTING",
+        "STARTING",
+        "VALIDATING",
+        "MIGRATED",
+        "NEEDS_DECISION",
+        "FAILED_ROLLED_BACK",
+        "FAILED_NEEDS_ATTENTION",
+        "SKIPPED"
+      ]
+    },
+    "pathCheckpoint": {
+      "type": "string",
+      "description": "Sub-checkpoint inside CONVERTING: converting:started, then A:diskPatched."
+    },
+    "lease": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "workerId": {
+          "type": "string"
+        },
+        "acquiredUtc": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "heartbeatUtc": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "attempts": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "integer",
+        "minimum": 0
+      }
+    },
+    "captured": {
+      "type": "object",
+      "description": "Pre-mutation facts: full VM config, guest disk inventory, extension list. vmConfig is the capture of the CURRENT attempt; original is the first capture of the machine in this run. OLD-VERSION-READERS-REMOVE-4 (v47): PRECHECK writes them in one write, so a capture always has the first capture beside it.",
+      "additionalProperties": true,
+      "dependentRequired": { "vmConfig": ["original"] },
+      "properties": {
+        "putBackRetirement": {
+          "type": ["object", "null"],
+          "description": "RETIRE-SCOPE-1: the retirement of the size the machine had when PRECHECK read it (Get-VmfMoveRetirementRecord) - the size and its dates - or null when that size has no retirement entry. The restore dialog reads it. OLD-STATE-READERS-FINISH-1 (v48): these three fields only.",
+          "additionalProperties": false,
+          "required": ["size", "retiresUtc", "warnFromUtc"],
+          "properties": {
+            "size": { "type": "string" },
+            "retiresUtc": { "type": "string" },
+            "warnFromUtc": { "type": "string" }
+          }
+        },
+        "vmConfig": {
+          "type": "object",
+          "description": "The capture of the current attempt. Open; SAFETY-ULTRA-1 (v20) describes its data disks, SAFETY-CMK-1 (v21) the encryption of every disk, ROLLBACK-CRG-1 (v24) its capacity reservation group, and REBUILD-PROPS-1 (v31) the settings Verifying compares. VERIFY-HOST-HIBERNATION-UNUSED-1 (v44): no hostId, hostGroupId or hibernationEnabled - Checking stops a machine on a dedicated host or with hibernation enabled before the capture. OLD-VERSION-READERS-REMOVE-4 (v47): every capture holds capacityReservationGroupId and patchSettings, null for none.",
+          "additionalProperties": true,
+          "required": ["capacityReservationGroupId", "patchSettings"],
+          "properties": {
+            "capacityReservationGroupId": {
+              "type": ["string", "null"],
+              "description": "ROLLBACK-CRG-1 (v24): the resource id of the capacity reservation group the machine was in when PRECHECK read it; null for no group. Every rollback and restore takes it from the first capture (captured.original.vmConfig) and returns the machine to that group. Required (v47): a rollback or a restore of a record without it stops."
+            },
+            "patchSettings": {
+              "type": ["object", "null"],
+              "description": "REBUILD-PROPS-1 (v31): the machine's patch settings (osProfile windowsConfiguration or linuxConfiguration patchSettings); null for none. Verifying compares them.",
+              "additionalProperties": false,
+              "properties": {
+                "os": { "enum": ["Windows", "Linux"] },
+                "patchMode": { "type": ["string", "null"] },
+                "assessmentMode": { "type": ["string", "null"] },
+                "enableHotpatching": { "type": ["boolean", "null"] },
+                "rebootSetting": { "type": ["string", "null"] },
+                "bypassPlatformSafetyChecksOnUserSchedule": { "type": ["boolean", "null"] }
+              }
+            },
+            "userDataPresent": { "type": "boolean", "description": "REBUILD-PROPS-1 (v31): the machine has user data. Its value is never written to the run store." },
+            "evictionPolicy": { "type": ["string", "null"], "description": "REBUILD-PROPS-1 (v31): a Spot machine's eviction policy (Deallocate or Delete); null for none. Verifying compares it." },
+            "maxPrice": { "type": ["number", "null"], "description": "REBUILD-PROPS-1 (v31): a Spot machine's maximum price (billingProfile.maxPrice; -1 is the pay-as-you-go price); null for none. Verifying compares it." },
+            "nics": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "additionalProperties": true,
+                "properties": {
+                  "deleteOption": { "type": ["string", "null"], "description": "REBUILD-PROPS-1 (v31): the interface's delete option (Delete or Detach). Verifying compares it." }
+                }
+              }
+            },
+            "osDisk": { "$ref": "#/$defs/capturedOsDisk" },
+            "dataDisks": { "type": "array", "items": { "$ref": "#/$defs/capturedDataDisk" } }
+          }
+        },
+        "original": {
+          "type": "object",
+          "description": "ROLLBACK-RETRY-CAPTURE-1 (v16): the first capture of the machine in this run, written once by the first PRECHECK and never again. Every rollback and restore takes the size, disk controller, accelerated networking per interface and disk types from it, and the disks from vmConfig.",
+          "additionalProperties": false,
+          "required": [
+            "vmConfig"
+          ],
+          "properties": {
+            "vmConfig": {
+              "type": "object",
+              "description": "The capture, as captured.vmConfig was written by that PRECHECK. Required fields as for captured.vmConfig (v47).",
+              "required": ["capacityReservationGroupId", "patchSettings"]
+            },
+            "extensions": {
+              "type": "array",
+              "description": "The extensions that PRECHECK read."
+            },
+            "sourceAcceleratedNetworking": {
+              "type": [
+                "boolean",
+                "null"
+              ],
+              "description": "Whether the first capture's size can carry accelerated networking (OLD-FAM-1); null when not asked or not said."
+            },
+            "capturedUtc": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "format": "date-time"
+            },
+            "sizeReplaced": {
+              "type": ["object", "null"],
+              "additionalProperties": false,
+              "required": ["size", "by", "reasonCode", "utc"],
+              "description": "ROLLBACK-SIZE-REFUSED-SERIES-1 (v51): Azure refused the original size in a rollback, and Restore this machine put the first safety copy on the target size of the plan. vmConfig.size is that size now, so every later rollback and restore returns the machine to it; this keeps the size Azure refused. Absent or null when the first capture's size is the size it read.",
+              "properties": {
+                "size": { "type": "string", "description": "The size the first capture read, which Azure refused." },
+                "by": { "enum": ["restore"] },
+                "reasonCode": { "enum": ["rollbackSizeRefused"] },
+                "operationId": { "type": ["string", "null"], "description": "The restore's engine operation." },
+                "utc": { "type": "string", "format": "date-time" }
+              }
+            }
+          }
+        },
+        "startOnTarget": {
+          "type": ["object", "null"],
+          "additionalProperties": false,
+          "required": ["size", "target", "power", "stopUtc", "tsUtc"],
+          "description": "ROLLBACK-NO-CAPACITY-OTHER-SERIES-1 (v51): this attempt starts the machine on the new size, with no start on its original size, because Azure had no capacity for that size (rollbackNoCapacity). Written by Checking, before anything changes; it belongs to the stop the machine was tried again from (stopUtc), and a park of that attempt before any change carries it on. Checking does not start the machine, Preparing runs no script, and Starting runs the checks that read the guest after the start on the new size.",
+          "properties": {
+            "size": { "type": "string", "description": "The original size, which Azure had no capacity for." },
+            "target": { "type": "string", "description": "The target size, which the machine starts on." },
+            "power": { "enum": ["PowerState/running", "PowerState/deallocated", "PowerState/stopped"], "description": "The power state the move returns the machine to: the one it owed, else the one Checking read." },
+            "stopUtc": { "type": "string", "description": "The time of the rollbackNoCapacity stop this attempt was tried again from." },
+            "tsUtc": { "type": "string", "format": "date-time" }
+          }
+        },
+        "kernelUpdate": {
+          "type": [
+            "object",
+            "null"
+          ],
+          "description": "MANA-LINUX-KERNEL-1 (v18): what GUEST_PREP did to the kernel of a Linux machine whose kernel had no MANA driver, when the person chose 'Update the kernel' for it (plan-entry onDriverBelowFloor = updateKernel). Written before the update script runs (result running), and again when the machine reads back after its restart. running: the update started and its outcome is not known yet - a resume reads the machine again. updated: the kernel after the restart has a MANA driver. failed: the update failed, the machine did not come back, or the driver is still missing, so the machine goes back to its pristine copy. stopped: nothing on the machine changed - no newer kernel, or the package manager never ran - so the move stopped for a person, untouched. putBackUtc says when the machine went back to its pristine copy, after a failed update or any later rollback. A person's new attempt at or before GUEST_PREP removes the record.",
+          "additionalProperties": false,
+          "required": [
+            "result",
+            "kernelBefore"
+          ],
+          "properties": {
+            "result": {
+              "enum": [
+                "running",
+                "updated",
+                "failed",
+                "stopped"
+              ]
+            },
+            "kernelBefore": {
+              "type": "string",
+              "description": "The running kernel before the update, as uname -r reported it."
+            },
+            "kernelInstalled": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "description": "The newest kernel installed after the update script, as the guest reported it."
+            },
+            "kernelAfter": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "description": "The running kernel after the restart."
+            },
+            "package": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "description": "The kernel package the distribution's own package manager was asked for, for example linux-azure."
+            },
+            "packageManager": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "scriptResult": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "description": "What kernel-update.sh answered: FIXED, NO_CHANGE or BLOCKED, or null when it gave no answer."
+            },
+            "error": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "startedUtc": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "finishedUtc": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "putBackUtc": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          }
+        }
+      }
+    },
+    "safety": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "snapshotId": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "cloneVmId": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "pristineSnapshotLocked": {
+          "type": [
+            "boolean",
+            "null"
+          ],
+          "description": "SAFETY-3 (v8): a CanNotDelete lock named vmf-safety-copy was placed on the pristine copy when it was taken. Retention removes it before deleting."
+        },
+        "snapshotLocked": {
+          "type": [
+            "boolean",
+            "null"
+          ],
+          "description": "SAFETY-3 (v8): the same lock on the prepared copy."
+        },
+        "locksAllowed": {
+          "type": [
+            "boolean",
+            "null"
+          ],
+          "description": "SAFETY-3 (v8): PRECHECK's answer to whether this identity may place resource locks. False means the copies are taken but not locked, and the run page said so."
+        },
+        "pristineSnapshotId": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "SAFETY-2: the copy taken BEFORE guest prep, on the original hardware. Separate from snapshotId, which is taken after prep with the machine stopped."
+        },
+        "earlierCopies": {
+          "type": "array",
+          "description": "SAFETY-RETRY-1 (v9): the copies of earlier attempts, moved here when a person tried the machine again from the first step. The new attempt takes its own; these stay on record so retention and run deletion still find them.",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "pristineSnapshotId": { "type": ["string", "null"] },
+              "pristineSnapshotLocked": { "type": ["boolean", "null"] },
+              "snapshotId": { "type": ["string", "null"] },
+              "snapshotLocked": { "type": ["boolean", "null"] },
+              "pristineDataCopies": { "type": "array", "items": { "$ref": "#/$defs/dataCopy" }, "description": "SAFETY-ALL-1 (v11): that attempt's pristine copies of the data disks." },
+              "dataCopies": { "type": "array", "items": { "$ref": "#/$defs/dataCopy" }, "description": "SAFETY-ALL-1 (v11): that attempt's prepared copies of the data disks." },
+              "rollbackDisksBeforeMove": { "$ref": "#/$defs/rollbackDisksBeforeMove", "description": "ROLLBACK-DISKS-FIRST-1 (v22): the rollback disks of that attempt, moved here with its copies. Retention deletes the ones nothing used (Get-VmfDueRollbackDisksBeforeMove)." },
+              "keptUtc": { "type": "string" }
+            }
+          }
+        },
+        "pristineDataCopies": {
+          "type": "array",
+          "description": "SAFETY-ALL-1 (v11): a copy of every data disk, taken at the same stopped moment as the pristine copy of the OS disk. A rollback restores these with the OS disk, so every disk goes back to one moment.",
+          "items": { "$ref": "#/$defs/dataCopy" }
+        },
+        "dataCopies": {
+          "type": "array",
+          "description": "SAFETY-ALL-1 (v11): a copy of every data disk, taken with the prepared copy of the OS disk.",
+          "items": { "$ref": "#/$defs/dataCopy" }
+        },
+        "rollbackDisksBeforeMove": {
+          "$ref": "#/$defs/rollbackDisksBeforeMove",
+          "description": "ROLLBACK-DISKS-FIRST-1 (v22): the disks this attempt made from its first copies as rollback disks, before the move changed anything (end of SAFETY_PRISTINE). Every rollback, and a restore from the first copy, only swaps these in."
+        }
+      }
+    },
+    "guestExecutions": {
+      "type": "array",
+      "description": "Audit: which guest script versions ran on this VM",
+      "items": {
+        "type": "object",
+        "required": [
+          "script",
+          "version",
+          "sha256",
+          "tsUtc",
+          "result"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "script": {
+            "type": "string"
+          },
+          "version": {
+            "type": "string"
+          },
+          "sha256": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          },
+          "tsUtc": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "result": {
+            "type": "string",
+            "description": "The script's result. READING: a run taken only to read the machine (VERIFY-FP-1). STARTED (PREP-ROLLBACK-1, v19): a script that changes the guest gets its entry BEFORE the run command, and the same entry (by evidenceRef) takes the real result after. A STARTED entry left behind means the script never answered - it threw, or the worker stopped while it ran - so it may have changed the machine. Its evidenceRef names the file the output would be kept in; a script that threw before it answered has none."
+          },
+          "evidenceRef": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "history": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "tsUtc",
+          "state",
+          "outcome"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "tsUtc": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "state": {
+            "type": "string"
+          },
+          "outcome": {
+            "type": "string",
+            "enum": [
+              "ok",
+              "retry",
+              "fail",
+              "skip"
+            ]
+          },
+          "durationSec": {
+            "type": "number",
+            "minimum": 0
+          },
+          "detail": {
+            "type": "string"
+          },
+          "evidenceRef": {
+            "type": "string",
+            "description": "Path/id of a stored artifact (RunCommand output, boot diag, error record)"
+          },
+          "reasonCode": {
+            "type": "string",
+            "description": "RETRY-1: stable code naming WHY a run stopped here, resolved against data/stop-reasons.json for what it means and what to do. Present on stop transitions; absent on ordinary progress."
+          },
+          "machineState": {
+            "type": "string",
+            "enum": [
+              "untouched",
+              "restored",
+              "changed"
+            ],
+            "description": "FAIL-1: where this stop left the MACHINE, recorded by the branch that wrote it - independent of reasonCode, which says why. untouched = never changed; restored = changed and rolled back; changed = not as it was (only when the rollback itself failed)."
+          },
+          "powerNotPutBack": {
+            "type": "string",
+            "enum": [
+              "PowerState/deallocated",
+              "PowerState/stopped",
+              "PowerState/running"
+            ],
+            "description": "POWER-ONLY-CHANGED-1 (v37): on a stop with machineState changed, the machine is changed ONLY in its power state - Azure refused, at every try, to return the machine to the power state it was found in, which this names: deallocated or stopped (Checking started it), or running (the move stopped it). Its disks, size, controller and network are as they were, so its retry is not held (Test-VmfRetryHeld), and the retry returns the machine to this power state first. Ended by a later entry with machineState untouched (the line of that return). Absent on every other entry."
+          }
+        }
+      }
+    },
+    "diskTypeChanges": {
+      "type": "array",
+      "description": "OLD-SKU-1C (v12): every disk type change the product made to this machine's disks, recorded before it is made and kept across attempts. Azure allows two changes per disk a day; a move that would make a third inside 24 hours stops before the machine is touched.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["diskId", "from", "to", "by", "utc"],
+        "properties": {
+          "diskId": { "type": "string" },
+          "from": { "type": "string" },
+          "to": { "type": "string" },
+          "by": { "enum": ["move", "rollback", "restore"] },
+          "utc": { "type": "string", "format": "date-time" }
+        }
+      }
+    },
+    "rollback": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["rolledBackUtc", "path", "osDisk", "dataDisks"],
+      "description": "IAC-REPORT-1 (v13): the last automatic rollback and the disks it made from the first safety copies. Kept across attempts: the machine runs on these disks until something replaces them. osDisk is null when no copy was on record; a data disk left as it was is not listed.",
+      "properties": {
+        "rolledBackUtc": { "type": "string", "format": "date-time" },
+        "path": { "type": "string", "description": "How the rollback went: A = in place, the size and controller back; disks (PREP-ROLLBACK-1, v19) = in place, the disks only, before the move changed the size, for a stop before CONVERTING. Written after each disk swap, so a rollback that stops part way still names the disk the machine runs on." },
+        "osDisk": {
+          "type": ["object", "null"],
+          "additionalProperties": false,
+          "required": ["id", "name"],
+          "properties": { "id": { "type": "string" }, "name": { "type": "string" } }
+        },
+        "dataDisks": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["lun", "diskId", "diskName"],
+            "properties": { "lun": { "type": "integer" }, "diskId": { "type": "string" }, "diskName": { "type": "string" } }
+          }
+        },
+        "keptDataDisks": {
+          "type": "array",
+          "description": "SAFETY-ULTRA-1 (v20): each data disk this rollback did NOT restore, with why - a shared disk, a disk with no copy, a disk Azure did not make or swap, or a Premium SSD v2 or Ultra Disk whose new disk differed from the record. Each keeps the disk it had. The stop that ends the rollback says them too.",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["lun", "name", "why"],
+            "properties": { "lun": { "type": "integer" }, "name": { "type": "string" }, "why": { "type": "string" } }
+          }
+        },
+        "reservationGroupNotBack": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["groupId", "why"],
+          "description": "ROLLBACK-CRG-1 (v24): the capacity reservation group this rollback did NOT return the machine to, and Azure's words - most often the group holds no reservation for the machine's own size. The machine runs in no group. The stop that ends the rollback says it too. Absent when the machine is back in its group, or had none.",
+          "properties": { "groupId": { "type": "string" }, "why": { "type": "string" } }
+        },
+        "reservationGroupLeft": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["groupId"],
+          "description": "ROLLBACK-CRG-1 (v24): a capacity reservation group this rollback took the machine out of that the machine was not in before the move and that this migration did not make - somebody joined the machine to it during the move. The stop that ends the rollback says it too. Absent for the migration's own group.",
+          "properties": { "groupId": { "type": "string" } }
+        }
+      }
+    },
+    "rollbackPending": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "state", "reasonCode", "detail", "startedUtc"],
+      "description": "PREP-ROLLBACK-1 (v19): the checkpoint a rollback writes BEFORE its first change, removed in the same write as the stop that ends it. A worker that stops part way leaves it, and the next one finishes the rollback before any step runs - never resumes the step that failed (which once went on to CONVERTING on a half rolled-back machine).",
+      "properties": {
+        "kind": { "enum": ["disks", "full"], "description": "disks = a stop before CONVERTING: stop, the disks from the first copy, start. full = FAIL-1: the disks plus the original size and controller." },
+        "state": { "type": "string", "description": "The step that failed." },
+        "reasonCode": { "type": "string", "description": "Why it stopped - kept as the stop's reason code." },
+        "detail": { "type": "string" },
+        "evidenceRef": { "type": ["string", "null"], "description": "The boot diagnostics taken before a FAIL-1 rollback." },
+        "change": { "enum": ["changed", "mayHaveChanged"], "description": "For kind disks: whether the preparation changed the machine, or a script that changes it never answered." },
+        "stopState": { "enum": ["FAILED_ROLLED_BACK", "FAILED_NEEDS_ATTENTION", "NEEDS_DECISION"], "description": "The state a rollback that succeeds records. FAILED_NEEDS_ATTENTION for a stop that is a fault in the product (stepLoopLimit); NEEDS_DECISION for a park on a second visit to GUEST_PREP, after a fix changed the guest." },
+        "startedUtc": { "type": "string", "format": "date-time" },
+        "done": { "type": "boolean", "description": "The rollback finished; only the stop is left to record." },
+        "volumes": { "type": ["object", "null"], "additionalProperties": false, "required": ["verdict"], "description": "VOLUMES-ONLINE-1 (v49): the check inside the machine after this rollback or restore - on Linux the LVM devices file refreshed first - and its result, kept before the machine returns to the power state it was found in, so a resume after that return uses it and never asks a stopped machine.", "properties": { "verdict": { "enum": ["MATCH", "MISSING", "UNKNOWN"], "description": "MATCH: every volume mounted before the move is mounted. MISSING: one is not (the stop volumesNotBack, machine changed). UNKNOWN: the check could not run - said, never a pass or a fail." }, "words": { "type": "string", "description": "The sentence the stop or the restore line says." }, "detail": { "type": "string" }, "tsUtc": { "type": "string", "format": "date-time" } } }
+      }
+    },
+    "powerReturnPending": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["power", "next", "startedUtc"],
+      "description": "POWER-AFTER-MOVE-1 (v39): the checkpoint of the return to the power state Checking found, written after a move passed every check of Verifying and BEFORE the return. A worker that stops in the return, or after it, leaves it, and the next one finishes the return and records the state it names - never runs Verifying again on a machine that may be deallocated. Removed in the same write as that state. Absent on every other document.",
+      "properties": {
+        "power": { "enum": ["PowerState/deallocated", "PowerState/stopped"], "description": "The power state Checking found (captured.clusterCheckPower), as Azure names it." },
+        "next": { "enum": ["MIGRATED"], "description": "The state the move ends in." },
+        "startedUtc": { "type": "string", "format": "date-time" }
+      }
+    },
+    "volumesCheckOwed": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["reason", "kind", "tsUtc"],
+      "description": "VOLUMES-RETRY-CHECK-1 (v50): a check of the volumes inside the machine that the next retry owes. Written in the same write as the stop of a rollback or a Restore this machine whose check found a volume mounted before the move that is not mounted now (volumesNotBack), or could not run (notChecked). Try this machine again is allowed for volumesNotBack only while this stands, and the retry's first step, at Checking, is that check: every volume mounted, the engine removes this record in the same write as the new attempt (new safety copies); not every volume, or not known, the stop volumesNotBack again with nothing changed. A check that finds every volume removes it. Absent on every other document.",
+      "properties": {
+        "reason": { "enum": ["volumesNotBack", "notChecked"], "description": "volumesNotBack: the check found a volume not mounted. notChecked: the check could not run." },
+        "kind": { "enum": ["rollback", "restore"], "description": "The rollback or the restore whose check owes it." },
+        "tsUtc": { "type": "string", "format": "date-time" }
+      }
+    },
+    "swapPending": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "leftUtc", "error", "swaps", "swapped", "kept"],
+      "description": "SWAP-REFUSED-AFTER-STOP-1 (v25): a rollback or a Restore this machine whose data-disk swap Azure refused, also when the product tried it again. The machine is left STOPPED - never started with disks from two moments - and this names every data disk that is not back. Finish the rollback or Finish the restore (Complete-VmfDataDiskSwap) swaps only these, then starts the machine, and removes this record in the same write as what ends it. While it stands, a restore, a retry and a decision are refused, and retention keeps each disk it names.",
+      "properties": {
+        "kind": { "enum": ["rollback", "restore"], "description": "Which left it - a rollback or a restore - and so which action finishes it." },
+        "powerAtStart": { "enum": ["PowerState/running", "PowerState/deallocated", "PowerState/stopped", null], "description": "POWER-AFTER-MOVE-1 (v39): a restore: the power state the restore found when it started (putBackJob.powerAtStart). Finish the restore returns the machine to it after it starts the machine. A rollback has none: Finish the rollback returns the machine to the power state Checking found, as the rollback does." },
+        "operationId": { "type": ["string", "null"], "description": "FINISH-NO-RESTORE-RECORD-1 (v32): a restore - its engine operation, as its checkpoint (putBackJob.operationId) and its own record (restore.operationId) name it. Finish the restore adds to that record only, and removes only that checkpoint. A rollback has none." },
+        "leftUtc": { "type": "string", "format": "date-time" },
+        "error": { "type": "string", "description": "Azure's words for the last refusal." },
+        "usedBy": { "type": ["string", "null"], "description": "The mark a rollback disk gets when it goes on (safety.rollbackDisksBeforeMove.disks[].usedBy): rollback-<time>, restore, or null." },
+        "swaps": {
+          "type": "array",
+          "description": "Each data disk that is not back: the LUN keeps the disk it had (name, oldDiskId), and the disk made from its copy (diskId, diskName) waits to go on.",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["lun", "name", "diskId", "diskName", "snapshotId", "lunHolds"],
+            "properties": {
+              "lun": { "type": "integer", "minimum": 0 },
+              "name": { "type": "string", "description": "The disk the LUN holds now." },
+              "oldDiskId": { "type": ["string", "null"], "description": "Its resource id. Finish refuses a LUN that holds any other disk." },
+              "diskId": { "type": "string", "description": "The disk made from the copy." },
+              "diskName": { "type": "string" },
+              "snapshotId": { "type": "string", "minLength": 1, "description": "FINISH-EMPTY-LUN-PROOF-1 (v28): the copy the disk made from the copy was made from. When its LUN has no disk, Finish attaches that disk only if Azure says it was made from this copy (creationData.sourceResourceId), as the restore's resume does. OLD-STATE-READERS-FINISH-1 (v48): required; a row with none proves nothing, and Finish stops before it changes the machine." },
+              "caching": { "type": ["string", "null"], "description": "None for Premium SSD v2 and Ultra Disk; null keeps the LUN's own caching." },
+              "instantAccess": { "type": "boolean", "description": "A Premium SSD v2 or Ultra Disk: swapped in a batch of its own (Get-VmfSwapBatches)." },
+              "temporary": { "type": "boolean", "description": "Keeping the names: the disk made from the copy is the temporary disk, and the disk the LUN holds is not deleted." },
+              "oldTemporary": { "type": "boolean", "description": "FINISH-TEMP-DISK-LEFT-1 (v38): keeping the names, the disk the LUN holds (name, oldDiskId) is the temporary disk made from the copy, and the disk that waits is the disk made under the old name. When Finish puts that disk on, it records it as the disk the LUN had before the restore (same name and id), and names the temporary disk as free: the daily cleanup deletes it once the move has ended." },
+              "lunHolds": { "enum": ["had", "none", "notRead", "other"], "description": "FINISH-EMPTY-LUN-WORDS-1 (v38): what is on the LUN, as the product last found it. had: the disk this row names (name, oldDiskId). none: no disk - a swap stopped between its two updates. notRead: the product did not read the LUN after a swap that did not finish. other: a disk that is neither the disk it had nor the disk made from the copy. Finish reads every LUN again before it changes anything. Required (v48): every row a swap leaves says it." },
+              "why": { "type": ["string", "null"], "description": "Azure's words for this disk." }
+            }
+          }
+        },
+        "swapped": {
+          "type": "array",
+          "description": "Each data disk this rollback or restore swapped back from the copy.",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["lun", "diskId", "diskName"],
+            "properties": {
+              "lun": { "type": "integer", "minimum": 0 },
+              "diskId": { "type": "string" },
+              "diskName": { "type": "string" }
+            }
+          }
+        },
+        "kept": {
+          "type": "array",
+          "description": "FINISH-KEPT-DISKS-1 (v29): each data disk this rollback or restore keeps as it is by design (a shared disk, a disk with no copy, a disk Azure cannot make from its copy now), with why - written in the same write as the swaps, so this record accounts for every data disk on its own. Finish counts these alone. Required (v48): a swap record with no list stops Finish before it changes the machine.",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["lun", "name", "why"],
+            "properties": { "lun": { "type": "integer", "minimum": 0 }, "name": { "type": "string" }, "why": { "type": "string" } }
+          }
+        },
+        "stop": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["state", "reasonCode", "machineState", "detail"],
+          "description": "For a rollback: the stop it would have recorded with every disk back. Finish the rollback records it. Absent until the rollback's own stop is recorded.",
+          "properties": {
+            "state": { "enum": ["FAILED_ROLLED_BACK", "FAILED_NEEDS_ATTENTION", "NEEDS_DECISION"] },
+            "reasonCode": { "type": "string" },
+            "machineState": { "enum": ["untouched", "restored", "changed"] },
+            "detail": { "type": "string" }
+          }
+        }
+      }
+    },
+    "rollbackOriginals": {
+      "type": "array",
+      "description": "ROLLBACK-ORIGINALS-LEFT-1 (v41): each disk a rollback swapped off the machine - the disk this attempt's capture names at the place the rollback put a new disk on - written in the same write as the disk put on, after each swap, and by Finish the rollback. Kept across attempts: Try this machine again does not clear it, and a later rollback adds to it. Nothing deletes these disks on its own; the machine's panel lists the ones not deleted (Get-VmfRollbackOriginalDisks), and Delete these disks deletes them.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["diskId", "diskName", "lun", "detachedUtc"],
+        "properties": {
+          "diskId": { "type": "string", "description": "The resource id of the disk the rollback swapped off." },
+          "diskName": { "type": "string" },
+          "lun": { "type": ["integer", "null"], "description": "The data disk LUN it was on; null for the OS disk." },
+          "detachedUtc": { "type": "string", "description": "When the rollback swapped it off: the first time it was recorded." },
+          "deletedUtc": { "type": ["string", "null"], "description": "When Delete these disks deleted it, or found it gone." },
+          "deletedBy": { "type": ["string", "null"], "description": "Who asked for the delete." },
+          "gone": { "type": "boolean", "description": "true: Azure had no such disk when the product read it, so it counts as deleted with no delete asked." }
+        }
+      }
+    },
+    "rollbackDisksDuringRollback": {
+      "type": "array",
+      "description": "PREP-ROLLBACK-1 (v19): every disk an automatic rollback made, recorded the moment Azure made it - kept across attempts. A rollback that fails after it made a disk leaves a disk that bills, and rollback (above) is written only for the disks a swap put on the machine.",
+      "items": { "$ref": "#/$defs/madeDisk" }
+    },
+    "restoreDisks": {
+      "type": "array",
+      "description": "MADE-DISK-RECORD-1 (v26): every disk Restore this machine made from a safety copy, recorded the moment Azure made it - the pattern of rollbackDisksDuringRollback. A restore that stops, or a process that dies, after it made a disk leaves a disk that bills, and restore (below) is written only at the end. The next restore names each one the machine does not run on, and retention deletes it once the move has ended.",
+      "items": { "$ref": "#/$defs/madeDisk" }
+    },
+    "putBackJob": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "operationId", "startedUtc", "options", "stamp", "phase", "resumes"],
+      "description": "RESTORE-END-JOB-1 (v27): the checkpoint of a Restore this machine that has not ended. Written before the job changes anything and saved as each step ends (rule 4); removed in the same write as the restore record that ends it. When the job stops part way (the platform stops the container), the service's timer starts it again with the same operation id, and it goes on from the last step it saved, with the disks it made - never a second set. While it stands and has not ended, a new restore or finish of the machine is refused, and retention keeps the machine's safety copies and every disk made for it.",
+      "properties": {
+        "kind": { "enum": ["restore", "finish"], "description": "FINISH-END-JOB-1 (v33): finish - Finish the rollback or Finish the restore (options.finishes says which). It makes no disk: its steps are begun, dataSwapped and started, and each swap Azure takes is on the swap record (swapPending) the moment it took. Removed in the same write as the swap record. The record of a restore it stands over goes inside it (prior) and is the machine's record again when the finish ends." },
+        "operationId": { "type": "string", "minLength": 1, "description": "The engine operation's id: on the start line, in the lease holder '<kind>:<id>', and on the engine's own fail line." },
+        "prior": { "type": ["object", "null"], "description": "FINISH-END-JOB-1 (v33): a finish only: the record of a restore that ended, which the finish stands over, kept whole. Its readers look under the finish (Get-VmfPutBackJobBehind). When the finish ends, this record is the machine's record again, as it was, unless Save-VmfFinishedRestore ends it." },
+        "startedUtc": { "type": "string", "format": "date-time" },
+        "startedBy": { "type": ["string", "null"], "description": "Who asked for it. A resume records the same person." },
+        "note": { "type": ["string", "null"] },
+        "options": {
+          "type": "object",
+          "additionalProperties": false,
+          "description": "What the person asked for. A resume uses these, never the request that started it again.",
+          "properties": {
+            "from": { "enum": ["prepared", "pristine"], "description": "A restore: which safety copy." },
+            "diskNaming": { "enum": ["new", "preserve"], "description": "A restore: new names, or keep the names." },
+            "acceptPreserveRisk": { "type": "boolean" },
+            "snapshotId": { "type": ["string", "null"], "description": "A restore from a copy named by its ID." },
+            "finishes": { "enum": ["rollback", "restore"], "description": "FINISH-END-JOB-1 (v33): a finish: what it finishes - a rollback (Finish the rollback) or a restore (Finish the restore)." },
+            "ontoSize": { "type": ["string", "null"], "description": "ROLLBACK-SIZE-REFUSED-SERIES-1 (v51): a restore from the first copy that goes onto the target size of the plan, because Azure refused the original size: that size, decided when the restore started. A resume uses it, whatever the plan says by then. Null for any other restore." },
+            "ontoOption": { "type": ["string", "null"], "description": "ROLLBACK-SIZE-REFUSED-SERIES-1 (v51): the series of ontoSize in the plan (v5)." },
+            "ontoOriginal": { "type": ["string", "null"], "description": "ROLLBACK-SIZE-REFUSED-SERIES-1 (v51): the original size, which Azure refused." }
+          }
+        },
+        "stamp": { "type": "string", "pattern": "^[0-9]{12}$", "description": "The time (yyyyMMddHHmm, UTC) in the name of every disk the job makes, so a resume asks for the same names." },
+        "phase": {
+          "enum": ["begun", "made", "stopped", "hardware", "osOnTemp", "originalKept", "originalBack", "originalStarted", "originalRemoved", "osSwapped", "tempRemoved", "dataSwapped", "started"],
+          "description": "The last step that ended. A resume does every step after it, and asks Azure where a step may have happened before the job stopped. RESTORE-ORIGINAL-DELETE-RESTART-1 (v43): originalKept, originalBack and originalStarted - keeping the names, Azure refused the delete of the original OS disk, so the restore puts that disk back, starts the machine as it was, deletes its temporary disks and ends without its record."
+        },
+        "originalKept": {
+          "type": ["object", "null"],
+          "additionalProperties": false,
+          "required": ["why"],
+          "description": "RESTORE-ORIGINAL-DELETE-RESTART-1 (v43): a restore that keeps the names: Azure refused the delete of the original OS disk, so the restore did not happen. Saved with the step originalKept, before the original OS disk goes back on the machine. A resume reads it and goes on to put the original OS disk back.",
+          "properties": { "why": { "type": "string", "description": "Azure's words for the refused delete." } }
+        },
+        "phaseUtc": { "type": "string", "format": "date-time" },
+        "powerAtStart": { "enum": ["PowerState/running", "PowerState/deallocated", "PowerState/stopped", null], "description": "POWER-AFTER-MOVE-1 (v39, 2026-11-06): a restore: the power state Azure gave for the machine when the job started, read before it changed anything. The job returns the machine to it at its end, and a resume uses this value, never one taken after the job started the machine. Null: Azure gave another power state, or the product could not read it - the machine runs at the end, as before." },
+        "resumes": { "type": "integer", "minimum": 0, "description": "How many times the service started it again. At the limit the service stops trying, ends the row and removes this record." },
+        "resumedUtc": { "type": ["string", "null"], "format": "date-time" },
+        "before": { "type": ["object", "null"], "description": "A restore: the machine before the job changed it - osDisk, dataDisks, sizeNow. The engine reads it; nothing else does." },
+        "made": { "type": ["object", "null"], "description": "A restore: what the steps before the stop decided and made (the data disk plan, the disks made from the copies). The engine reads it; nothing else does." },
+        "os": { "type": ["object", "null"], "description": "The OS disk now on the machine (newId, finalName)." },
+        "result": { "type": ["object", "null"], "description": "What the data disk step did (newId, finalName, data)." },
+        "ended": {
+          "type": ["object", "null"],
+          "additionalProperties": false,
+          "description": "The job ended with an answer it said, without its record. Never resumed: the service makes sure the row ends, then removes this record.",
+          "properties": {
+            "utc": { "type": "string", "format": "date-time" },
+            "outcome": { "enum": ["fail"] },
+            "reason": { "type": ["string", "null"], "enum": ["gaveUp", null], "description": "RESUME-GIVEUP-KEEP-1: gaveUp - the service started the job again as many times as it does and it did not finish. The record then stays: it refuses nothing, and retention keeps the machine's safety copies and every disk made for it until a restore of the machine finishes. Finish the restore of the swap this restore left finishes it too, and removes this record (FINISH-NO-RESTORE-RECORD-1)." },
+            "why": { "type": ["string", "null"] }
+          }
+        },
+        "held": {
+          "type": ["object", "null"],
+          "additionalProperties": false,
+          "description": "RESUME-GIVEUP-KEEP-1: this restore started over a record the service gave up on, and carries that mark until it finishes - so a later job that also fails still keeps the copies.",
+          "properties": {
+            "operationId": { "type": "string" },
+            "sinceUtc": { "type": "string", "format": "date-time" },
+            "why": { "type": ["string", "null"] }
+          }
+        },
+        "volumes": { "type": ["object", "null"], "additionalProperties": false, "required": ["verdict"], "description": "VOLUMES-ONLINE-1 (v49): the check inside the machine after this rollback or restore - on Linux the LVM devices file refreshed first - and its result, kept before the machine returns to the power state it was found in, so a resume after that return uses it and never asks a stopped machine.", "properties": { "verdict": { "enum": ["MATCH", "MISSING", "UNKNOWN"], "description": "MATCH: every volume mounted before the move is mounted. MISSING: one is not (the stop volumesNotBack, machine changed). UNKNOWN: the check could not run - said, never a pass or a fail." }, "words": { "type": "string", "description": "The sentence the stop or the restore line says." }, "detail": { "type": "string" }, "tsUtc": { "type": "string", "format": "date-time" } } }
+      }
+    },
+    "restore": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "RESTORE-1/SAFETY-2: the last restore a person performed on this machine from a safety copy. Absent until one happens; overwritten by a later one (the events log keeps the full history).",
+      "properties": {
+        "powerAtStart": { "enum": ["PowerState/running", "PowerState/deallocated", "PowerState/stopped", null], "description": "POWER-AFTER-MOVE-1 (v39): the power state the restore found when it started (putBackJob.powerAtStart), kept with the record." },
+        "operationId": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "FINISH-NO-RESTORE-RECORD-1 (v32): the restore's engine operation - the id its checkpoint (putBackJob) and its swap record (swapPending) name."
+        },
+        "writtenByFinish": {
+          "type": [
+            "object",
+            "null"
+          ],
+          "additionalProperties": false,
+          "required": ["by", "utc"],
+          "description": "FINISH-NO-RESTORE-RECORD-1 (v32): the restore's job stopped before it wrote this record, and the service stopped starting it again, so Finish the restore wrote it from what the restore saved (its checkpoint and its swap record), when it started the machine. by is who asked for Finish the restore; restoredBy stays who asked for the restore. Absent or null when the restore wrote its own record.",
+          "properties": {
+            "by": { "type": "string" },
+            "utc": { "type": "string", "format": "date-time" }
+          }
+        },
+        "restoredUtc": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "When the restore completed."
+        },
+        "restoredBy": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Who asked for it."
+        },
+        "note": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Operator note, e.g. why it was restored."
+        },
+        "fromSnapshotId": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "The safety copy it was restored from."
+        },
+        "fromCopy": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "enum": [
+            "prepared",
+            "pristine",
+            null
+          ],
+          "description": "prepared = taken after guest prep, boots on the new hardware. pristine = taken before anything changed, so the size and controller revert with it."
+        },
+        "sizeAfter": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "The size the machine actually ended on. A restore from the pristine copy reverts the hardware, so this is not necessarily the size the plan named."
+        },
+        "diskNaming": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "enum": [
+            "new",
+            "preserve",
+            null
+          ],
+          "description": "new keeps the original disk (default, reversible); preserve ends on the original name and DELETES the original."
+        },
+        "previousDiskId": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "The OS disk the machine was on before."
+        },
+        "previousDiskName": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": ""
+        },
+        "newDiskId": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "The OS disk it is on now."
+        },
+        "newDiskName": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": ""
+        },
+        "diskIdChanged": {
+          "type": [
+            "boolean",
+            "null"
+          ],
+          "description": "Whether the OS disk is a NEW resource - drift in customer IaC state, and it breaks anything bound to the old id."
+        },
+        "retainedDiskId": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "The original disk kept alive when diskNaming=new, so the restore is itself reversible."
+        },
+        "dataDisks": {
+          "type": "array",
+          "description": "RESTORE-ALL-1 (v14): every data disk the restore replaced from the chosen copy. With diskNaming=preserve the previous disk was deleted and the new one has its name.",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["lun", "previousDiskId", "previousDiskName", "newDiskId", "newDiskName"],
+            "properties": {
+              "lun": { "type": "integer" },
+              "previousDiskId": { "type": "string" },
+              "previousDiskName": { "type": "string" },
+              "newDiskId": { "type": "string" },
+              "newDiskName": { "type": "string" }
+            }
+          }
+        },
+        "ontoTarget": {
+          "type": ["object", "null"],
+          "additionalProperties": false,
+          "required": ["option", "size", "originalSize", "reasonCode"],
+          "description": "ROLLBACK-SIZE-REFUSED-SERIES-1 (v51): the restore put the first safety copy on the target size of the plan, not on the original size, because Azure refused that size in the rollback (rollbackSizeRefused). The machine is restored on this size: every disk from the first safety copy, every setting from the first capture. Absent or null for any other restore.",
+          "properties": {
+            "option": { "type": "string", "description": "The series of the size in the plan (v5)." },
+            "size": { "type": "string" },
+            "originalSize": { "type": "string", "description": "The original size, which Azure refused." },
+            "reasonCode": { "enum": ["rollbackSizeRefused"] }
+          }
+        },
+        "dataDisksKept": {
+          "type": "array",
+          "description": "RESTORE-ALL-1 (v14): every data disk the restore left as it was, with the reason (no copy, Premium SSD v2 or Ultra Disk, a shared disk, a disk Azure did not make or swap).",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["lun", "name", "why"],
+            "properties": {
+              "lun": { "type": "integer" },
+              "name": { "type": "string" },
+              "why": { "type": "string" }
+            }
+          }
+        },
+        "earlierDisksDeleted": {
+          "type": "array",
+          "description": "RESTORE-EARLIER-DELETE-1 (v40): each earlier managed disk of this restore (retainedDiskId, or a dataDisks[].previousDiskId of a restore with diskIdChanged) that Delete these disks deleted, written the moment it was deleted. The machine's panel lists only the earlier disks not named here. Absent until a delete.",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["diskId", "deletedUtc"],
+            "properties": {
+              "diskId": { "type": "string", "description": "The resource id of the disk, as the restore's record names it." },
+              "deletedUtc": { "type": "string", "description": "When the product deleted it, or found it gone." },
+              "deletedBy": { "type": "string", "description": "Who asked for the delete." },
+              "gone": { "type": "boolean", "description": "true: Azure had no such disk when the product read it, so it counts as deleted with no delete asked." }
+            }
+          }
+        }
+      }
+    },
+    "evidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["takenUtc", "before", "after"],
+      "description": "VERIFY-FP-1 part 3 (v10): the machine read before the move and after it, kept for attestation and support. Never a pass or a fail - VALIDATING already judged every reading that matters. Each side maps a reading key (azure.size, imds.answered, guest.bootBus, ...) to its value as text, or null when it was not read.",
+      "properties": {
+        "takenUtc": { "type": "string", "format": "date-time" },
+        "planned": { "type": "array", "items": { "type": "string" }, "description": "Readings this move was also meant to change (Get-VmfEvidencePlanned), beyond the ones every move changes." },
+        "before": { "type": "object", "additionalProperties": { "type": ["string", "null"] } },
+        "after": { "type": "object", "additionalProperties": { "type": ["string", "null"] } }
+      }
+    },
+    "retention": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "description": "WAVE-2 lever 7: set once this machine's safety copies were deleted under its wave's keepSnapshotDays retention. Present means the copies are gone on purpose - a restore says so rather than failing on a missing snapshot.",
+      "additionalProperties": false,
+      "properties": {
+        "deletedUtc": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date-time"
+        },
+        "keepDays": {
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "deletedSnapshotIds": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "deletedBy": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    }
+  },
+  "$defs": {
+    "madeDisk": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["diskId", "diskName", "madeUtc"],
+      "description": "A disk a rollback or Restore this machine made from a safety copy (rollbackDisksDuringRollback, restoreDisks). MADE-DISK-RECORD-1 (v26) added usedUtc and deletedUtc: a marked disk is off the list - no stop names it, and no cleanup asks for it.",
+      "properties": {
+        "diskId": { "type": "string" },
+        "diskName": { "type": "string" },
+        "lun": { "type": ["integer", "null"], "description": "The data disk LUN it was made for; null for the OS disk." },
+        "madeUtc": { "type": "string", "format": "date-time" },
+        "usedUtc": { "type": ["string", "null"], "description": "MADE-DISK-RECORD-1 (v26): when a rollback or a restore put it on a machine, or the cleanup found it attached. It is the machine's own disk from then on, and nothing deletes it." },
+        "deletedUtc": { "type": ["string", "null"], "description": "MADE-DISK-RECORD-1 (v26): when the restore that made it, or the daily cleanup, deleted it - or the cleanup found Azure no longer has it." }
+      }
+    },
+    "rollbackDisksBeforeMove": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["stamp", "pristineSnapshotId", "complete", "disks"],
+      "description": "ROLLBACK-DISKS-FIRST-1 (v22), decided 2026-10-11: a rollback must never depend on Azure accepting a new disk request when it runs. Written before the first disk is made, so a resume asks for the same names; each disk goes on the moment Azure made it. A disk Azure refused, or one that differed, stopped the move untouched (stop reason rollbackDisksBeforeMoveNotMade) and the disks made were deleted.",
+      "properties": {
+        "stamp": { "type": "string", "pattern": "^[0-9]{12}$", "description": "The time (UTC, yyyyMMddHHmm) at the end of every disk name: '<disk>-asitwas-<stamp>' and '<disk>-d<lun>-asitwas-<stamp>'." },
+        "pristineSnapshotId": { "type": "string", "description": "The first copy of the OS disk these disks were made from. A restore from another copy does not use them." },
+        "zone": { "type": ["string", "null"], "description": "The zone every disk was made in; null for a regional machine." },
+        "complete": { "type": "boolean", "description": "Every disk a rollback restores was made and read back. Only a complete record is used." },
+        "disks": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["lun", "diskId", "diskName", "madeUtc"],
+            "properties": {
+              "lun": { "type": ["integer", "null"], "description": "The data disk LUN; null for the OS disk." },
+              "name": { "type": "string", "description": "The disk it replaces on a rollback or a restore." },
+              "diskId": { "type": "string" },
+              "diskName": { "type": "string" },
+              "snapshotId": { "type": "string", "description": "The copy it was made from." },
+              "skuName": { "type": "string", "description": "The type it was made on: the first capture's type for its place." },
+              "instantAccess": { "type": "boolean", "description": "A Premium SSD v2 or Ultra Disk, made with its recorded IOPS and throughput (SAFETY-ULTRA-1)." },
+              "madeUtc": { "type": "string", "format": "date-time" },
+              "usedUtc": { "type": ["string", "null"], "description": "When a rollback or a restore put it on the machine. From then on it is the machine's own disk: never used again, never deleted." },
+              "usedBy": { "type": ["string", "null"], "description": "Which rollback or restore put it on: rollback-<the rollback checkpoint's time> or restore. A worker that finishes the same rollback may swap the same disks again; nothing else uses them." },
+              "deletedUtc": { "type": ["string", "null"], "description": "When the product deleted it: the move completed, retention, run deletion, or a refused disk stopped the move." }
+            }
+          }
+        },
+        "kept": {
+          "type": "array",
+          "description": "The data disks every rollback leaves as they are (a shared disk), with why.",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["lun", "name", "why"],
+            "properties": { "lun": { "type": "integer" }, "name": { "type": "string" }, "why": { "type": "string" } }
+          }
+        }
+      }
+    },
+    "dataCopy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["lun", "diskId", "snapshotId"],
+      "properties": {
+        "lun": { "type": "integer", "minimum": 0 },
+        "diskId": { "type": "string", "description": "The data disk the copy was taken from." },
+        "snapshotId": { "type": ["string", "null"] },
+        "locked": { "type": ["boolean", "null"], "description": "SAFETY-3: the vmf-safety-copy lock is on it." },
+        "instantAccessMinutes": { "type": ["integer", "null"], "description": "SAFETY-ULTRA-1 (v20): on the first copy of a Premium SSD v2 or Ultra Disk data disk, the instant access minutes Azure gave it (300 asked). Evidence only: every decision reads the copy again from Azure. Null when the read after the copy failed." },
+        "takenUtc": { "type": ["string", "null"], "format": "date-time", "description": "SAFETY-ULTRA-1 (v20): when Azure made that copy (its timeCreated). Evidence only, as above." }
+      }
+    },
+    "capturedDataDisk": {
+      "type": "object",
+      "description": "One data disk in a capture (Get-VmfVmCapture). Open, as the capture always was; the fields below are the ones SAFETY-ULTRA-1 (v20) adds, written by PRECHECK on a Premium SSD v2 or Ultra Disk data disk only, from a read of the disk by its id. A rollback makes the disk again with diskIOPSReadWrite and diskMBpsReadWrite, and compares the new disk with all of them.",
+      "additionalProperties": true,
+      "properties": {
+        "diskIOPSReadWrite": { "type": ["integer", "null"], "description": "The provisioned IOPS of the disk." },
+        "diskMBpsReadWrite": { "type": ["integer", "null"], "description": "The provisioned throughput of the disk, in MBps." },
+        "logicalSectorSize": { "type": ["integer", "null"], "description": "512 or 4096. A disk made from a copy takes it from the copy (measured 2026-10-10); the rollback compares it." },
+        "diskZones": { "type": "array", "items": { "type": "string" }, "description": "The zones of the disk itself; empty for a disk with no zone." },
+        "maxShares": { "type": ["integer", "null"], "description": "Evidence: above 1 is a shared disk, which a rollback always leaves." },
+        "completionPercent": { "type": ["number", "null"], "description": "Below 100: Azure is still filling the disk from a copy, and PRECHECK refuses the machine (stop reason dataDiskFilling)." },
+        "encryptionType": { "$ref": "#/$defs/diskEncryptionType" },
+        "diskEncryptionSetId": { "$ref": "#/$defs/diskEncryptionSetId" },
+        "writeAcceleratorEnabled": { "type": "boolean", "description": "REBUILD-PROPS-1 (v31): the disk has Write Accelerator. Verifying compares it." }
+      }
+    },
+    "capturedOsDisk": {
+      "type": "object",
+      "description": "The OS disk in a capture (Get-VmfVmCapture). Open, as the capture always was; the fields below are the ones SAFETY-CMK-1 (v21) and REBUILD-PROPS-1 (v31) add.",
+      "additionalProperties": true,
+      "properties": {
+        "encryptionType": { "$ref": "#/$defs/diskEncryptionType" },
+        "diskEncryptionSetId": { "$ref": "#/$defs/diskEncryptionSetId" },
+        "caching": { "type": ["string", "null"], "description": "REBUILD-PROPS-1 (v31): the OS disk's host caching (None, ReadOnly or ReadWrite). Verifying compares it." },
+        "writeAcceleratorEnabled": { "type": "boolean", "description": "REBUILD-PROPS-1 (v31): as on a data disk." }
+      }
+    },
+    "diskEncryptionType": {
+      "type": "string",
+      "enum": ["EncryptionAtRestWithPlatformKey", "EncryptionAtRestWithCustomerKey", "EncryptionAtRestWithPlatformAndCustomerKeys"],
+      "description": "SAFETY-CMK-1 (v21): the disk's encryption.type, read by PRECHECK from the disk by its id. Every safety copy of the disk, and every disk a rollback or a restore makes from a copy, is made with this type and compared with it. PRECHECK refuses a machine with a disk whose type Azure did not return or this tool does not know (stop reason diskEncryptionNotKnown), so a type is never guessed."
+    },
+    "diskEncryptionSetId": {
+      "type": ["string", "null"],
+      "description": "SAFETY-CMK-1 (v21): the disk's encryption.diskEncryptionSetId - a resource id for a customer-managed key (EncryptionAtRestWithCustomerKey) or double encryption (EncryptionAtRestWithPlatformAndCustomerKeys), null for a platform key. PRECHECK refuses a type that takes a set with no set, and a platform key with one."
+    }
+  }
+}

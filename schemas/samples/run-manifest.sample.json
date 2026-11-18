@@ -1,0 +1,9 @@
+{
+  "schemaVersion": 9,
+  "kind": "migration",
+  "runId": "prod-wave-2026-08",
+  "createdUtc": "2026-08-31T09:15:00.0000000Z",
+  "createdBy": "operator@contoso.com",
+  "fromAssessment": "estate-scan-2026-08",
+  "project": "contoso-exit"
+}

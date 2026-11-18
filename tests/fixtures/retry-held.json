@@ -1,0 +1,114 @@
+{
+  "_comment": [
+    "ROLLBACK-RETRY-CAPTURE-1. Whether Try this machine again is refused because",
+    "the last stop left the machine CHANGED and nothing has mended it since",
+    "(SAFETY-RETRY-1). Decided in TWO places: the engine (Get-VmfRetryEntryState",
+    "and Test-VmfRetryHeld, asked by Resolve-VmfDecision) and the run page",
+    "(retryHeld in migrations.html), which offers the button only where the",
+    "engine would accept it. Both are held to this one list:",
+    "tests/unit/RetryCapture.Tests.ps1 and tests/js/retry-held.test.js."
+  ],
+  "cases": [
+    { "why": "a stop before anything changed",
+      "doc": { "state": "NEEDS_DECISION", "history": [
+        { "tsUtc": "2026-10-01T10:00:00Z", "state": "NEEDS_DECISION", "machineState": "untouched" } ] },
+      "held": false },
+    { "why": "rolled back: the machine is as it was",
+      "doc": { "state": "FAILED_ROLLED_BACK", "history": [
+        { "tsUtc": "2026-10-01T10:00:00Z", "state": "FAILED_ROLLED_BACK", "machineState": "restored" } ] },
+      "held": false },
+    { "why": "the rollback failed: the machine is changed, and nothing has mended it",
+      "doc": { "state": "FAILED_NEEDS_ATTENTION", "history": [
+        { "tsUtc": "2026-10-01T10:00:00Z", "state": "FAILED_NEEDS_ATTENTION", "outcome": "fail", "reasonCode": "rollbackFailed", "machineState": "changed" } ] },
+      "held": true },
+    { "why": "changed, then restored after the stop",
+      "doc": { "state": "FAILED_NEEDS_ATTENTION", "restore": { "restoredUtc": "2026-10-01T11:00:00Z" }, "history": [
+        { "tsUtc": "2026-10-01T10:00:00Z", "state": "FAILED_NEEDS_ATTENTION", "outcome": "fail", "reasonCode": "rollbackFailed", "machineState": "changed" } ] },
+      "held": false },
+    { "why": "a restore that could not rebuild leaves it changed again, after an earlier restore",
+      "doc": { "state": "FAILED_NEEDS_ATTENTION", "restore": { "restoredUtc": "2026-10-01T09:00:00Z" }, "history": [
+        { "tsUtc": "2026-10-01T08:00:00Z", "state": "FAILED_NEEDS_ATTENTION", "outcome": "fail", "reasonCode": "rollbackFailed", "machineState": "changed" },
+        { "tsUtc": "2026-10-01T10:00:00Z", "state": "FAILED_NEEDS_ATTENTION", "outcome": "fail", "reasonCode": "restoreRebuildFailed", "machineState": "changed" } ] },
+      "held": true },
+    { "why": "an older changed stop, then a later stop that put it back: the LAST one counts",
+      "doc": { "state": "FAILED_ROLLED_BACK", "history": [
+        { "tsUtc": "2026-10-01T08:00:00Z", "state": "FAILED_NEEDS_ATTENTION", "outcome": "fail", "reasonCode": "rollbackFailed", "machineState": "changed" },
+        { "tsUtc": "2026-10-01T10:00:00Z", "state": "FAILED_ROLLED_BACK", "outcome": "fail", "reasonCode": "bootFailedAfterConversion", "machineState": "restored" } ] },
+      "held": false },
+    { "why": "a later line with no machine state does not hide the changed stop",
+      "doc": { "state": "FAILED_NEEDS_ATTENTION", "history": [
+        { "tsUtc": "2026-10-01T10:00:00Z", "state": "FAILED_NEEDS_ATTENTION", "outcome": "fail", "reasonCode": "rollbackFailed", "machineState": "changed" },
+        { "tsUtc": "2026-10-01T10:05:00Z", "state": "FAILED_NEEDS_ATTENTION", "outcome": "info" } ] },
+      "held": true },
+    { "why": "on the new size, only the final checks failed: the retry repeats the checks, which the changed rule does not stop",
+      "doc": { "state": "FAILED_NEEDS_ATTENTION", "history": [
+        { "tsUtc": "2026-10-01T10:00:00Z", "state": "FAILED_NEEDS_ATTENTION", "outcome": "fail", "reasonCode": "validationFailedAfterConversion", "machineState": "changed" } ] },
+      "held": false },
+    { "why": "no history at all",
+      "doc": { "state": "NEEDS_DECISION", "history": [] },
+      "held": false },
+    { "why": "SWAP-REFUSED-AFTER-STOP-1: a rollback whose data disk swap Azure refused leaves the machine stopped",
+      "doc": { "state": "FAILED_NEEDS_ATTENTION", "swapPending": { "kind": "rollback", "swaps": [ { "lun": 1 } ] }, "history": [
+        { "tsUtc": "2026-10-23T10:00:00Z", "state": "FAILED_NEEDS_ATTENTION", "outcome": "fail", "reasonCode": "dataDiskSwapRefused", "machineState": "changed" } ] },
+      "held": true },
+    { "why": "SWAP-REFUSED-AFTER-STOP-1: a restore that left a swap writes its record, and the machine is still stopped",
+      "doc": { "state": "FAILED_ROLLED_BACK", "restore": { "restoredUtc": "2026-10-23T11:00:00Z" }, "swapPending": { "kind": "restore", "swaps": [ { "lun": 1 } ] }, "history": [
+        { "tsUtc": "2026-10-23T10:00:00Z", "state": "FAILED_ROLLED_BACK", "outcome": "fail", "reasonCode": "rolledBack", "machineState": "restored" } ] },
+      "held": true },
+    { "why": "POWER-ONLY-CHANGED-1: owed Running (a machine the move stopped that Azure did not start again): not held",
+      "doc": { "state": "FAILED_NEEDS_ATTENTION", "history": [
+        { "tsUtc": "2026-11-06T10:00:00Z", "state": "FAILED_NEEDS_ATTENTION", "outcome": "ok", "reasonCode": "rollbackDisksBeforeMoveNotMade", "machineState": "changed", "powerNotPutBack": "PowerState/running" } ] },
+      "held": false },
+    { "why": "POWER-ONLY-CHANGED-1: changed only in its power state - the retry puts it back first, so it is not held",
+      "doc": { "state": "FAILED_NEEDS_ATTENTION", "history": [
+        { "tsUtc": "2026-11-06T10:00:00Z", "state": "FAILED_NEEDS_ATTENTION", "outcome": "ok", "reasonCode": "rollbackDisksBeforeMoveNotMade", "machineState": "changed", "powerNotPutBack": "PowerState/deallocated" } ] },
+      "held": false },
+    { "why": "POWER-ONLY-CHANGED-1: a cluster node whose power state Azure did not put back waits for a decision, and is not held",
+      "doc": { "state": "NEEDS_DECISION", "history": [
+        { "tsUtc": "2026-11-06T10:00:00Z", "state": "NEEDS_DECISION", "outcome": "ok", "reasonCode": "clusterNode", "machineState": "changed", "powerNotPutBack": "PowerState/stopped" } ] },
+      "held": false },
+    { "why": "POWER-ONLY-CHANGED-1: a later stop that changed the machine in another way holds it, as before",
+      "doc": { "state": "FAILED_NEEDS_ATTENTION", "history": [
+        { "tsUtc": "2026-11-06T10:00:00Z", "state": "FAILED_NEEDS_ATTENTION", "outcome": "ok", "reasonCode": "rollbackDisksBeforeMoveNotMade", "machineState": "changed", "powerNotPutBack": "PowerState/deallocated" },
+        { "tsUtc": "2026-11-06T11:00:00Z", "state": "FAILED_NEEDS_ATTENTION", "outcome": "fail", "reasonCode": "rollbackFailed", "machineState": "changed" } ] },
+      "held": true },
+    { "why": "POWER-ONLY-CHANGED-1: a power state this build does not know is not one to put back, so it is held",
+      "doc": { "state": "FAILED_NEEDS_ATTENTION", "history": [
+        { "tsUtc": "2026-11-06T10:00:00Z", "state": "FAILED_NEEDS_ATTENTION", "outcome": "ok", "reasonCode": "rollbackDisksBeforeMoveNotMade", "machineState": "changed", "powerNotPutBack": "PowerState/starting" } ] },
+      "held": true },
+    { "why": "POWER-ONLY-CHANGED-1: a power state on a stop that did not say changed holds nothing on its own",
+      "doc": { "state": "FAILED_NEEDS_ATTENTION", "history": [
+        { "tsUtc": "2026-11-06T10:00:00Z", "state": "FAILED_NEEDS_ATTENTION", "outcome": "fail", "reasonCode": "rollbackFailed", "machineState": "changed" },
+        { "tsUtc": "2026-11-06T11:00:00Z", "state": "FAILED_ROLLED_BACK", "outcome": "fail", "reasonCode": "rolledBack", "machineState": "restored", "powerNotPutBack": "PowerState/deallocated" } ] },
+      "held": false },
+    { "why": "VOLUMES-RETRY-CHECK-1: a volume not mounted after the rollback, with the check owed - the retry checks the volumes first, so it is not held",
+      "doc": { "state": "FAILED_NEEDS_ATTENTION", "volumesCheckOwed": { "reason": "volumesNotBack", "kind": "rollback", "tsUtc": "2026-11-14T10:00:00Z" }, "history": [
+        { "tsUtc": "2026-11-14T10:00:00Z", "state": "FAILED_NEEDS_ATTENTION", "outcome": "fail", "reasonCode": "volumesNotBack", "machineState": "changed" } ] },
+      "held": false },
+    { "why": "VOLUMES-RETRY-CHECK-1: a volume not mounted after a restore, with the check owed - the restore is older than the stop, and the retry still checks first",
+      "doc": { "state": "FAILED_ROLLED_BACK", "restore": { "restoredUtc": "2026-11-14T09:59:00Z" }, "volumesCheckOwed": { "reason": "volumesNotBack", "kind": "restore", "tsUtc": "2026-11-14T09:59:00Z" }, "history": [
+        { "tsUtc": "2026-11-14T10:00:00Z", "state": "FAILED_ROLLED_BACK", "outcome": "fail", "reasonCode": "volumesNotBack", "machineState": "changed" } ] },
+      "held": false },
+    { "why": "VOLUMES-RETRY-CHECK-1: volumesNotBack with no record that owes the check is held - a retry would skip the check",
+      "doc": { "state": "FAILED_NEEDS_ATTENTION", "history": [
+        { "tsUtc": "2026-11-14T10:00:00Z", "state": "FAILED_NEEDS_ATTENTION", "outcome": "fail", "reasonCode": "volumesNotBack", "machineState": "changed" } ] },
+      "held": true },
+    { "why": "VOLUMES-RETRY-CHECK-1: the record that owes the check does not free another changed stop",
+      "doc": { "state": "FAILED_NEEDS_ATTENTION", "volumesCheckOwed": { "reason": "volumesNotBack", "kind": "rollback", "tsUtc": "2026-11-14T10:00:00Z" }, "history": [
+        { "tsUtc": "2026-11-14T10:00:00Z", "state": "FAILED_NEEDS_ATTENTION", "outcome": "fail", "reasonCode": "volumesNotBack", "machineState": "changed" },
+        { "tsUtc": "2026-11-14T11:00:00Z", "state": "FAILED_NEEDS_ATTENTION", "outcome": "fail", "reasonCode": "rollbackFailed", "machineState": "changed" } ] },
+      "held": true },
+    { "why": "VOLUMES-RETRY-CHECK-1: nor does a refused data disk swap left on the machine",
+      "doc": { "state": "FAILED_NEEDS_ATTENTION", "volumesCheckOwed": { "reason": "volumesNotBack", "kind": "rollback", "tsUtc": "2026-11-14T10:00:00Z" }, "swapPending": { "kind": "rollback", "swaps": [ { "lun": 1 } ] }, "history": [
+        { "tsUtc": "2026-11-14T10:00:00Z", "state": "FAILED_NEEDS_ATTENTION", "outcome": "fail", "reasonCode": "volumesNotBack", "machineState": "changed" } ] },
+      "held": true },
+    { "why": "VOLUMES-NOT-CHECKED-WORDS-1: the check before the retry could not run, with the check still owed - the next retry checks first, so it is not held",
+      "doc": { "state": "FAILED_NEEDS_ATTENTION", "volumesCheckOwed": { "reason": "notChecked", "kind": "rollback", "tsUtc": "2026-11-15T10:00:00Z" }, "history": [
+        { "tsUtc": "2026-11-15T10:00:00Z", "state": "FAILED_NEEDS_ATTENTION", "outcome": "fail", "reasonCode": "volumesNotChecked", "machineState": "changed" } ] },
+      "held": false },
+    { "why": "VOLUMES-NOT-CHECKED-WORDS-1: volumesNotChecked with no record that owes the check is held - a retry would skip the check",
+      "doc": { "state": "FAILED_NEEDS_ATTENTION", "history": [
+        { "tsUtc": "2026-11-15T10:00:00Z", "state": "FAILED_NEEDS_ATTENTION", "outcome": "fail", "reasonCode": "volumesNotChecked", "machineState": "changed" } ] },
+      "held": true }
+  ]
+}

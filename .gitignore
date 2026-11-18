@@ -1,0 +1,26 @@
+# A local run store and its logs. A run store holds machine names and
+# resource IDs, so it stays on the machine that ran it.
+runs/
+*.log
+
+# Operating system files
+Thumbs.db
+.DS_Store
+
+# Editor settings
+.vscode/
+.idea/
+
+# The build stamp the install writes beside the module manifest. A checkout
+# has none, so its version reads "+local".
+src/VmMigrationFactory/build.json
+
+# azd environments: one for each person and each install. Each holds the
+# subscription and the install's names, so it is never shared.
+.azure/
+
+# Export-VmfManualScreenshots.ps1 puts these beside the pages while it takes
+# the manual's screenshots, and removes them after. A run that stops early can
+# leave them.
+src/dashboard/manual-report-look.json
+src/dashboard/manual-sample-report.html

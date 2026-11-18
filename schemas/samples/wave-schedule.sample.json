@@ -1,0 +1,14 @@
+{
+  "schemaVersion": 1,
+  "wave": "wave-2",
+  "runAtUtc": "2026-11-03T22:00:00.0000000Z",
+  "scheduledUtc": "2026-11-03T15:12:40.5123456Z",
+  "scheduledBy": "operator@example.com",
+  "note": "Change window approved for Tuesday night",
+  "windowMinutes": 240,
+  "state": "started",
+  "startId": "4f1c2d9e8b7a46c3a0d5e6f7a8b9c0d1",
+  "startingUtc": "2026-11-03T22:01:12.3456789Z",
+  "executions": ["vmf-engine-k3x9q2"],
+  "startedUtc": "2026-11-03T22:01:15.9876543Z"
+}

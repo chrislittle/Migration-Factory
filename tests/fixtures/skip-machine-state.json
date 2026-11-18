@@ -1,0 +1,113 @@
+{
+  "_comment": [
+    "SKIP-PREPARED-WORDS-1. Where the stop that parked a machine left it, as the",
+    "Leave this machine out dialog says it: untouched, restored, changed, or null",
+    "(no claim). It is the machineState the engine recorded on the stop that still",
+    "describes the machine (FAIL-1), never the steps the history shows: a machine",
+    "whose preparation ran and then rolled back runs as it was. A data disk swap",
+    "that is left (swapPending) is a changed machine. Decided in TWO places: the",
+    "engine (Get-VmfSkipMachineState, which Skip-VmfVm returns) and the run page",
+    "(skipMachineState in migrations.html). Both are held to this one list:",
+    "tests/unit/SkipOneMachine.Tests.ps1 and tests/js/skip-words-real.test.js."
+  ],
+  "cases": [
+    { "why": "POWER-ONLY-CHANGED-1: a stop changed only in its power state, still owed: changed",
+      "doc": { "state": "NEEDS_DECISION", "history": [
+        { "tsUtc": "2026-11-06T10:00:00Z", "state": "NEEDS_DECISION", "outcome": "ok", "reasonCode": "clusterNode", "machineState": "changed", "powerNotPutBack": "PowerState/deallocated" } ] },
+      "expected": "changed" },
+    { "why": "POWER-ONLY-CHANGED-1: the product returned the power state since the stop: untouched",
+      "doc": { "state": "NEEDS_DECISION", "history": [
+        { "tsUtc": "2026-11-06T10:00:00Z", "state": "NEEDS_DECISION", "outcome": "ok", "reasonCode": "clusterNode", "machineState": "changed", "powerNotPutBack": "PowerState/deallocated" },
+        { "tsUtc": "2026-11-06T11:00:00Z", "state": "NEEDS_DECISION", "outcome": "ok", "machineState": "untouched" } ] },
+      "expected": "untouched" },
+    { "why": "POWER-ONLY-CHANGED-1: a power state this build does not know is not a power state returned: changed",
+      "doc": { "state": "NEEDS_DECISION", "history": [
+        { "tsUtc": "2026-11-06T10:00:00Z", "state": "NEEDS_DECISION", "outcome": "ok", "reasonCode": "clusterNode", "machineState": "changed", "powerNotPutBack": "PowerState/starting" },
+        { "tsUtc": "2026-11-06T11:00:00Z", "state": "NEEDS_DECISION", "outcome": "ok", "machineState": "untouched" } ] },
+      "expected": "changed" },
+    { "why": "a stop for a decision at PRECHECK, before the preparation",
+      "doc": { "state": "NEEDS_DECISION", "history": [
+        { "tsUtc": "2026-10-01T10:00:00Z", "state": "PRECHECK", "outcome": "ok" },
+        { "tsUtc": "2026-10-01T10:01:00Z", "state": "NEEDS_DECISION", "outcome": "fail", "reasonCode": "dataOnTempDrive", "machineState": "untouched" } ] },
+      "expected": "untouched" },
+    { "why": "a stop for a decision in the preparation that changed nothing",
+      "doc": { "state": "NEEDS_DECISION", "history": [
+        { "tsUtc": "2026-10-01T10:00:00Z", "state": "PRECHECK", "outcome": "ok" },
+        { "tsUtc": "2026-10-01T10:02:00Z", "state": "SAFETY_PRISTINE", "outcome": "ok" },
+        { "tsUtc": "2026-10-01T10:03:00Z", "state": "GUEST_PREP", "outcome": "ok" },
+        { "tsUtc": "2026-10-01T10:04:00Z", "state": "NEEDS_DECISION", "outcome": "fail", "reasonCode": "driverBelowFloor", "machineState": "untouched" } ] },
+      "expected": "untouched" },
+    { "why": "a stop for a decision after the preparation changed the guest: it rolled back first",
+      "doc": { "state": "NEEDS_DECISION", "history": [
+        { "tsUtc": "2026-10-01T10:00:00Z", "state": "PRECHECK", "outcome": "ok" },
+        { "tsUtc": "2026-10-01T10:02:00Z", "state": "SAFETY_PRISTINE", "outcome": "ok" },
+        { "tsUtc": "2026-10-01T10:03:00Z", "state": "GUEST_PREP", "outcome": "ok" },
+        { "tsUtc": "2026-10-01T10:09:00Z", "state": "NEEDS_DECISION", "outcome": "fail", "reasonCode": "driverBelowFloor", "machineState": "restored" } ] },
+      "expected": "restored" },
+    { "why": "rolled back after the preparation: the case seen on the lab walk",
+      "doc": { "state": "FAILED_ROLLED_BACK", "history": [
+        { "tsUtc": "2026-10-01T10:00:00Z", "state": "PRECHECK", "outcome": "ok" },
+        { "tsUtc": "2026-10-01T10:03:00Z", "state": "GUEST_PREP", "outcome": "ok" },
+        { "tsUtc": "2026-10-01T10:05:00Z", "state": "STOPPED", "outcome": "ok" },
+        { "tsUtc": "2026-10-01T10:07:00Z", "state": "CONVERTING", "outcome": "ok" },
+        { "tsUtc": "2026-10-01T10:20:00Z", "state": "FAILED_ROLLED_BACK", "outcome": "fail", "reasonCode": "bootFailedAfterConversion", "machineState": "restored" } ] },
+      "expected": "restored" },
+    { "why": "the deallocation failed and the machine was started again untouched",
+      "doc": { "state": "FAILED_ROLLED_BACK", "history": [
+        { "tsUtc": "2026-10-01T10:03:00Z", "state": "GUEST_PREP", "outcome": "ok" },
+        { "tsUtc": "2026-10-01T10:06:00Z", "state": "FAILED_ROLLED_BACK", "outcome": "fail", "reasonCode": "deallocationFailed", "machineState": "untouched" } ] },
+      "expected": "untouched" },
+    { "why": "the rollback after the preparation failed: the machine keeps it",
+      "doc": { "state": "FAILED_NEEDS_ATTENTION", "history": [
+        { "tsUtc": "2026-10-01T10:03:00Z", "state": "GUEST_PREP", "outcome": "ok" },
+        { "tsUtc": "2026-10-01T10:08:00Z", "state": "FAILED_NEEDS_ATTENTION", "outcome": "fail", "reasonCode": "rollbackFailed", "machineState": "changed" } ] },
+      "expected": "changed" },
+    { "why": "a data disk swap is left: changed, whatever the last stop says",
+      "doc": { "state": "FAILED_NEEDS_ATTENTION", "swapPending": { "kind": "rollback" }, "history": [
+        { "tsUtc": "2026-10-01T10:08:00Z", "state": "FAILED_NEEDS_ATTENTION", "outcome": "fail", "reasonCode": "bootFailedAfterConversion", "machineState": "restored" } ] },
+      "expected": "changed" },
+    { "why": "a data disk swap is left after a restore later than the stop: still changed",
+      "doc": { "state": "FAILED_NEEDS_ATTENTION", "swapPending": { "kind": "restore" },
+        "restore": { "restoredUtc": "2026-10-01T12:00:00Z" }, "history": [
+        { "tsUtc": "2026-10-01T10:08:00Z", "state": "FAILED_NEEDS_ATTENTION", "outcome": "fail", "reasonCode": "rollbackFailed", "machineState": "changed" } ] },
+      "expected": "changed" },
+    { "why": "changed, then restored after the stop: the stop no longer describes the machine",
+      "doc": { "state": "FAILED_NEEDS_ATTENTION", "restore": { "restoredUtc": "2026-10-01T12:00:00Z" }, "history": [
+        { "tsUtc": "2026-10-01T10:08:00Z", "state": "FAILED_NEEDS_ATTENTION", "outcome": "fail", "reasonCode": "rollbackFailed", "machineState": "changed" } ] },
+      "expected": null },
+    { "why": "a restore EARLIER than the stop does not hide it",
+      "doc": { "state": "FAILED_NEEDS_ATTENTION", "restore": { "restoredUtc": "2026-10-01T09:00:00Z" }, "history": [
+        { "tsUtc": "2026-10-01T10:08:00Z", "state": "FAILED_NEEDS_ATTENTION", "outcome": "fail", "reasonCode": "rollbackFailed", "machineState": "changed" } ] },
+      "expected": "changed" },
+    { "why": "a stop with no recorded machine state: no claim",
+      "doc": { "state": "FAILED_NEEDS_ATTENTION", "history": [
+        { "tsUtc": "2026-10-01T10:08:00Z", "state": "FAILED_NEEDS_ATTENTION", "outcome": "fail", "reasonCode": "stepFailedRepeatedly" } ] },
+      "expected": null },
+    { "why": "the stop of an earlier attempt, after a retry moved the machine on: no claim",
+      "doc": { "state": "NEEDS_DECISION", "history": [
+        { "tsUtc": "2026-10-01T10:08:00Z", "state": "FAILED_NEEDS_ATTENTION", "outcome": "fail", "reasonCode": "rollbackFailed", "machineState": "changed" },
+        { "tsUtc": "2026-10-01T11:00:00Z", "state": "PRECHECK", "outcome": "ok" },
+        { "tsUtc": "2026-10-01T11:01:00Z", "state": "NEEDS_DECISION", "outcome": "fail" } ] },
+      "expected": null },
+    { "why": "rolled back, tried again, and stopped before the preparation: the new stop",
+      "doc": { "state": "NEEDS_DECISION", "history": [
+        { "tsUtc": "2026-10-01T10:03:00Z", "state": "GUEST_PREP", "outcome": "ok" },
+        { "tsUtc": "2026-10-01T10:20:00Z", "state": "FAILED_ROLLED_BACK", "outcome": "fail", "reasonCode": "bootFailedAfterConversion", "machineState": "restored" },
+        { "tsUtc": "2026-10-01T11:00:00Z", "state": "PRECHECK", "outcome": "ok" },
+        { "tsUtc": "2026-10-01T11:01:00Z", "state": "NEEDS_DECISION", "outcome": "fail", "reasonCode": "targetTooFewNics", "machineState": "untouched" } ] },
+      "expected": "untouched" },
+    { "why": "a restore at the same moment as the stop: the stop no longer describes the machine",
+      "doc": { "state": "FAILED_NEEDS_ATTENTION", "restore": { "restoredUtc": "2026-10-01T10:08:00Z" }, "history": [
+        { "tsUtc": "2026-10-01T10:08:00Z", "state": "FAILED_NEEDS_ATTENTION", "outcome": "fail", "reasonCode": "rollbackFailed", "machineState": "changed" } ] },
+      "expected": null },
+    { "why": "a machine whose state is not a stop, whatever its history ends with: no claim",
+      "doc": { "state": "PLANNED", "history": [
+        { "tsUtc": "2026-10-01T10:01:00Z", "state": "NEEDS_DECISION", "outcome": "fail", "reasonCode": "dataOnTempDrive", "machineState": "untouched" } ] },
+      "expected": null },
+    { "why": "a machine that is not stopped: no claim",
+      "doc": { "state": "GUEST_PREP", "history": [
+        { "tsUtc": "2026-10-01T10:01:00Z", "state": "NEEDS_DECISION", "outcome": "fail", "reasonCode": "dataOnTempDrive", "machineState": "untouched" },
+        { "tsUtc": "2026-10-01T10:03:00Z", "state": "GUEST_PREP", "outcome": "ok" } ] },
+      "expected": null }
+  ]
+}

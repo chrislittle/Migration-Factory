@@ -1,0 +1,76 @@
+{
+  "about": "DECIDE-ROLE-1: the park a machine waits at now, for a person. The engine (Get-VmfWaitingDecisionStop) and the run page (decisionWaiting) are both held to these cases. 'expect' is the reason code of the park, or null when the machine waits at no park.",
+  "cases": [
+    {
+      "name": "parked for a decision, the last entry",
+      "doc": { "state": "NEEDS_DECISION", "history": [
+        { "tsUtc": "2026-10-01T10:00:00Z", "state": "PRECHECK", "outcome": "ok" },
+        { "tsUtc": "2026-10-01T10:05:00Z", "state": "NEEDS_DECISION", "outcome": "ok", "reasonCode": "acceleratedNetworkingRequired" } ] },
+      "expect": "acceleratedNetworkingRequired"
+    },
+    {
+      "name": "parked for a stop with no decision is still the park",
+      "doc": { "state": "NEEDS_DECISION", "history": [
+        { "tsUtc": "2026-10-01T10:05:00Z", "state": "NEEDS_DECISION", "outcome": "ok", "reasonCode": "diskEncryptionPresent" } ] },
+      "expect": "diskEncryptionPresent"
+    },
+    {
+      "name": "not waiting: the machine failed and rolled back",
+      "doc": { "state": "FAILED_ROLLED_BACK", "history": [
+        { "tsUtc": "2026-10-01T10:05:00Z", "state": "FAILED_ROLLED_BACK", "outcome": "fail", "reasonCode": "acceleratedNetworkingRequired" } ] },
+      "expect": null
+    },
+    {
+      "name": "an old resolved park is not the stop",
+      "doc": { "state": "NEEDS_DECISION",
+        "history": [
+          { "tsUtc": "2026-10-01T10:05:00Z", "state": "NEEDS_DECISION", "outcome": "ok", "reasonCode": "acceleratedNetworkingRequired" },
+          { "tsUtc": "2026-10-01T11:00:00Z", "state": "PRECHECK", "outcome": "ok" },
+          { "tsUtc": "2026-10-01T12:00:00Z", "state": "SKIPPED", "outcome": "skip" } ] },
+      "expect": null
+    },
+    {
+      "name": "restored after the park: not the stop",
+      "doc": { "state": "NEEDS_DECISION",
+        "restore": { "restoredUtc": "2026-10-01T10:05:00Z" },
+        "history": [
+          { "tsUtc": "2026-10-01T10:05:00Z", "state": "NEEDS_DECISION", "outcome": "ok", "reasonCode": "dataOnTempDrive" } ] },
+      "expect": null
+    },
+    {
+      "name": "a restore BEFORE the park does not hide it",
+      "doc": { "state": "NEEDS_DECISION",
+        "restore": { "restoredUtc": "2026-09-30T09:00:00Z" },
+        "history": [
+          { "tsUtc": "2026-10-01T10:05:00Z", "state": "NEEDS_DECISION", "outcome": "ok", "reasonCode": "dataOnTempDrive" } ] },
+      "expect": "dataOnTempDrive"
+    },
+    {
+      "name": "a park time that cannot be read, beside a restore, is not a yes",
+      "doc": { "state": "NEEDS_DECISION",
+        "restore": { "restoredUtc": "2026-09-30T09:00:00Z" },
+        "history": [
+          { "tsUtc": "not a time", "state": "NEEDS_DECISION", "outcome": "ok", "reasonCode": "dataOnTempDrive" } ] },
+      "expect": null
+    },
+    {
+      "name": "the last entry is a failure with a reason code, not a park",
+      "doc": { "state": "NEEDS_DECISION", "history": [
+        { "tsUtc": "2026-10-01T10:05:00Z", "state": "NEEDS_DECISION", "outcome": "ok", "reasonCode": "dataOnTempDrive" },
+        { "tsUtc": "2026-10-01T11:05:00Z", "state": "FAILED_ROLLED_BACK", "outcome": "fail", "reasonCode": "acceleratedNetworkingRequired" } ] },
+      "expect": null
+    },
+    {
+      "name": "the last entry has no reason code",
+      "doc": { "state": "NEEDS_DECISION", "history": [
+        { "tsUtc": "2026-10-01T10:05:00Z", "state": "NEEDS_DECISION", "outcome": "ok", "reasonCode": "dataOnTempDrive" },
+        { "tsUtc": "2026-10-01T10:06:00Z", "state": "NEEDS_DECISION", "outcome": "ok" } ] },
+      "expect": null
+    },
+    {
+      "name": "no history at all",
+      "doc": { "state": "NEEDS_DECISION", "history": [] },
+      "expect": null
+    }
+  ]
+}

@@ -1,0 +1,26 @@
+name: Dependency review
+
+# Each pull request: the dependencies it adds or changes, against the GitHub
+# Advisory Database. A pull request that adds a dependency with a known
+# vulnerability fails this check.
+#
+# Dependency review on a private repository needs GitHub Advanced Security.
+# This repository stays private until the release day, so the job runs only
+# once it is public.
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  dependency-review:
+    name: Dependency review
+    if: ${{ !github.event.repository.private }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: actions/dependency-review-action@a1d282b36b6f3519aa1f3fc636f609c47dddb294 # v5.0.0

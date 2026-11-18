@@ -1,0 +1,809 @@
+{
+  "schemaVersion": 1,
+  "why": "DEPS-CURRENT-1: the one pin file for every part the product ships that does not update by itself. tools/Test-VmfPartPins.ps1 (a unit test runs it) fails when a reference in the repository differs from its pin, and when the repository gains an outside part that this file does not list. The daily upstream-drift run (tools/Test-VmfPartPinDrift.ps1) reports a newer version of each part, and a GitHub advisory that names a pinned version, in its open issue. Read the release notes, then move one pin with tools/Test-VmfPartPinDrift.ps1 -UpdateBaseline -Part <key>, in a pull request with the tests the item names for that kind of update. SBOM-1: it is also the manifest of the third-party files the release carries. Each part with files names its licence (an SPDX licence expression, read from the package) and its source (the address of the package of the pinned version), and a file names the libraries it carries inside it (contains: an npm package name, its version and licence, and the text of the file that proves the version). tools/New-VmfSbom.ps1 builds the release's bill of materials from this file.",
+  "parts": [
+    {
+      "key": "npm:@azure/msal-browser",
+      "name": "Sign-in library (MSAL for the browser)",
+      "version": "5.29.0",
+      "latest": {
+        "source": "npm",
+        "package": "@azure/msal-browser"
+      },
+      "advisories": {
+        "ecosystem": "npm",
+        "package": "@azure/msal-browser"
+      },
+      "releaseNotes": "https://github.com/AzureAD/microsoft-authentication-library-for-js/releases",
+      "license": "MIT",
+      "source": "https://registry.npmjs.org/@azure/msal-browser/-/msal-browser-5.29.0.tgz",
+      "files": [
+        {
+          "path": "src/dashboard/msal-browser.min.js",
+          "from": "lib/msal-browser.min.js",
+          "sha256": "1b20f9bfbabb2e33801042563761794b7818aa774606e4ed1ccb1ada6a18ce03",
+          "contains": [
+            {
+              "name": "@azure/msal-common",
+              "version": "16.16.1",
+              "license": "MIT",
+              "evidence": "\"@azure/msal-common\",Jn=\"16.16.1\"",
+              "why": "SBOM-1: the library is built with msal-common inside it, and the file names it and its version (the npm registry gives that version the licence MIT). The evidence text changes with each release of the library: read it from the new file."
+            }
+          ]
+        }
+      ],
+      "why": "Every dashboard page signs in and gets tokens with it. It is a saved copy of the one browser file in the npm package, so no build step and no package manager sees it. Microsoft's CDN stopped at v3; the npm registry is where a release is read. The package also holds a redirect bridge, which answers a pop-up. The dashboard opens no pop-up, so the bridge is not shipped (NO-POPUPS-SIGNOUT-1)."
+    },
+    {
+      "key": "npm:docsify",
+      "name": "Manual reader (docsify)",
+      "version": "4.13.1",
+      "holdMajor": 4,
+      "latest": {
+        "source": "npm",
+        "package": "docsify"
+      },
+      "advisories": {
+        "ecosystem": "npm",
+        "package": "docsify"
+      },
+      "releaseNotes": "https://github.com/docsifyjs/docsify/releases",
+      "license": "MIT",
+      "source": "https://registry.npmjs.org/docsify/-/docsify-4.13.1.tgz",
+      "files": [
+        {
+          "path": "docs/manual/vendor/docsify.min.js",
+          "from": "lib/docsify.min.js",
+          "sha256": "9123f808d3f6ad736b4a8f99944a611f87c5d4f9328030080a5c029ed5f450a5"
+        },
+        {
+          "path": "docs/manual/vendor/search.min.js",
+          "from": "lib/plugins/search.min.js",
+          "sha256": "ab20792dc69dfd9cdb19479f716f69a619e577dec452739196770134dd71f297"
+        },
+        {
+          "path": "docs/manual/vendor/zoom-image.min.js",
+          "from": "lib/plugins/zoom-image.min.js",
+          "sha256": "73e70a64af96532474cb43878ef43ad6e450316e37ebcee96b31e6fe4dc8cd43"
+        },
+        {
+          "path": "docs/manual/vendor/vue.css",
+          "from": "lib/themes/vue.css",
+          "sha256": "153f8a221cba65ab9c4bcfabe97f692e7539c54572d8b75262e924bee7ab6feb",
+          "remove": [
+            "@import url(\"https://fonts.googleapis.com/css?family=Roboto+Mono|Source+Sans+Pro:300,400,600\");"
+          ],
+          "removeWhy": "MANUAL-FONTS-1: the theme's first line asks fonts.googleapis.com for two fonts. The dashboard's content security policy allows styles and fonts from the install only, so the browser refused the request on every manual page and wrote an error to its console. manual.css sets the product's own system fonts, so the fonts were never used."
+        }
+      ],
+      "why": "The manual ships inside the dashboard (DOC-4), and docsify draws it in the browser: the reader, its search and image zoom plugins, and its theme. Saved copies of files in the npm package, so nothing else sees them. It is held on 4 (DEPS-CURRENT-1 part 4, 2026-10-24), so the check compares only 4.x versions: 5 draws the manual with the dashboard's content policy, but its code-block call takes one token (marked 18), so no diagram draws until the hook in index.html changes; its vue.css is gone for a new core theme; and manual.css no longer fits its sidebar and search (the brand banner, unreadable search titles in the dark theme, a narrower page column). MANUAL-DOCSIFY-5-1 moves it. 4.13.1 is the last 4.x release, and GitHub names no advisory against it."
+    },
+    {
+      "key": "npm:mermaid",
+      "name": "Manual diagrams (mermaid)",
+      "version": "11.17.2",
+      "holdMajor": 11,
+      "minimumVersion": "11.16.1",
+      "minimumWhy": "MANUAL-MERMAID-1: GitHub named nine advisories against 11.4.1, and 11.16.1 is the first release that fixes all of them: GHSA-c4c3-pg64-4m4v, GHSA-6x64-9x62-f2gx and GHSA-2v8p-3f2j-5mp7 (fixed in 11.16.1), GHSA-87f9-hvmw-gh4p, GHSA-6m6c-36f7-fhxh, GHSA-ghcm-xqfw-q4vr and GHSA-xcj9-5m2h-648r (fixed in 11.15.0), GHSA-7rqq-prvp-x9jh and GHSA-8gwm-58g9-j8pw (fixed in 11.10.0).",
+      "latest": {
+        "source": "npm",
+        "package": "mermaid"
+      },
+      "advisories": {
+        "ecosystem": "npm",
+        "package": "mermaid"
+      },
+      "releaseNotes": "https://github.com/mermaid-js/mermaid/releases",
+      "license": "MIT",
+      "source": "https://registry.npmjs.org/mermaid/-/mermaid-11.17.2.tgz",
+      "files": [
+        {
+          "path": "docs/manual/vendor/mermaid.min.js",
+          "from": "dist/mermaid.min.js",
+          "sha256": "581ed7d74bd9048d0e3a91363927d72ef22942d7722546b27f7cc29e35390eb8",
+          "contains": [
+            {
+              "name": "@braintree/sanitize-url",
+              "version": "7.1.2",
+              "license": "MIT"
+            },
+            {
+              "name": "@chevrotain/gast",
+              "version": "11.1.2",
+              "license": "Apache-2.0"
+            },
+            {
+              "name": "@chevrotain/regexp-to-ast",
+              "version": "11.1.2",
+              "license": "Apache-2.0"
+            },
+            {
+              "name": "@chevrotain/utils",
+              "version": "11.1.2",
+              "license": "Apache-2.0"
+            },
+            {
+              "name": "@iconify/utils",
+              "version": "3.0.2",
+              "license": "MIT"
+            },
+            {
+              "name": "@upsetjs/venn.js",
+              "version": "2.0.0",
+              "license": "MIT"
+            },
+            {
+              "name": "chevrotain-allstar",
+              "version": "0.3.1",
+              "license": "MIT"
+            },
+            {
+              "name": "chevrotain",
+              "version": "11.1.2",
+              "license": "Apache-2.0"
+            },
+            {
+              "name": "cose-base",
+              "version": "1.0.3",
+              "license": "MIT"
+            },
+            {
+              "name": "cose-base",
+              "version": "2.2.0",
+              "license": "MIT"
+            },
+            {
+              "name": "cytoscape-cose-bilkent",
+              "version": "4.1.0",
+              "license": "MIT"
+            },
+            {
+              "name": "cytoscape-fcose",
+              "version": "2.2.0",
+              "license": "MIT"
+            },
+            {
+              "name": "cytoscape",
+              "version": "3.34.0",
+              "license": "MIT"
+            },
+            {
+              "name": "d3-array",
+              "version": "2.12.1",
+              "license": "BSD-3-Clause"
+            },
+            {
+              "name": "d3-array",
+              "version": "3.2.4",
+              "license": "ISC"
+            },
+            {
+              "name": "d3-axis",
+              "version": "3.0.0",
+              "license": "ISC"
+            },
+            {
+              "name": "d3-brush",
+              "version": "3.0.0",
+              "license": "ISC"
+            },
+            {
+              "name": "d3-chord",
+              "version": "3.0.1",
+              "license": "ISC"
+            },
+            {
+              "name": "d3-color",
+              "version": "3.1.0",
+              "license": "ISC"
+            },
+            {
+              "name": "d3-contour",
+              "version": "4.0.2",
+              "license": "ISC"
+            },
+            {
+              "name": "d3-delaunay",
+              "version": "6.0.4",
+              "license": "ISC"
+            },
+            {
+              "name": "d3-dispatch",
+              "version": "3.0.1",
+              "license": "ISC"
+            },
+            {
+              "name": "d3-drag",
+              "version": "3.0.0",
+              "license": "ISC"
+            },
+            {
+              "name": "d3-dsv",
+              "version": "3.0.1",
+              "license": "ISC"
+            },
+            {
+              "name": "d3-ease",
+              "version": "3.0.1",
+              "license": "BSD-3-Clause"
+            },
+            {
+              "name": "d3-fetch",
+              "version": "3.0.1",
+              "license": "ISC"
+            },
+            {
+              "name": "d3-force",
+              "version": "3.0.0",
+              "license": "ISC"
+            },
+            {
+              "name": "d3-format",
+              "version": "3.1.0",
+              "license": "ISC"
+            },
+            {
+              "name": "d3-geo",
+              "version": "3.1.1",
+              "license": "ISC"
+            },
+            {
+              "name": "d3-hierarchy",
+              "version": "3.1.2",
+              "license": "ISC"
+            },
+            {
+              "name": "d3-interpolate",
+              "version": "3.0.1",
+              "license": "ISC"
+            },
+            {
+              "name": "d3-path",
+              "version": "1.0.9",
+              "license": "BSD-3-Clause"
+            },
+            {
+              "name": "d3-path",
+              "version": "3.1.0",
+              "license": "ISC"
+            },
+            {
+              "name": "d3-polygon",
+              "version": "3.0.1",
+              "license": "ISC"
+            },
+            {
+              "name": "d3-quadtree",
+              "version": "3.0.1",
+              "license": "ISC"
+            },
+            {
+              "name": "d3-random",
+              "version": "3.0.1",
+              "license": "ISC"
+            },
+            {
+              "name": "d3-sankey",
+              "version": "0.12.3",
+              "license": "BSD-3-Clause"
+            },
+            {
+              "name": "d3-scale-chromatic",
+              "version": "3.1.0",
+              "license": "ISC"
+            },
+            {
+              "name": "d3-scale",
+              "version": "4.0.2",
+              "license": "ISC"
+            },
+            {
+              "name": "d3-selection",
+              "version": "3.0.0",
+              "license": "ISC"
+            },
+            {
+              "name": "d3-shape",
+              "version": "1.3.7",
+              "license": "BSD-3-Clause"
+            },
+            {
+              "name": "d3-shape",
+              "version": "3.2.0",
+              "license": "ISC"
+            },
+            {
+              "name": "d3-time-format",
+              "version": "4.1.0",
+              "license": "ISC"
+            },
+            {
+              "name": "d3-time",
+              "version": "3.1.0",
+              "license": "ISC"
+            },
+            {
+              "name": "d3-timer",
+              "version": "3.0.1",
+              "license": "ISC"
+            },
+            {
+              "name": "d3-transition",
+              "version": "3.0.1",
+              "license": "ISC"
+            },
+            {
+              "name": "d3-zoom",
+              "version": "3.0.0",
+              "license": "ISC"
+            },
+            {
+              "name": "d3",
+              "version": "7.9.0",
+              "license": "ISC"
+            },
+            {
+              "name": "dagre-d3-es",
+              "version": "7.0.14",
+              "license": "MIT"
+            },
+            {
+              "name": "dayjs",
+              "version": "1.11.21",
+              "license": "MIT"
+            },
+            {
+              "name": "dompurify",
+              "version": "3.4.12",
+              "license": "(MPL-2.0 OR Apache-2.0)",
+              "evidence": "DOMPurify 3.4.12",
+              "why": "SBOM-1: the diagram library carries the HTML sanitizer DOMPurify inside it, and its own licence block at the end of the file names the version. An advisory against DOMPurify is an advisory against the manual. The lock file below gives the same version."
+            },
+            {
+              "name": "es-toolkit",
+              "version": "1.45.1",
+              "license": "MIT"
+            },
+            {
+              "name": "fastdom",
+              "version": "1.0.12",
+              "license": "MIT"
+            },
+            {
+              "name": "internmap",
+              "version": "2.0.3",
+              "license": "ISC"
+            },
+            {
+              "name": "js-yaml",
+              "version": "4.3.0",
+              "license": "MIT"
+            },
+            {
+              "name": "katex",
+              "version": "0.16.47",
+              "license": "MIT"
+            },
+            {
+              "name": "khroma",
+              "version": "2.1.0",
+              "license": "MIT"
+            },
+            {
+              "name": "langium",
+              "version": "4.2.1",
+              "license": "MIT"
+            },
+            {
+              "name": "layout-base",
+              "version": "1.0.2",
+              "license": "MIT"
+            },
+            {
+              "name": "layout-base",
+              "version": "2.0.1",
+              "license": "MIT"
+            },
+            {
+              "name": "lodash-es",
+              "version": "4.17.23",
+              "license": "MIT"
+            },
+            {
+              "name": "lodash-es",
+              "version": "4.18.1",
+              "license": "MIT"
+            },
+            {
+              "name": "marked",
+              "version": "16.3.0",
+              "license": "MIT"
+            },
+            {
+              "name": "roughjs",
+              "version": "4.6.6",
+              "license": "MIT"
+            },
+            {
+              "name": "stylis",
+              "version": "4.3.6",
+              "license": "MIT"
+            },
+            {
+              "name": "ts-dedent",
+              "version": "2.2.0",
+              "license": "MIT"
+            },
+            {
+              "name": "uuid",
+              "version": "14.0.0",
+              "license": "MIT"
+            },
+            {
+              "name": "vscode-jsonrpc",
+              "version": "8.2.0",
+              "license": "MIT"
+            },
+            {
+              "name": "vscode-languageserver-protocol",
+              "version": "3.17.5",
+              "license": "MIT"
+            },
+            {
+              "name": "vscode-languageserver-textdocument",
+              "version": "1.0.12",
+              "license": "MIT"
+            },
+            {
+              "name": "vscode-languageserver-types",
+              "version": "3.17.5",
+              "license": "MIT"
+            }
+          ],
+          "lockFile": {
+            "url": "https://raw.githubusercontent.com/mermaid-js/mermaid/mermaid%4011.17.2/pnpm-lock.yaml",
+            "sha256": "fdc5fdda2c7067c9e10cc8743e0837554c5a924a763a7e2fbaa1cbaa9a775ffa",
+            "why": "MERMAID-CONTENTS-1 (2026-11-08): the file names the version of DOMPurify only, so the lock file of the mermaid repository at the tag mermaid@11.17.2 proves each other row: it gives the exact version each library was built at, not the range in package.json. Which libraries are built in was read from the source maps of the npm packages: dist/mermaid.min.js.map of mermaid 11.17.2, and the chunk maps of @mermaid-js/parser 1.2.1, whose chunks the mermaid map names. Each node_modules path in them is a library the build put in the file, and the build leaves out only require, fs and path. So a type package (@types/d3, @chevrotain/types) and a development tool are not listed. The licence of each row is from the npm registry for that version; khroma 2.1.0 gives none there, and its package licence file is MIT. mermaid applies its own patch to roughjs 4.6.6. The daily check downloads the lock file and compares its sha256 and rows; -UpdateBaseline moves it with the version."
+          }
+        }
+      ],
+      "why": "Draws the diagrams in the manual, which ships inside the dashboard (DOC-4). A saved copy of the file in the npm package. It is held on 11 (MANUAL-MERMAID-1, 2026-10-23), so the check compares only 11.x versions: 12 doubles the browser file to 5.5 MB, needs an ES2024 browser, which a locked-down browser may not be, and changes the layout, the look and the label width of every diagram. 11.17.2 fixes all nine advisories that 11.4.1 had."
+    },
+    {
+      "key": "image:mcr.microsoft.com/azure-powershell",
+      "name": "Engine base image",
+      "version": "16.5.0",
+      "tag": "{version}-ubuntu-24.04",
+      "latest": {
+        "source": "mcr",
+        "repository": "azure-powershell"
+      },
+      "releaseNotes": "https://learn.microsoft.com/powershell/azure/release-notes-azureps",
+      "why": "The base of the engine image and of the service's publish image (docker/Dockerfile, docker/publish/Dockerfile). MCR does not build a tag again, so the image keeps the Ubuntu packages of its build date, and only a new tag brings fixes. The tag is also the Az module version the engine calls, so read the Az release notes for each cmdlet in Private/azureops before moving it."
+    },
+    {
+      "key": "bicep:mcr.microsoft.com/bicep/avm/res/operational-insights/workspace",
+      "name": "Install template module avm/res/operational-insights/workspace",
+      "version": "0.16.1",
+      "latest": {
+        "source": "mcr",
+        "repository": "bicep/avm/res/operational-insights/workspace"
+      },
+      "releaseNotes": "https://github.com/Azure/bicep-registry-modules/tree/main/avm/res/operational-insights/workspace",
+      "why": "An Azure Verified Module the install templates (infra/platform.bicep) call from the public Bicep registry. A module version never changes, so only a new version brings a fix; a new version can rename or remove a parameter or change a default. Read its changes, then build the templates and run a what-if against the lab install (the item's test table)."
+    },
+    {
+      "key": "bicep:mcr.microsoft.com/bicep/avm/res/insights/component",
+      "name": "Install template module avm/res/insights/component",
+      "version": "0.8.0",
+      "latest": {
+        "source": "mcr",
+        "repository": "bicep/avm/res/insights/component"
+      },
+      "releaseNotes": "https://github.com/Azure/bicep-registry-modules/tree/main/avm/res/insights/component",
+      "why": "An Azure Verified Module the install templates (infra/platform.bicep) call from the public Bicep registry. A module version never changes, so only a new version brings a fix; a new version can rename or remove a parameter or change a default. Read its changes, then build the templates and run a what-if against the lab install (the item's test table)."
+    },
+    {
+      "key": "bicep:mcr.microsoft.com/bicep/avm/res/managed-identity/user-assigned-identity",
+      "name": "Install template module avm/res/managed-identity/user-assigned-identity",
+      "version": "0.6.0",
+      "latest": {
+        "source": "mcr",
+        "repository": "bicep/avm/res/managed-identity/user-assigned-identity"
+      },
+      "releaseNotes": "https://github.com/Azure/bicep-registry-modules/tree/main/avm/res/managed-identity/user-assigned-identity",
+      "why": "An Azure Verified Module the install templates (infra/platform.bicep) call from the public Bicep registry. A module version never changes, so only a new version brings a fix; a new version can rename or remove a parameter or change a default. Read its changes, then build the templates and run a what-if against the lab install (the item's test table)."
+    },
+    {
+      "key": "bicep:mcr.microsoft.com/bicep/avm/res/storage/storage-account",
+      "name": "Install template module avm/res/storage/storage-account",
+      "version": "0.33.1",
+      "latest": {
+        "source": "mcr",
+        "repository": "bicep/avm/res/storage/storage-account"
+      },
+      "releaseNotes": "https://github.com/Azure/bicep-registry-modules/tree/main/avm/res/storage/storage-account",
+      "why": "An Azure Verified Module the install templates (infra/platform.bicep) call from the public Bicep registry. A module version never changes, so only a new version brings a fix; a new version can rename or remove a parameter or change a default. Read its changes, then build the templates and run a what-if against the lab install (the item's test table)."
+    },
+    {
+      "key": "bicep:mcr.microsoft.com/bicep/avm/res/network/network-security-perimeter",
+      "name": "Install template module avm/res/network/network-security-perimeter",
+      "version": "0.1.4",
+      "latest": {
+        "source": "mcr",
+        "repository": "bicep/avm/res/network/network-security-perimeter"
+      },
+      "releaseNotes": "https://github.com/Azure/bicep-registry-modules/tree/main/avm/res/network/network-security-perimeter",
+      "why": "An Azure Verified Module the install templates (infra/platform.bicep) call from the public Bicep registry. A module version never changes, so only a new version brings a fix; a new version can rename or remove a parameter or change a default. Read its changes, then build the templates and run a what-if against the lab install (the item's test table)."
+    },
+    {
+      "key": "bicep:mcr.microsoft.com/bicep/avm/res/container-registry/registry",
+      "name": "Install template module avm/res/container-registry/registry",
+      "version": "0.13.1",
+      "latest": {
+        "source": "mcr",
+        "repository": "bicep/avm/res/container-registry/registry"
+      },
+      "releaseNotes": "https://github.com/Azure/bicep-registry-modules/tree/main/avm/res/container-registry/registry",
+      "why": "An Azure Verified Module the install templates (infra/platform.bicep) call from the public Bicep registry. A module version never changes, so only a new version brings a fix; a new version can rename or remove a parameter or change a default. Read its changes, then build the templates and run a what-if against the lab install (the item's test table)."
+    },
+    {
+      "key": "bicep:mcr.microsoft.com/bicep/avm/res/app/managed-environment",
+      "name": "Install template module avm/res/app/managed-environment",
+      "version": "0.16.0",
+      "latest": {
+        "source": "mcr",
+        "repository": "bicep/avm/res/app/managed-environment"
+      },
+      "releaseNotes": "https://github.com/Azure/bicep-registry-modules/tree/main/avm/res/app/managed-environment",
+      "why": "An Azure Verified Module the install templates (infra/platform.bicep) call from the public Bicep registry. A module version never changes, so only a new version brings a fix; a new version can rename or remove a parameter or change a default. Read its changes, then build the templates and run a what-if against the lab install (the item's test table)."
+    },
+    {
+      "key": "bicep:mcr.microsoft.com/bicep/avm/res/web/serverfarm",
+      "name": "Install template module avm/res/web/serverfarm",
+      "version": "0.7.0",
+      "latest": {
+        "source": "mcr",
+        "repository": "bicep/avm/res/web/serverfarm"
+      },
+      "releaseNotes": "https://github.com/Azure/bicep-registry-modules/tree/main/avm/res/web/serverfarm",
+      "why": "An Azure Verified Module the install templates (infra/platform.bicep) call from the public Bicep registry. A module version never changes, so only a new version brings a fix; a new version can rename or remove a parameter or change a default. Read its changes, then build the templates and run a what-if against the lab install (the item's test table)."
+    },
+    {
+      "key": "bicep:mcr.microsoft.com/bicep/avm/res/web/site",
+      "name": "Install template module avm/res/web/site",
+      "version": "0.24.0",
+      "latest": {
+        "source": "mcr",
+        "repository": "bicep/avm/res/web/site"
+      },
+      "releaseNotes": "https://github.com/Azure/bicep-registry-modules/tree/main/avm/res/web/site",
+      "why": "An Azure Verified Module the install templates (infra/platform.bicep) call from the public Bicep registry. A module version never changes, so only a new version brings a fix; a new version can rename or remove a parameter or change a default. Read its changes, then build the templates and run a what-if against the lab install (the item's test table)."
+    },
+    {
+      "key": "bicep:mcr.microsoft.com/bicep/avm/res/app/job",
+      "name": "Install template module avm/res/app/job",
+      "version": "0.7.2",
+      "latest": {
+        "source": "mcr",
+        "repository": "bicep/avm/res/app/job"
+      },
+      "releaseNotes": "https://github.com/Azure/bicep-registry-modules/tree/main/avm/res/app/job",
+      "why": "An Azure Verified Module the install templates (infra/platform.bicep) call from the public Bicep registry. A module version never changes, so only a new version brings a fix; a new version can rename or remove a parameter or change a default. Read its changes, then build the templates and run a what-if against the lab install (the item's test table)."
+    },
+    {
+      "key": "bicep:mcr.microsoft.com/bicep/extensions/microsoftgraph/v1.0",
+      "name": "Install template extension Microsoft Graph v1.0",
+      "version": "1.0.0",
+      "latest": {
+        "source": "mcr",
+        "repository": "bicep/extensions/microsoftgraph/v1.0"
+      },
+      "releaseNotes": "https://github.com/microsoftgraph/msgraph-bicep-types",
+      "why": "infra/identity.bicep creates the app registrations with it; bicepconfig.json names the version."
+    },
+    {
+      "key": "psgallery:Pester",
+      "name": "Test tool Pester",
+      "version": "5.9.1",
+      "holdMajor": 5,
+      "latest": {
+        "source": "psgallery",
+        "id": "Pester"
+      },
+      "releaseNotes": "https://github.com/pester/Pester/releases",
+      "references": [
+        {
+          "path": ".github/workflows/ci.yml",
+          "text": "@('Pester', '{version}')"
+        },
+        {
+          "path": ".github/workflows/ci.yml",
+          "text": "Import-Module Pester -RequiredVersion {version}"
+        },
+        {
+          "path": ".github/workflows/ci.yml",
+          "text": "-PesterVersion '{version}'"
+        },
+        {
+          "path": "tools/Initialize-VmfCiRunner.ps1",
+          "text": "'Pester' = '{version}'"
+        },
+        {
+          "path": "tools/Invoke-VmfMutationSweep.ps1",
+          "text": "Import-Module Pester -RequiredVersion {version}"
+        },
+        {
+          "path": "tools/Invoke-VmfPesterParallel.ps1",
+          "text": "[string]$PesterVersion = '{version}'"
+        },
+        {
+          "path": "tools/Invoke-VmfTests.ps1",
+          "text": "[string]$PesterVersion = '{version}'"
+        }
+      ],
+      "why": "Not shipped: it runs every unit test, here and in CI. It stays on 5 for 1.0 (2026-10-21); Pester 6 is PESTER-6-1, after 1.0, so the check compares only 5.x versions."
+    },
+    {
+      "key": "psgallery:PSScriptAnalyzer",
+      "name": "Test tool PSScriptAnalyzer",
+      "version": "1.25.0",
+      "latest": {
+        "source": "psgallery",
+        "id": "PSScriptAnalyzer"
+      },
+      "releaseNotes": "https://github.com/PowerShell/PSScriptAnalyzer/releases",
+      "references": [
+        {
+          "path": ".github/workflows/ci.yml",
+          "text": "@('PSScriptAnalyzer', '{version}')"
+        },
+        {
+          "path": ".github/workflows/ci.yml",
+          "text": "Import-Module PSScriptAnalyzer -RequiredVersion {version}"
+        },
+        {
+          "path": "tools/Initialize-VmfCiRunner.ps1",
+          "text": "'PSScriptAnalyzer' = '{version}'"
+        },
+        {
+          "path": "tools/Invoke-VmfTests.ps1",
+          "text": "Import-Module PSScriptAnalyzer -RequiredVersion {version}"
+        }
+      ],
+      "why": "Not shipped: the analyzer gate, here and in CI. A new version can add rules, so move it only when its rules raise no errors."
+    },
+    {
+      "key": "psgallery:Az.Accounts",
+      "name": "Test tool Az.Accounts",
+      "version": "5.5.4",
+      "latest": {
+        "source": "psgallery",
+        "id": "Az.Accounts"
+      },
+      "releaseNotes": "https://learn.microsoft.com/powershell/azure/release-notes-azureps",
+      "references": [
+        {
+          "path": "tools/Initialize-VmfCiRunner.ps1",
+          "text": "'Az.Accounts' = '{version}'"
+        }
+      ],
+      "why": "Not shipped: the CI runner installs it so the unit tests can mock the Az.Accounts commands the engine calls (Pester mocks only a command that exists, and a mock's parameter filter names the command's parameters), and the tests that run the real module (StoreAzTelemetry.Tests.ps1) use it. 5.5.4 is the version Az 16.5.0 ships, so the version in the engine image. FACADE-SIGNIN-COLD-1 and PERF-AZ-LOAD-1 (2026-11-12): the web service no longer loads it. It takes its tokens from the managed identity endpoint (IDENTITY_ENDPOINT, Microsoft's 'Managed identities - Azure App Service'), so it has no requirements.psd1, host.json turns managed dependencies off, and this was psmodule:Az.Accounts, the service's module, until then. PIN-RUNTIME-1 had pinned it there because managed dependencies took each new 5.x by themselves."
+    },
+    {
+      "key": "bundle:Microsoft.Azure.Functions.ExtensionBundle",
+      "name": "Service Functions extension bundle",
+      "version": "4.39.1",
+      "tag": "[{version}]",
+      "latest": {
+        "source": "functions-cdn",
+        "id": "Microsoft.Azure.Functions.ExtensionBundle"
+      },
+      "releaseNotes": "https://github.com/Azure/azure-functions-extension-bundles/releases",
+      "why": "PIN-RUNTIME-1: the extension bundle the service (src/facade/app/host.json) and the CI starter function (infra/ci-schedule/starter-function/host.json) name. With the range [4.*, 5.0.0) the Functions host took the newest 4.x it could find (Microsoft's extension bundles page: the runtime always chooses the maximum version the range allows). [4.39.1] is NuGet's exact version (Microsoft's NuGet version reference: [1.0] is x == 1.0). 4.39.1 is the newest bundle on the Functions bundle index (cdn.functions.azure.com, read 2026-11-03), the last release on GitHub not marked in progress, and installed on the lab install's worker (read 2026-11-03, with 4.40.0, which the index does not list). Both apps use only HTTP and timer triggers, which the Functions host carries itself: the lab service process loaded no file from a bundle. A move is a service update: read the bundle's release notes, run the full suite, then the install test."
+    },
+    {
+      "key": "action:actions/checkout",
+      "name": "GitHub Action actions/checkout",
+      "version": "7.0.1",
+      "commit": "3d3c42e5aac5ba805825da76410c181273ba90b1",
+      "latest": {
+        "source": "github",
+        "repository": "actions/checkout"
+      },
+      "releaseNotes": "https://github.com/actions/checkout/releases",
+      "why": "Not shipped: every workflow checks out the repository with it. PIN-ACTIONS-1 (2026-11-02): each uses: line names the full commit id with the version as a comment, because a publisher can move a label such as v7 to new code. The daily check reports a newer release and a tag that names another commit; -UpdateBaseline moves the commit and the comment on every line."
+    },
+    {
+      "key": "action:github/codeql-action/init",
+      "name": "GitHub Action github/codeql-action/init",
+      "version": "4.39.3",
+      "commit": "33d7b85da1a04171e211befe2c739303b9a4c066",
+      "latest": {
+        "source": "github",
+        "repository": "github/codeql-action"
+      },
+      "releaseNotes": "https://github.com/github/codeql-action/releases",
+      "why": "Not shipped: the public repository's code scanning (public/.github/workflows/codeql.yml, PUBLIC-PIPELINE-1) starts CodeQL with it. The commit is the one the tag v4.39.3 names (an annotated tag, read 2026-11-17). Move it with analyze, which comes from the same release."
+    },
+    {
+      "key": "action:github/codeql-action/analyze",
+      "name": "GitHub Action github/codeql-action/analyze",
+      "version": "4.39.3",
+      "commit": "33d7b85da1a04171e211befe2c739303b9a4c066",
+      "latest": {
+        "source": "github",
+        "repository": "github/codeql-action"
+      },
+      "releaseNotes": "https://github.com/github/codeql-action/releases",
+      "why": "Not shipped: the public repository's code scanning (public/.github/workflows/codeql.yml, PUBLIC-PIPELINE-1) analyzes the code and sends the results with it. Move it with init, which comes from the same release."
+    },
+    {
+      "key": "action:actions/dependency-review-action",
+      "name": "GitHub Action actions/dependency-review-action",
+      "version": "5.0.0",
+      "commit": "a1d282b36b6f3519aa1f3fc636f609c47dddb294",
+      "latest": {
+        "source": "github",
+        "repository": "actions/dependency-review-action"
+      },
+      "releaseNotes": "https://github.com/actions/dependency-review-action/releases",
+      "why": "Not shipped: the public repository's dependency review of each pull request (public/.github/workflows/dependency-review.yml, PUBLIC-PIPELINE-1). The commit is the one the tag v5.0.0 names (read 2026-11-17)."
+    }
+  ],
+  "updatesItself": [
+    {
+      "key": "image:mcr.microsoft.com/k8se/quickstart-jobs",
+      "ref": "latest",
+      "why": "PINS-COVER-2: a placeholder. The engine job and the publish job (infra/platform.bicep, infra/main.bicep) must name an image that exists when the install creates them, before the registry holds the real images. Neither job runs it: the first code publish points each job at the image it built, by digest, and infra/deploy.ps1 keeps that image on a redeploy."
+    }
+  ],
+  "ownFiles": {
+    "why": "PINS-COVER-2: the files in src/dashboard and docs/manual that the repository wrote, of each kind the browser loads as code, a style, a font or a vector picture (.js, .mjs, .cjs, .css, .map, .wasm, .svg, .woff, .woff2, .ttf, .otf, .eot - SBOM-1 added every kind but .js, .mjs and .css). The check reads every such file, and any file that is not on this list, or in a pinned part's files, is an outside part. A saved library is found this way even when its name and its first line say nothing. Add a file here in the pull request that writes it.",
+    "paths": [
+      "docs/manual/images/architecture.svg",
+      "docs/manual/images/journey.svg",
+      "docs/manual/index.js",
+      "docs/manual/logo.svg",
+      "docs/manual/manual.css",
+      "docs/manual/mark.svg",
+      "src/dashboard/access.js",
+      "src/dashboard/app.css",
+      "src/dashboard/assessment-report.js",
+      "src/dashboard/assessments.js",
+      "src/dashboard/help.js",
+      "src/dashboard/index.js",
+      "src/dashboard/logo.svg",
+      "src/dashboard/mark.svg",
+      "src/dashboard/migrations.js",
+      "src/dashboard/projects.js",
+      "src/dashboard/reports.js",
+      "src/dashboard/theme.js",
+      "src/dashboard/waves.js",
+      "src/dashboard/wizard.js"
+    ]
+  },
+  "pinnedElsewhere": [
+    {
+      "name": "Bicep CLI",
+      "pin": "infra/bicep-version.json",
+      "check": "tools/Test-BicepPinDrift.ps1"
+    },
+    {
+      "name": "SBOM generator (syft)",
+      "pin": "infra/sbom-generator.json",
+      "check": "tools/Test-VmfPartPinDrift.ps1",
+      "key": "generator:anchore/syft",
+      "latest": {
+        "source": "github",
+        "repository": "anchore/syft"
+      },
+      "advisories": {
+        "ecosystem": "go",
+        "package": "github.com/anchore/syft"
+      },
+      "checksums": "syft_{version}_checksums.txt"
+    }
+  ]
+}

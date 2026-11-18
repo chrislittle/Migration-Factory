@@ -1,0 +1,26 @@
+{
+  "_comment": [
+    "SIGNOFF-NULL-1. Does this plan entry require a person's sign-off before its",
+    "wave runs? ONE answer, decided in two languages: the engine",
+    "(Test-VmfApprovalRequired, PowerShell) and the pages",
+    "(VmfHelp.approvalRequired in src/dashboard/help.js, JavaScript).",
+    "The rule fails safe: only a stored boolean false turns the sign-off off.",
+    "A missing policy, a missing key, null, 0, an empty string, the text",
+    "'false' and any other value read as required.",
+    "Held by tests/unit/SignoffNull.Tests.ps1 and tests/js/signoff-null.test.js."
+  ],
+  "cases": [
+    { "name": "an explicit true",             "entry": { "policy": { "requireApproval": true } },    "required": true },
+    { "name": "an explicit false",            "entry": { "policy": { "requireApproval": false } },   "required": false },
+    { "name": "a stored null",                "entry": { "policy": { "requireApproval": null } },    "required": true },
+    { "name": "a stored 0",                   "entry": { "policy": { "requireApproval": 0 } },       "required": true },
+    { "name": "a stored 1",                   "entry": { "policy": { "requireApproval": 1 } },       "required": true },
+    { "name": "an empty string",              "entry": { "policy": { "requireApproval": "" } },      "required": true },
+    { "name": "the text false",               "entry": { "policy": { "requireApproval": "false" } }, "required": true },
+    { "name": "a list that holds false",      "entry": { "policy": { "requireApproval": [ false ] } }, "required": true },
+    { "name": "a policy with no such key",    "entry": { "policy": { "capacityGate": "BestEffort" } }, "required": true },
+    { "name": "an empty policy",              "entry": { "policy": {} },                             "required": true },
+    { "name": "a null policy",                "entry": { "policy": null },                           "required": true },
+    { "name": "an entry with no policy",      "entry": { "wave": "w1" },                             "required": true }
+  ]
+}

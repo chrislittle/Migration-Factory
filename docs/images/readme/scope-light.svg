@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 880 380" width="880" height="380" role="img" aria-label="Scope. The product moves standalone IaaS virtual machines with a server operating system, on the sizes in the support matrix. The scan leaves out scale set members, resource groups that a platform manages (AKS, Databricks), and Azure Virtual Desktop session hosts. It also leaves out Azure CycleCloud clusters, Azure Dedicated Host, hibernation enabled, and Windows 10 and Windows 11. The scan finds these and does not move them: network virtual appliances, storage and backup appliances, and Azure managed applications. It also finds failover clusters on a shared disk, SQL Server Always On members, SAP workloads and confidential machines. It also finds Marketplace purchase plans, unmanaged or ephemeral operating system disks, and more than 32 data disks.">
+  <title>Scope</title>
+  <g font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif">
+    <rect x="8.5" y="8.5" width="280" height="362" rx="10" fill="#f8f9fa" stroke="#6c6c6c"/>
+    <path d="M8.5 18.5 A10 10 0 0 1 18.5 8.5 H278.5 A10 10 0 0 1 288.5 18.5 V64.5 H8.5 Z" fill="#d8f0d3"/>
+    <g transform="translate(26 25)" fill="none" stroke="#18480d" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="11" r="10"/><path d="M5.5 11 L8.8 14.3 L14.8 8"/></g>
+    <text x="58" y="42" font-size="16" font-weight="700" fill="#18480d">The product moves</text>
+    <g data-panel="moves" font-size="13.5" fill="#2d2d2d">
+      <text x="26" y="96">Standalone IaaS virtual machines</text>
+      <text x="26" y="124">A server operating system</text>
+      <text x="26" y="152">The sizes in the support matrix</text>
+    </g>
+    <text x="26" y="196" font-size="12.5" fill="#6c6c6c">The support matrix lists every</text>
+    <text x="26" y="214" font-size="12.5" fill="#6c6c6c">size, generation, Windows version</text>
+    <text x="26" y="232" font-size="12.5" fill="#6c6c6c">and Linux image.</text>
+    <rect x="300.5" y="8.5" width="280" height="362" rx="10" fill="#f8f9fa" stroke="#6c6c6c"/>
+    <path d="M300.5 18.5 A10 10 0 0 1 310.5 8.5 H570.5 A10 10 0 0 1 580.5 18.5 V64.5 H300.5 Z" fill="#eeeeee"/>
+    <g transform="translate(318 25)" fill="none" stroke="#2d2d2d" stroke-width="2.4" stroke-linecap="round"><circle cx="10" cy="11" r="10"/><path d="M5 11 H15"/></g>
+    <text x="350" y="42" font-size="16" font-weight="700" fill="#2d2d2d">The scan leaves out</text>
+    <g data-panel="excluded" font-size="13.5" fill="#2d2d2d">
+      <g data-reason="scale-set-member"><text x="318" y="96">Scale set members</text></g>
+      <g data-reason="managed-resource-group"><text x="318" y="124">Resource groups that a</text><text x="318" y="142">platform manages (AKS, Databricks)</text></g>
+      <g data-reason="avd-session-host"><text x="318" y="170">Azure Virtual Desktop session hosts</text></g>
+      <g data-reason="cyclecloud-cluster-node"><text x="318" y="198">Azure CycleCloud clusters</text></g>
+      <g data-reason="dedicated-host"><text x="318" y="226">Azure Dedicated Host</text></g>
+      <g data-reason="hibernation-enabled"><text x="318" y="254">Hibernation enabled</text></g>
+      <g data-reason="client-operating-system"><text x="318" y="282">Windows 10 and Windows 11</text></g>
+    </g>
+    <rect x="592.5" y="8.5" width="280" height="362" rx="10" fill="#f8f9fa" stroke="#6c6c6c"/>
+    <path d="M592.5 18.5 A10 10 0 0 1 602.5 8.5 H862.5 A10 10 0 0 1 872.5 18.5 V64.5 H592.5 Z" fill="#f6e3cc"/>
+    <g transform="translate(610 25)" fill="none" stroke="#552f00" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M10 1.5 L19.5 19.5 H0.5 Z"/><path d="M10 8 V12.5"/><path d="M10 16 V16.2"/></g>
+    <text x="642" y="33" font-size="15" font-weight="700" fill="#552f00">The scan finds these, and</text><text x="642" y="52" font-size="15" font-weight="700" fill="#552f00">does not move them</text>
+    <g data-panel="blocked" font-size="13.5" fill="#2d2d2d">
+      <g data-reason="nva-requires-parallel-deployment"><text x="610" y="96">Network virtual appliances</text></g>
+      <g data-reason="storage-appliance-needs-vendor"><text x="610" y="122">Storage and backup appliances</text></g>
+      <g data-reason="managed-application-needs-vendor"><text x="610" y="148">Azure managed applications</text></g>
+      <g data-reason="shared-disk-cluster-node"><text x="610" y="174">Failover clusters on a shared disk</text></g>
+      <g data-reason="sql-availability-group-member"><text x="610" y="200">SQL Server Always On members</text></g>
+      <g data-reason="sap-needs-a-certified-size"><text x="610" y="226">SAP workloads</text></g>
+      <g data-reason="confidential-vm-requires-manual"><text x="610" y="252">Confidential machines</text></g>
+      <g data-reason="purchase-plan-out-of-scope"><text x="610" y="278">Marketplace purchase plans</text></g>
+      <g data-reason="unmanaged-os-disk ephemeral-os-disk"><text x="610" y="304">Unmanaged or ephemeral</text><text x="610" y="322">operating system disks</text></g>
+      <g data-reason="too-many-data-disks"><text x="610" y="348">More than 32 data disks</text></g>
+    </g>
+  </g>
+</svg>

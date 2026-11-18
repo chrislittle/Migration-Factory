@@ -1,0 +1,43 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://vmf.local/schemas/wave-approval.schema.json",
+  "title": "VMF wave approval",
+  "description": "APPR-1: an enforced, identity-bound authorization for one wave to execute. Written by Approve-VmfWave, and by Approve-VmfPlan once for each wave, at approvals/<wave>.json; Start-VmfWave refuses a requireApproval wave without a valid one. v2 (WAVE-APPROVE-1) signs THIS WAVE alone: waveVersion binds the approval to the wave's machines and settings, so a change to this wave invalidates it and a change to another wave does not. This document is the Stage 3 approval API resource.",
+  "type": "object",
+  "required": ["schemaVersion", "runId", "wave", "approvedBy", "approvedUtc", "planHash", "waveVersion", "note"],
+  "additionalProperties": false,
+  "properties": {
+    "schemaVersion": { "const": 5, "description": "v5 (OLD-VERSION-READERS-REMOVE-1): no identityLoss in the contract, and waveVersion is required. No writer gave identityLoss since v4 or left out waveVersion since v2, and nothing is public before 1.0, so no store holds such an approval. Each earlier version is in docs/schema-migrations.md." },
+    "runId": { "type": "string" },
+    "wave": { "type": "string", "minLength": 1 },
+    "approvedBy": {
+      "type": "object",
+      "required": ["identity"],
+      "additionalProperties": false,
+      "properties": {
+        "identity": { "type": "string", "minLength": 1, "description": "The approver's signed-in Entra identity (UPN/account id) - captured from their Azure login, never typed" },
+        "tenantId": { "type": ["string", "null"] }
+      }
+    },
+    "approvedUtc": { "type": "string", "format": "date-time" },
+    "planHash": { "type": "string", "pattern": "^[0-9a-f]{64}$", "description": "sha256 of plan.json at approval time - the plan version the approver was shown (APPR-2). A record: waveVersion is the gate." },
+    "waveVersion": { "type": "string", "pattern": "^[0-9a-f]{64}$", "description": "WAVE-APPROVE-1: the version of this wave of the plan at approval time (Get-VmfWaveVersion) - every entry of the wave and the plan-wide fields. The gate of the approval." },
+    "note": { "type": "string", "minLength": 1, "description": "What was reviewed and why this wave may proceed" },
+    "amendments": {
+      "type": "array",
+      "description": "WAVE-APPROVE-1, as DECIDE-KEEP-1 for the acceptance: decisions recorded on this approval after it was made. Only an approver's acceptance of the one decision a machine waits for (its setting, exactly its accepting value) moves the approval to the wave as it is after the decision, and only when the approval was current just before it. Any other decision leaves the wave asking for its approval again.",
+      "items": {
+        "type": "object",
+        "required": ["by", "utc", "vmId", "change", "reason"],
+        "additionalProperties": false,
+        "properties": {
+          "by": { "type": "string", "minLength": 1, "description": "Who made the decision" },
+          "utc": { "type": "string", "format": "date-time" },
+          "vmId": { "type": "string", "minLength": 1, "description": "The one machine the decision changed" },
+          "change": { "type": "string", "minLength": 1, "description": "The settings it changed, as name=value" },
+          "reason": { "const": "decision" }
+        }
+      }
+    }
+  }
+}

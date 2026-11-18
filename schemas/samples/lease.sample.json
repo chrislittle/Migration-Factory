@@ -1,0 +1,7 @@
+{
+  "schemaVersion": 1,
+  "vmId": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-app/providers/Microsoft.Compute/virtualMachines/app-01",
+  "workerId": "wave-1-worker-0",
+  "acquiredUtc": "2026-11-07T10:00:00.0000000Z",
+  "heartbeatUtc": "2026-11-07T10:04:30.0000000Z"
+}

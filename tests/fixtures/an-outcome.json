@@ -1,0 +1,163 @@
+{
+  "_comment": [
+    "WAVE-AN-NAMES-1. Does a plan entry's move turn accelerated networking on",
+    "for the primary network interface, and on which row of the wave settings",
+    "is the machine named? ONE answer, decided once: the engine works it out",
+    "from the plan entry (Get-VmfPlannedAnOutcome, PowerShell) and records it",
+    "on the entry as acceleratedNetworkingOutcome (plan-entry v20). The pages",
+    "read the record (VmfHelp.anOutcomeRow in src/dashboard/help.js) and never",
+    "work it out again.",
+    "recorded: true - the engine is held to 'outcome' for 'entry', and the",
+    "pages, given the entry with that record, to 'row'.",
+    "recorded: false - an entry the engine gives no record: one that does not",
+    "move (Get-VmfPlannedAnOutcome gives null; outcome null). The planner and",
+    "every writer record every entry that moves, so the pages read no setting",
+    "in place of the record: no record is none (OLD-VERSION-READERS-REMOVE-6).",
+    "row: on (Machines that get accelerated networking turned on), decides",
+    "(Machines where the move decides accelerated networking), none.",
+    "Held by tests/unit/WaveAnNames.Tests.ps1 and tests/js/wave-an-names.test.js."
+  ],
+  "cases": [
+    {
+      "name": "Linux B2s to B2ls_v2, a release Microsoft lists, primary off: it turns on (AN-MANA-DRIVER-RULE-1: nothing keeps it off; the lab run of 2026-10-11, mx-b2s, said the kernel decides)",
+      "recorded": true,
+      "entry": { "path": "A", "target": { "size": "Standard_B2ls_v2", "controller": "SCSI" }, "policy": {},
+        "assessment": { "os": "Linux", "sourceSize": "Standard_B2s", "nicCount": 1, "acceleratedNicCount": 0, "primaryNicAccelerated": false,
+          "runningOsName": "ubuntu", "runningOsVersion": "22.04" } },
+      "outcome": { "turnsOn": true, "unknownWhy": null },
+      "row": "on"
+    },
+    {
+      "name": "Windows B2ms to B2s_v2, primary off: it turns on, and the size does not require it (the lab run of 2026-10-11, mx-b2w)",
+      "recorded": true,
+      "entry": { "path": "A", "target": { "size": "Standard_B2s_v2", "controller": "SCSI" }, "policy": {},
+        "assessment": { "os": "Windows", "sourceSize": "Standard_B2ms", "nicCount": 1, "acceleratedNicCount": 0, "primaryNicAccelerated": false } },
+      "outcome": { "turnsOn": true, "unknownWhy": null },
+      "row": "on"
+    },
+    {
+      "name": "Windows to a v6 size, primary off: it turns on",
+      "recorded": true,
+      "entry": { "path": "A", "target": { "size": "Standard_D2ds_v6", "controller": "NVMe" }, "policy": {},
+        "assessment": { "os": "Windows", "sourceSize": "Standard_D2ds_v4", "nicCount": 1, "acceleratedNicCount": 0, "primaryNicAccelerated": false } },
+      "outcome": { "turnsOn": true, "unknownWhy": null },
+      "row": "on"
+    },
+    {
+      "name": "Linux to an AMD v5 size, primary off: it turns on - the size never gives MANA",
+      "recorded": true,
+      "entry": { "path": "A", "target": { "size": "Standard_D2as_v5", "controller": "SCSI" }, "policy": {},
+        "assessment": { "os": "Linux", "sourceSize": "Standard_D2as_v4", "nicCount": 1, "acceleratedNicCount": 0, "primaryNicAccelerated": false,
+          "runningOsName": "ubuntu", "runningOsVersion": "18.04" } },
+      "outcome": { "turnsOn": true, "unknownWhy": null },
+      "row": "on"
+    },
+    {
+      "name": "Linux to a v6 size, a release Microsoft does not list (the VM agent reads it), primary off: it turns on - every v6 size requires it (DRIFT-11)",
+      "recorded": true,
+      "entry": { "path": "A", "target": { "size": "Standard_D2ds_v6", "controller": "NVMe" }, "policy": {},
+        "assessment": { "os": "Linux", "sourceSize": "Standard_D2ds_v4", "nicCount": 1, "acceleratedNicCount": 0, "primaryNicAccelerated": false,
+          "runningOsName": "ubuntu", "runningOsVersion": "18.04" } },
+      "outcome": { "turnsOn": true, "unknownWhy": null },
+      "row": "on"
+    },
+    {
+      "name": "Linux to a v7 size, a release Microsoft does not list (the VM agent reads it), primary off: it turns on (AN-MANA-DRIVER-RULE-1: no longer kept off; such a size is not offered, and Preparing stops a kernel with no driver)",
+      "recorded": true,
+      "entry": { "path": "A", "target": { "size": "Standard_D2ds_v7", "controller": "NVMe" }, "policy": {},
+        "assessment": { "os": "Linux", "sourceSize": "Standard_D2ds_v4", "nicCount": 1, "acceleratedNicCount": 0, "primaryNicAccelerated": false,
+          "runningOsName": "ubuntu", "runningOsVersion": "18.04" } },
+      "outcome": { "turnsOn": true, "unknownWhy": null },
+      "row": "on"
+    },
+    {
+      "name": "Linux to a v7 size, a release nobody read, primary off: it turns on (AN-MANA-DRIVER-RULE-1: no longer kept off)",
+      "recorded": true,
+      "entry": { "path": "A", "target": { "size": "Standard_D2ds_v7", "controller": "NVMe" }, "policy": {},
+        "assessment": { "os": "Linux", "sourceSize": "Standard_D2ds_v4", "nicCount": 1, "acceleratedNicCount": 0, "primaryNicAccelerated": false } },
+      "outcome": { "turnsOn": true, "unknownWhy": null },
+      "row": "on"
+    },
+    {
+      "name": "the primary on already: nothing turns on",
+      "recorded": true,
+      "entry": { "path": "A", "target": { "size": "Standard_D2ds_v6", "controller": "NVMe" }, "policy": {},
+        "assessment": { "os": "Windows", "sourceSize": "Standard_D2ds_v4", "nicCount": 1, "acceleratedNicCount": 1, "primaryNicAccelerated": true } },
+      "outcome": { "turnsOn": false, "unknownWhy": null },
+      "row": "none"
+    },
+    {
+      "name": "an Intel D v5 size that requires it, the plan sets ensureOn (AN-PLAN-1), Linux primary off: it turns on",
+      "recorded": true,
+      "entry": { "path": "A", "target": { "size": "Standard_D2s_v5", "controller": "SCSI" }, "policy": { "acceleratedNetworking": "ensureOn" },
+        "assessment": { "os": "Linux", "sourceSize": "Standard_D2s_v4", "nicCount": 1, "acceleratedNicCount": 0, "primaryNicAccelerated": false,
+          "runningOsName": "ubuntu", "runningOsVersion": "18.04" } },
+      "outcome": { "turnsOn": true, "unknownWhy": null },
+      "row": "on"
+    },
+    {
+      "name": "a decision set ensureOn on a v6 size, Linux whose kernel nobody read, primary off: it turns on - the setting is explicit",
+      "recorded": true,
+      "entry": { "path": "A", "target": { "size": "Standard_D2ds_v6", "controller": "NVMe" }, "policy": { "acceleratedNetworking": "ensureOn" },
+        "assessment": { "os": "Linux", "sourceSize": "Standard_D2ds_v4", "nicCount": 1, "acceleratedNicCount": 0, "primaryNicAccelerated": false } },
+      "outcome": { "turnsOn": true, "unknownWhy": null },
+      "row": "on"
+    },
+    {
+      "name": "ensureOn on a machine whose primary is on already: nothing turns on",
+      "recorded": true,
+      "entry": { "path": "A", "target": { "size": "Standard_D2s_v5", "controller": "SCSI" }, "policy": { "acceleratedNetworking": "ensureOn" },
+        "assessment": { "os": "Windows", "sourceSize": "Standard_D2s_v4", "nicCount": 1, "acceleratedNicCount": 1, "primaryNicAccelerated": true } },
+      "outcome": { "turnsOn": false, "unknownWhy": null },
+      "row": "none"
+    },
+    {
+      "name": "the primary interface not read (two interfaces, one on): the move decides",
+      "recorded": true,
+      "entry": { "path": "A", "target": { "size": "Standard_D2ds_v6", "controller": "NVMe" }, "policy": {},
+        "assessment": { "os": "Windows", "sourceSize": "Standard_D2ds_v4", "nicCount": 2, "acceleratedNicCount": 1, "primaryNicAccelerated": null } },
+      "outcome": { "turnsOn": null, "unknownWhy": "nics" },
+      "row": "decides"
+    },
+    {
+      "name": "a SCSI reversion keeps it as it was: nothing turns on",
+      "recorded": true,
+      "entry": { "path": "A", "target": { "size": "Standard_D2ds_v6", "controller": "SCSI" }, "policy": {},
+        "assessment": { "os": "Windows", "sourceSize": "Standard_D2ds_v6", "nicCount": 1, "acceleratedNicCount": 0, "primaryNicAccelerated": false } },
+      "outcome": { "turnsOn": false, "unknownWhy": null },
+      "row": "none"
+    },
+    {
+      "name": "a SCSI reversion whose primary interface the scan did not read: nothing turns on - the move keeps it as it was",
+      "recorded": true,
+      "entry": { "path": "A", "target": { "size": "Standard_D2ds_v6", "controller": "SCSI" }, "policy": {},
+        "assessment": { "os": "Windows", "sourceSize": "Standard_D2ds_v6", "nicCount": 2, "acceleratedNicCount": 1, "primaryNicAccelerated": null } },
+      "outcome": { "turnsOn": false, "unknownWhy": null },
+      "row": "none"
+    },
+    {
+      "name": "preserve on a machine whose primary is off: nothing turns on",
+      "recorded": true,
+      "entry": { "path": "A", "target": { "size": "Standard_D2ds_v6", "controller": "NVMe" }, "policy": { "acceleratedNetworking": "preserve" },
+        "assessment": { "os": "Windows", "sourceSize": "Standard_D2ds_v4", "nicCount": 1, "acceleratedNicCount": 0, "primaryNicAccelerated": false } },
+      "outcome": { "turnsOn": false, "unknownWhy": null },
+      "row": "none"
+    },
+    {
+      "name": "OLD-VERSION-READERS-REMOVE-6: a machine that does not move has no record, and its own ensureOn turns nothing on",
+      "recorded": false,
+      "entry": { "path": "MANUAL", "target": { "size": "Standard_D2s_v5", "controller": "SCSI" }, "policy": { "acceleratedNetworking": "ensureOn" },
+        "assessment": { "os": "Linux", "sourceSize": "Standard_D2s_v4" } },
+      "outcome": null,
+      "row": "none"
+    },
+    {
+      "name": "OLD-VERSION-READERS-REMOVE-6: an entry with no target size has no record: nothing turns on",
+      "recorded": false,
+      "entry": { "path": "A", "target": { "size": null, "controller": "NVMe" }, "policy": {},
+        "assessment": { "os": "Windows", "sourceSize": "Standard_D2ds_v4" } },
+      "outcome": null,
+      "row": "none"
+    }
+  ]
+}

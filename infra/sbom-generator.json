@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "name": "syft",
+  "version": "1.57.1",
+  "license": "Apache-2.0",
+  "project": "https://github.com/anchore/syft",
+  "releaseNotes": "https://github.com/anchore/syft/releases/tag/v1.57.1",
+  "url": "https://github.com/anchore/syft/releases/download/v1.57.1/syft_1.57.1_windows_amd64.zip",
+  "sha256": "3a01fe865076bb548352195b77e88fa4649277861ea458efe165c3a810b6dcc7",
+  "executable": "syft.exe",
+  "pinnedUtc": "2026-11-10T20:26:46Z",
+  "why": "SBOM-1: the one open-source SBOM generator the release workflow runs, for the Windows runner that cuts a release. tools/New-VmfSbom.ps1 downloads this file, refuses it unless its sha256 is this one, and refuses a program that does not report this version. The sha256 is the one the release's own checksums file gives. SBOM-GEN-DRIFT-1: the daily drift check reports a newer release, and a GitHub advisory against this version (tools/Test-VmfPartPinDrift.ps1, from the pinnedElsewhere entry in infra/part-versions.json). To move it: read the release notes, then run ./tools/Test-VmfPartPinDrift.ps1 -UpdateBaseline -Part generator:anchore/syft, which changes version, releaseNotes, url and sha256 together, takes the sha256 from that release's checksums file, and refuses a file whose sha256 is not that one."
+}

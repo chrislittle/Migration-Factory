@@ -1,0 +1,118 @@
+{
+  "_comment": [
+    "AN-MANA-DRIVER-RULE-1 (2026-11-06). A target that can give MANA",
+    "(every v6 and v7 size, Intel v5, Bsv2) needs a machine with a MANA driver.",
+    "AMD v5 never gives MANA. One row per machine of the design.",
+    "vm: the machine as the scan records it. size, os, agent (the release the",
+    "Azure Linux Agent reports, name and version, or empty), image (publisher,",
+    "offer, sku), primary (accelerated networking on the primary interface).",
+    "expect: what the target advice gives (Get-VmfTargetAdvice) - offered (the",
+    "supported options), refused (an option and its reason), start (both",
+    "defaults), listing (linuxRelease.mana), manaUpgrade (linuxRelease.manaUpgrade).",
+    "words: what the Details of the targets step say for that advice",
+    "(src/dashboard/wizard.js, manaUpgradeText). An empty list: no such line.",
+    "catalog: d (synthetic D sizes, Intel and AMD, v5 to v7) or b (the B v1 and",
+    "Bsv2 catalog fixtures of centralus).",
+    "Held by tests/unit/AnManaDriverRule.Tests.ps1 and tests/js/an-mana-driver-rule.test.js."
+  ],
+  "cases": [
+    {
+      "name": "Windows, Intel, accelerated networking on: v6 and v7 of its maker (unchanged)",
+      "catalog": "d",
+      "vm": { "size": "Standard_D2s_v4", "os": "Windows", "agent": ["", ""], "image": ["MicrosoftWindowsServer", "WindowsServer", "2022-datacenter-g2"], "primary": true },
+      "expect": { "offered": ["v5", "v6", "v7"], "refused": {}, "start": { "current": "v6", "extended": "v5" }, "listing": null, "manaUpgrade": null },
+      "words": []
+    },
+    {
+      "name": "Windows, AMD, accelerated networking off: v6 and v7 of its maker (unchanged)",
+      "catalog": "d",
+      "vm": { "size": "Standard_D2as_v4", "os": "Windows", "agent": ["", ""], "image": ["MicrosoftWindowsServer", "WindowsServer", "2022-datacenter-g2"], "primary": false },
+      "expect": { "offered": ["v5", "v6", "v7"], "refused": {}, "start": { "current": "v6", "extended": "v5" }, "listing": null, "manaUpgrade": null },
+      "words": []
+    },
+    {
+      "name": "Linux, a release Microsoft lists (Ubuntu 22.04): v6 and v7 (unchanged)",
+      "catalog": "d",
+      "vm": { "size": "Standard_D2s_v4", "os": "Linux", "agent": ["ubuntu", "22.04"], "image": ["Canonical", "0001-com-ubuntu-server-jammy", "22_04-lts-gen2"], "primary": true },
+      "expect": { "offered": ["v5", "v6", "v7"], "refused": {}, "start": { "current": "v6", "extended": "v5" }, "listing": "listed", "manaUpgrade": null },
+      "words": []
+    },
+    {
+      "name": "Linux, Red Hat 9.4: a normal update within 9 reaches 9.6, which Microsoft lists, so it is offered v6 and v7 with the kernel update",
+      "catalog": "d",
+      "vm": { "size": "Standard_D2s_v4", "os": "Linux", "agent": ["redhat", "9.4"], "image": ["RedHat", "RHEL", "9_4"], "primary": true },
+      "expect": { "offered": ["v5", "v6", "v7"], "refused": {}, "start": { "current": "v6", "extended": "v5" }, "listing": "listed", "manaUpgrade": null },
+      "words": []
+    },
+    {
+      "name": "Linux, Rocky Linux 9.2, accelerated networking off: the same as Red Hat 9.4",
+      "catalog": "d",
+      "vm": { "size": "Standard_D2s_v4", "os": "Linux", "agent": ["rocky", "9.2"], "image": ["", "", ""], "primary": false },
+      "expect": { "offered": ["v5", "v6", "v7"], "refused": {}, "start": { "current": "v6", "extended": "v5" }, "listing": "listed", "manaUpgrade": null },
+      "words": []
+    },
+    {
+      "name": "Intel, Ubuntu 18.04, accelerated networking on: not moved, never an AMD size",
+      "catalog": "d",
+      "vm": { "size": "Standard_D2s_v4", "os": "Linux", "agent": ["ubuntu", "18.04"], "image": ["Canonical", "UbuntuServer", "18.04-LTS"], "primary": true },
+      "expect": { "offered": [], "refused": { "v5": "no-mana-driver", "v6": "no-mana-driver", "v7": "no-mana-driver" }, "start": { "current": null, "extended": null }, "listing": "unlisted", "manaUpgrade": { "distroId": "ubuntu", "version": "22.04" } },
+      "words": ["Ubuntu 18.04", "Ubuntu 22.04"]
+    },
+    {
+      "name": "Intel, Ubuntu 20.04, accelerated networking off: not moved (the DRIFT-11 start on v7 with it off is gone)",
+      "catalog": "d",
+      "vm": { "size": "Standard_D2s_v4", "os": "Linux", "agent": ["ubuntu", "20.04"], "image": ["Canonical", "0001-com-ubuntu-server-focal", "20_04-lts-gen2"], "primary": false },
+      "expect": { "offered": [], "refused": { "v5": "no-mana-driver", "v6": "no-mana-driver", "v7": "no-mana-driver" }, "start": { "current": null, "extended": null }, "listing": "unlisted", "manaUpgrade": { "distroId": "ubuntu", "version": "22.04" } },
+      "words": ["Ubuntu 20.04", "Ubuntu 22.04"]
+    },
+    {
+      "name": "Intel, Red Hat 8.10: not moved; the release to upgrade to is 9.6",
+      "catalog": "d",
+      "vm": { "size": "Standard_D2s_v4", "os": "Linux", "agent": ["redhat", "8.10"], "image": ["RedHat", "RHEL", "8_10"], "primary": true },
+      "expect": { "offered": [], "refused": { "v5": "no-mana-driver", "v6": "no-mana-driver", "v7": "no-mana-driver" }, "start": { "current": null, "extended": null }, "listing": "unlisted", "manaUpgrade": { "distroId": "rhel", "version": "9.6" } },
+      "words": ["Red Hat Enterprise Linux 8.10", "Red Hat Enterprise Linux 9.6"]
+    },
+    {
+      "name": "Intel, Debian 11: not moved; the release to upgrade to is 12",
+      "catalog": "d",
+      "vm": { "size": "Standard_D2s_v4", "os": "Linux", "agent": ["debian", "11"], "image": ["Debian", "debian-11", "11-gen2"], "primary": true },
+      "expect": { "offered": [], "refused": { "v5": "no-mana-driver", "v6": "no-mana-driver", "v7": "no-mana-driver" }, "start": { "current": null, "extended": null }, "listing": "unlisted", "manaUpgrade": { "distroId": "debian", "version": "12" } },
+      "words": ["Debian 11", "Debian 12"]
+    },
+    {
+      "name": "Intel, SUSE 15 SP4: a service pack is not a normal update, so not moved; the release to upgrade to is 15.5",
+      "catalog": "d",
+      "vm": { "size": "Standard_D2s_v4", "os": "Linux", "agent": ["sles", "15.4"], "image": ["SUSE", "sles-15-sp4", "gen2"], "primary": true },
+      "expect": { "offered": [], "refused": { "v5": "no-mana-driver", "v6": "no-mana-driver", "v7": "no-mana-driver" }, "start": { "current": null, "extended": null }, "listing": "unlisted", "manaUpgrade": { "distroId": "sles", "version": "15.5" } },
+      "words": ["SUSE Linux Enterprise Server 15.4", "SUSE Linux Enterprise Server 15.5"]
+    },
+    {
+      "name": "AMD, Ubuntu 18.04, accelerated networking on: AMD v5 only, as the start",
+      "catalog": "d",
+      "vm": { "size": "Standard_D2as_v4", "os": "Linux", "agent": ["ubuntu", "18.04"], "image": ["Canonical", "UbuntuServer", "18.04-LTS"], "primary": true },
+      "expect": { "offered": ["v5"], "refused": { "v6": "no-mana-driver", "v7": "no-mana-driver" }, "start": { "current": "v5", "extended": "v5" }, "listing": "unlisted", "manaUpgrade": { "distroId": "ubuntu", "version": "22.04" } },
+      "words": ["Ubuntu 18.04", "Ubuntu 22.04"]
+    },
+    {
+      "name": "AMD, Ubuntu 18.04, accelerated networking off: AMD v5 only, and the move turns it on",
+      "catalog": "d",
+      "vm": { "size": "Standard_D2as_v4", "os": "Linux", "agent": ["ubuntu", "18.04"], "image": ["Canonical", "UbuntuServer", "18.04-LTS"], "primary": false },
+      "expect": { "offered": ["v5"], "refused": { "v6": "no-mana-driver", "v7": "no-mana-driver" }, "start": { "current": "v5", "extended": "v5" }, "listing": "unlisted", "manaUpgrade": { "distroId": "ubuntu", "version": "22.04" } },
+      "words": ["Ubuntu 18.04", "Ubuntu 22.04"]
+    },
+    {
+      "name": "B v1, Intel, Ubuntu 18.04: not moved (Bsv2 can give MANA)",
+      "catalog": "b",
+      "vm": { "size": "Standard_B2s", "os": "Linux", "agent": ["ubuntu", "18.04"], "image": ["Canonical", "UbuntuServer", "18.04-LTS"], "primary": false },
+      "expect": { "offered": [], "refused": { "v5": "no-mana-driver" }, "start": { "current": null, "extended": null }, "listing": "unlisted", "manaUpgrade": { "distroId": "ubuntu", "version": "22.04" } },
+      "words": ["Ubuntu 18.04", "Ubuntu 22.04"]
+    },
+    {
+      "name": "Linux whose running release was not read (stopped during the scan, image Ubuntu 18.04): unchanged, the run reads the driver",
+      "catalog": "d",
+      "vm": { "size": "Standard_D2s_v4", "os": "Linux", "agent": ["", ""], "image": ["Canonical", "UbuntuServer", "18.04-LTS"], "primary": true },
+      "expect": { "offered": ["v5", "v6", "v7"], "refused": {}, "start": { "current": "v6", "extended": "v5" }, "listing": "unlisted", "manaUpgrade": null },
+      "words": []
+    }
+  ]
+}

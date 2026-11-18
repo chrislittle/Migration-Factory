@@ -1,0 +1,831 @@
+{
+  "schemaVersion": 2,
+  "site": "https://learn.microsoft.com/en-us/",
+  "textFolder": "upstream-docs",
+  "why": "UPST-3: the v6/v7 migration documentation is the SOURCE of most rules this tool enforces - temp-disk categories, OS floors, hibernation, quota families, NVMe readiness. A change here can invalidate an engine rule with nothing in our code moving. Watched as a FOLDER so a NEW page is reported too.",
+  "how": "DOCS-DRIFT-LEARN-1: each page is read from the site with Accept: text/markdown, and the sha256 of the text AFTER the front matter is pinned here. The accepted text itself is kept in textFolder, at the page's Learn path, so a change is shown as a difference from it. Each folder names the toc.json that lists its pages, so a NEW page is still found. A folder path is the Learn path of the GitHub folder it was watched in: articles/ became azure/ for azure-compute-docs and azure-docs, and docs/ became entra/ for entra-docs. Every page's own front matter (source_path) confirmed its GitHub path on 2026-10-03.",
+  "license": "The stored text is Microsoft documentation, kept for comparison only. Microsoft publishes it under CC BY 4.0 (azure-compute-docs, azure-docs) and MIT (entra-docs), per each repository's LICENSE file, read 2026-10-03. Each file is named by the Learn page it came from.",
+  "checkedUtc": "2026-11-12T15:43:54.5170373Z",
+  "folders": [
+    {
+      "path": "azure/virtual-machines/sizes/lifecycle",
+      "toc": "azure/virtual-machines/toc.json",
+      "include": "^(sizes-v6-v7-modernization-.*|sizes-v5-modernization-overview|retirements-and-capacity-restrictions|lifecycle-overview|end-of-life-sizes-list)$",
+      "githubSource": "MicrosoftDocs/azure-compute-docs/articles/virtual-machines/sizes/lifecycle (watched there until 2026-10-03)",
+      "localDerivatives": [
+        "docs/ms-guide-traceability.md (DOC-2 decision-flow map - the per-decision wiring; start there)",
+        "CLAUDE.md domain facts",
+        "src/VmMigrationFactory/data/supported-images.json",
+        "src/VmMigrationFactory/data/driver-floors.json",
+        "src/VmMigrationFactory/data/target-families.json (SCOPE-DATA-1 - the approved target PLATFORMS, read from the overview page's target-families table. If that table gains or loses a platform, this file is the thing to change)",
+        "src/VmMigrationFactory/data/target-families.json replacements (V3-TEMPDISK-1 - the v3 replacement table on the plan page, #retiring-v3-workloads; the planner gives a v3 machine the d size it names first)",
+        "engine:assessment-rules",
+        "engine:planner",
+        "V3-RETIRE-1 (every retirement date in target-families.json lifecycle.retirements - Dv3, Dsv3, Ev3, Esv3 on 2029-11-15 and the 2028 families. From one day before a date a machine on that size is outside the scope of this tool (RETIRE-SCOPE-1), and it is warned 12 months before: Private/plan/Retirement.ps1)",
+        "src/VmMigrationFactory/data/target-families.json lifecycle (GEN-V5-1): the stage of every source and target series, shown by the advisor"
+      ],
+      "note": "DRIFT-2: the v6/v7 guide moved here on 2026-09-25 and was renamed \"modernization\"; the capacity-limitations page merged into retirements-and-capacity-restrictions. Evaluated word for word against the pinned version the same day (docs/backlog/drift-2-*.md).",
+      "pages": [
+        {
+          "name": "end-of-life-sizes-list",
+          "sha256": "db8ae10428c465e8c68c6b65127a0727677de1c80d3f32b3e985a69bf65727f4"
+        },
+        {
+          "name": "lifecycle-overview",
+          "sha256": "dba16362f199de8a37777f2a9d035a5a8219adb50bdf9bf5caf73f8c0720375f"
+        },
+        {
+          "name": "retirements-and-capacity-restrictions",
+          "sha256": "25f01eeb1a2248b7f4d87cf35481a6001c9f3364825e752d523eddb160c79cd4"
+        },
+        {
+          "name": "sizes-v5-modernization-overview",
+          "sha256": "1ad378f01429a75e034dc1a915448bbcbbb31ee2e1079559a0edbf8c5ad946af"
+        },
+        {
+          "name": "sizes-v6-v7-modernization-assess",
+          "sha256": "7cd4e6003383c33be81f0011c89d493f2d972858da0d05a75de990e98c32b63f"
+        },
+        {
+          "name": "sizes-v6-v7-modernization-discover",
+          "sha256": "feaebc7f2adb18cc390329e30490637d2d86fa8e723a0ca89ccab5bd7b95dd0c"
+        },
+        {
+          "name": "sizes-v6-v7-modernization-faq",
+          "sha256": "06f52bbd763000826f17caa6c0429b2c686efa9daaf166cef94a69b074e7e5f6"
+        },
+        {
+          "name": "sizes-v6-v7-modernization-modernize",
+          "sha256": "521700aed0a445e20d022369373d9097409c262c585dd0ce99b644344d669c98"
+        },
+        {
+          "name": "sizes-v6-v7-modernization-overview",
+          "sha256": "422f2c57311d3738954421a2caf5a5840bb30a75dadc39356611ff07d2375b92"
+        },
+        {
+          "name": "sizes-v6-v7-modernization-plan",
+          "sha256": "eb913f64375d46ed490ed4eac512d0067d52a4eb17592d069db1da9bbba07589"
+        },
+        {
+          "name": "sizes-v6-v7-modernization-validate",
+          "sha256": "03080277529d00cbe7efa0dcd4fffeb13d8917f3b2de65ad0839cf8d67364159"
+        }
+      ]
+    },
+    {
+      "path": "azure/virtual-machines/sizes/lifecycle/retirement",
+      "toc": "azure/virtual-machines/toc.json",
+      "include": "^(retired-sizes-modernization-guide|av1-series-retirement)$",
+      "githubSource": "MicrosoftDocs/azure-compute-docs/articles/virtual-machines/sizes/lifecycle/retirement (watched there until 2026-10-03)",
+      "localDerivatives": [
+        "src/VmMigrationFactory/data/assessment-reasons.json (OLD-FAM-3: the route Microsoft gives for HPC, FPGA, storage optimized, G and GS sizes, which the tool does not move)",
+        "engine:planner (OLD-FAM-1: the Dl family, which the guide names for B v1, F, Fs and Fsv2)",
+        "src/VmMigrationFactory/data/target-families.json lifecycle (the retirement dates of the End of Life families)",
+        "src/VmMigrationFactory/data/target-families.json lifecycle.retirements (OLD-FAM-4: A v1, retired on 2024-08-31, from av1-series-retirement)",
+        "src/VmMigrationFactory/data/target-families.json burstableTargets (BSV2-TARGET-1): the Bv1 row names Bsv2 first and gives the B disk controller type as SCSI, which is why a B v1 machine is offered Bsv2 on v5, as a SCSI resize"
+      ],
+      "pages": [
+        {
+          "name": "av1-series-retirement",
+          "sha256": "7a8ddc79701e569120f56a9d1ff04ddb59e6ac616e25ccaa636b67320e908c25"
+        },
+        {
+          "name": "retired-sizes-modernization-guide",
+          "sha256": "157b110567dd7b89a984c14d9781ff467f469b1478abd8842cfd008ce528dad2"
+        }
+      ]
+    },
+    {
+      "path": "azure/virtual-machines/migration",
+      "toc": "azure/virtual-machines/toc.json",
+      "include": "^scsi-to-nvme-migration$",
+      "githubSource": "MicrosoftDocs/azure-compute-docs/articles/virtual-machines/migration (watched there until 2026-10-03)",
+      "localDerivatives": [
+        "CLAUDE.md domain facts (Path A is Microsoft's in-place upgrade; the VMTempDiskResizePreview contradiction)",
+        "docs/research/temp-disk-in-place-preview.md",
+        "engine:path choice (Path A / Path B)"
+      ],
+      "pages": [
+        {
+          "name": "scsi-to-nvme-migration",
+          "sha256": "fc33f91d57b01224d1ee20c86b9ba29cac63c0ea30b1c3e4817ed70a93d71f2b"
+        }
+      ]
+    },
+    {
+      "path": "azure/virtual-machines/sizes",
+      "toc": "azure/virtual-machines/toc.json",
+      "include": "^resize-vm$",
+      "githubSource": "MicrosoftDocs/azure-compute-docs/articles/virtual-machines/sizes (watched there until 2026-10-03)",
+      "localDerivatives": [
+        "src/VmMigrationFactory/Private/engine/AvailabilitySetNote.ps1 (AVSET-NOTE-1 - the PRECHECK note for a machine in an availability set. The resize page makes stopping every machine in the set conditional on the set's current hardware not offering the new size; if that condition changes, this note is the thing to change)"
+      ],
+      "pages": [
+        {
+          "name": "resize-vm",
+          "sha256": "4fae4579651342d433497969c57da3ed801f4def852fd69339c5e90497b2fc5f"
+        }
+      ]
+    },
+    {
+      "path": "azure/virtual-machines",
+      "toc": "azure/virtual-machines/toc.json",
+      "include": "^(trusted-launch|trusted-launch-existing-vm|trusted-launch-existing-vm-gen-1|trusted-launch-faq|generation-2|nvme-overview|nvme-linux|enable-nvme-interface|enable-nvme-faqs|enable-nvme-remote-faqs|enable-nvme-temp-faqs|disk-encryption|ephemeral-os-disks|hibernate-resume|vm-naming-conventions|constrained-vcpu|disks-hdd-os-retirement)$",
+      "githubSource": "MicrosoftDocs/azure-compute-docs/articles/virtual-machines (watched there until 2026-10-03)",
+      "localDerivatives": [
+        "GEN1-UPGRADE-1 and the Gen1 drill (tests/lab/Invoke-Gen1MsRouteDrill.ps1, docs/research/gen1-route-drills.md) - Microsoft's Gen1 route, SBInfo, the System Reserved known issue",
+        "src/guest/linux (nvme-check, nvme-fix, temp-disk-setup) and src/guest/windows (Test-NvmeReady, Set-NvmeReady, Install-TempDiskInit)",
+        "src/VmMigrationFactory/data/assessment-reasons.json (Gen1, disk encryption, ephemeral OS disk, hibernation findings)",
+        "src/VmMigrationFactory/data/nvme-linux-releases.json (IMAGE-SCRIPT-MATCH-1): the Linux releases enable-nvme-interface lists under Supported Linux OS images, one row per bullet. NvmeLinuxRelease.Tests.ps1 fails when the pinned page and the rows differ, so after a refresh of the page change the rows. A release not on the list gets no v6 or v7 target (linux-release-not-on-nvme-list)",
+        "src/VmMigrationFactory/data/target-families.json (naming conventions: the additive feature letters a, p and i, and the subfamily letters C and H - DRIFT-12 proved with tests that a size with the subfamily letter H reads as its own family, never as AMD, Arm64, isolated, a target or the H family)",
+        "src/VmMigrationFactory/data/target-families.json microsoftSizes (V5-SUCCESSOR-1, SIZE-LISTING-V5-1, SIZE-LISTING-D-1): the constrained vCPU page lists the constrained E sizes of v5, v6 and v7 and no constrained D size of v5, v6 or v7, and the naming conventions page gives i as the isolated size letter. A size not in the list is refused as one Microsoft does not list, so a change here can change which machines are told that",
+        "src/VmMigrationFactory/data/assessment-reasons.json warnings os-disk-standard-hdd (HDD-OS-1): the retirement date of Standard HDD as an OS disk type, 8 September 2028, what Azure does on that date (it converts each one to Standard SSD of the same size), and what is not retired. The targets step offers Standard SSD for such an OS disk, and src/VmMigrationFactory/Private/engine/DiskType.ps1 changes it. If the date or the scope changes, these are the things to change"
+      ],
+      "pages": [
+        {
+          "name": "constrained-vcpu",
+          "sha256": "62af9829d6230a7e3aa82b4c6a7c76b01bb21ad57d48091768482dd8753da730"
+        },
+        {
+          "name": "disk-encryption",
+          "sha256": "dfbd2a3bb1a9ed8fd92446a28f66cfd5bb926c33356b4ae8480bd12f8795a081"
+        },
+        {
+          "name": "disks-hdd-os-retirement",
+          "sha256": "068bfa801e1a9805c1d725af083c42206d59126bb0a8141758dc86735a568046"
+        },
+        {
+          "name": "enable-nvme-faqs",
+          "sha256": "323258fa60de384ffa8f047780a55e39489e90c08f0df3bdecb81c67037ec424"
+        },
+        {
+          "name": "enable-nvme-interface",
+          "sha256": "2cfc53ad5e4354a5f0b338747a0382f730ddd9dde4e2a9809c1eb02ef5b502ef"
+        },
+        {
+          "name": "enable-nvme-remote-faqs",
+          "sha256": "61f2a08d4f8004f8cdb4055874a2d85bc408da878ca171b6f4dc4d3e093bb544"
+        },
+        {
+          "name": "enable-nvme-temp-faqs",
+          "sha256": "6169b3b01ed164b7164ec65e54ff884734483e2533c8efb0e34defdec1f80aae"
+        },
+        {
+          "name": "ephemeral-os-disks",
+          "sha256": "afa5393c30b9e839cc84111ea08bfc05d14b2c8b058f9069410b22f3643774a4"
+        },
+        {
+          "name": "generation-2",
+          "sha256": "4969f2651edcc82afd0408b2728e883e5f4eb27acc740aa7179b8a44a6aa9541"
+        },
+        {
+          "name": "hibernate-resume",
+          "sha256": "e1fad7e7340cff8e038b20cdf194e897bb24499a9dd82be8a6442fabe6b88be0"
+        },
+        {
+          "name": "nvme-linux",
+          "sha256": "d8850643fb6db13895b83e6e871333a5edd7d91131c34672d13a56a54e63a51c"
+        },
+        {
+          "name": "nvme-overview",
+          "sha256": "7a0b1c66e57b822dbce2fbbb48131ffb353d19b3b0f118bad90985db759a6106"
+        },
+        {
+          "name": "trusted-launch",
+          "sha256": "f7715a05edeb9b23e1c15701531108f90ae80af82b824a4f6423f71815ff6bd7"
+        },
+        {
+          "name": "trusted-launch-existing-vm",
+          "sha256": "9ae9adcb605f27764951c5d313c389cad84c4c8ba1595bc5328caf918569035d"
+        },
+        {
+          "name": "trusted-launch-existing-vm-gen-1",
+          "sha256": "3a2d36ddc85fd6286411cdfe62b4b88e9778834ee1a03bd88c9e52e3a897fe88"
+        },
+        {
+          "name": "trusted-launch-faq",
+          "sha256": "25dd9236f55f2be79235fea9265689277be5695ea9e82d5407c685efedcfff0b"
+        },
+        {
+          "name": "vm-naming-conventions",
+          "sha256": "c43debeb016f01f7c5c819b9250f0cc748b2f0669677d4db4d169aa413a25481"
+        }
+      ]
+    },
+    {
+      "path": "azure/virtual-machines/windows",
+      "toc": "azure/virtual-machines/toc.json",
+      "include": "^(client-images|convert-unmanaged-to-managed-disks)$",
+      "githubSource": "MicrosoftDocs/azure-compute-docs/articles/virtual-machines/windows (watched there until 2026-10-03)",
+      "localDerivatives": [
+        "src/VmMigrationFactory/data/assessment-reasons.json (client Windows out of scope; unmanaged disks)"
+      ],
+      "pages": [
+        {
+          "name": "client-images",
+          "sha256": "57da81469400424ac46edf7901a01906e548b6ea4ac7843a6d536d55cf6a36e1"
+        },
+        {
+          "name": "convert-unmanaged-to-managed-disks",
+          "sha256": "83734a6707ea50e36329677e4552e8174fb2465cb805f838daf223310c92e71b"
+        }
+      ]
+    },
+    {
+      "path": "azure/virtual-machines/linux",
+      "toc": "azure/virtual-machines/toc.json",
+      "include": "^endorsed-distros$",
+      "githubSource": "MicrosoftDocs/azure-compute-docs/articles/virtual-machines/linux (watched there until 2026-10-03)",
+      "localDerivatives": [
+        "src/VmMigrationFactory/data/supported-images.json (IMAGE-1)",
+        "src/VmMigrationFactory/data/driver-floors.json (the Mellanox rule: endorsed and not end of life)"
+      ],
+      "pages": [
+        {
+          "name": "endorsed-distros",
+          "sha256": "7b04796ef1b14e1f5241d0b6c8b12847b46b7f53a2491035d3954831f786da4e"
+        }
+      ]
+    },
+    {
+      "path": "azure/azure-linux",
+      "toc": "azure/azure-linux/toc.json",
+      "include": "^azure-linux-vm-vmss-overview$",
+      "githubSource": "MicrosoftDocs/azure-management-docs/articles/azure-linux (never watched there; added 2026-11-12, DRIFT-12)",
+      "localDerivatives": [
+        "src/VmMigrationFactory/data/supported-images.json microsoftazurelinux (DRIFT-12): Azure Linux 4.0 images are published under the publisher microsoftazurelinux, offer azurelinux-4, and Azure Linux 4.0 is in preview, for evaluation and testing only. The entry says not supported for that reason, and its offerPattern is what Get-VmfImageSupport and the release reader Get-VmfImageRelease (src/VmMigrationFactory/Private/plan/AdviceAn.ps1, the MANA advice) read. If the publisher, the offer or the preview statement changes - for example general availability - this entry is the thing to change"
+      ],
+      "pages": [
+        {
+          "name": "azure-linux-vm-vmss-overview",
+          "sha256": "9cfb4e610cd891b68eae62f18f3b00cc5fff47b5c17ba9004c821bad6d166e9a"
+        }
+      ]
+    },
+    {
+      "path": "azure/virtual-machines/sizes/general-purpose",
+      "toc": "azure/virtual-machines/toc.json",
+      "include": "^((?!dc|ec|dp|ep|dn|en)[def][a-z]*v[5-7]-series|[bde]-family|(da|das|ea|eas|d|dd|e|ed)v4-series|bsv2-series)$",
+      "note": "OLD-FAM-4: b-family is watched for target-families.json burstableFamilies - the B series are the only sizes that use CPU credits. BSV2-TARGET-1: bsv2-series is watched for target-families.json burstableTargets. basv2-series and bpsv2-series are not watched, because they are never offered.",
+      "githubSource": "MicrosoftDocs/azure-compute-docs/articles/virtual-machines/sizes/general-purpose (watched there until 2026-10-03)",
+      "localDerivatives": [
+        "CLAUDE.md domain facts: accelerated networking REQUIRED on every D and E v6 size since 2026-10-27 (DRIFT-11) and SUPPORTED on v7, where a Linux machine with no MANA driver keeps it off (AN-KEEP-1); temporary disk counts (TEMPPOOL-1); NIC and data-disk counts that shrink on v6 (NIC-1, DISK-3); host caching (DISK-3)",
+        "src/VmMigrationFactory/data/target-families.json",
+        "engine:planner (target size choice)",
+        "src/VmMigrationFactory/data/target-families.json microsoftSizes (SIZE-LISTING-D-1): every D and Dl size page of v5, v6 and v7 (Intel and AMD) gives the size names Microsoft lists. A size not in the list is refused as one Microsoft does not list, never as a size the region does not have, so a new size or a new page here can change which machines are told that",
+        "src/VmMigrationFactory/data/target-families.json generations.v5 (GEN-V5-1): accelerated networking Required on Intel D and Intel E v5 (E since 2026-10-01, DRIFT-5) and Supported on AMD v5; Generation 1 and 2 on v5",
+        "src/VmMigrationFactory/data/target-families.json generations.v6 (DRIFT-11): accelerated networking Required on every D and E v6 size, Intel and AMD, and generations.v7: none, because the v7 pages say Supported; the start a machine with it off gets (Select-VmfAnKeepingStart) and the card that keeps the processor (Select-VmfOwnMakerOption)",
+        "src/VmMigrationFactory/data/target-families.json lifecycle (GEN-V5-1): Microsoft says to read a family's lifecycle stage from its family page",
+        "src/VmMigrationFactory/data/target-families.json replacements (DAV4-TEMPDISK-1): the dav4, dasv4, eav4 and easv4 pages show a temporary disk on every size, so the planner gives those machines the AMD d size first",
+        "src/VmMigrationFactory/data/target-families.json replacements (V4-NAMES-1): the dv4, ddv4, ev4 and edv4 pages show which Intel v4 series has a temporary disk, so the planner gives a Ddv4 or Edv4 machine the Intel d size and a Dv4 or Ev4 machine the size without one",
+        "src/VmMigrationFactory/data/target-families.json replacements (V5-NAMES-1): the dv5, ddv5, ev5 and edv5 pages show which Intel v5 series has a temporary disk, so the planner gives a Ddv5 or Edv5 machine the Intel d size on v6 and v7 and a Dv5 or Ev5 machine the size without one",
+        "src/VmMigrationFactory/data/target-families.json generations.v5.manaProcessors (GEN-V5-1): the size pages take their Interfaces row - NetVSC, ConnectX, MANA - from the spec files listed under includes. Learn serves each size page with its spec file expanded in place, so a change to a spec file is a change to its size page",
+        "src/VmMigrationFactory/data/target-families.json burstableTargets (BSV2-TARGET-1): the bsv2-series page gives the Bsv2 sizes with their vCPUs and memory, no local storage, Generation 1 and Generation 2 Supported, accelerated networking Supported, Intel processors and the interfaces NetVSC, ConnectX and MANA. A B v1 machine is offered its Bsv2 size on v5 because these are the Intel v5 facts; a change here can change which machines are offered Bsv2, or the move it is"
+      ],
+      "includes": [
+        {
+          "name": "dadsv5-series-specs",
+          "includedIn": "dadsv5-series"
+        },
+        {
+          "name": "dasv5-series-specs",
+          "includedIn": "dasv5-series"
+        },
+        {
+          "name": "ddsv5-series-specs",
+          "includedIn": "ddsv5-series"
+        },
+        {
+          "name": "ddv5-series-specs",
+          "includedIn": "ddv5-series"
+        },
+        {
+          "name": "dldsv5-series-specs",
+          "includedIn": "dldsv5-series"
+        },
+        {
+          "name": "dlsv5-series-specs",
+          "includedIn": "dlsv5-series"
+        },
+        {
+          "name": "dsv5-series-specs",
+          "includedIn": "dsv5-series"
+        },
+        {
+          "name": "dv5-series-specs",
+          "includedIn": "dv5-series"
+        }
+      ],
+      "pages": [
+        {
+          "name": "b-family",
+          "sha256": "53befa31bed94cea46346c45a434cdfd1ece164d34b763058875ae8aab27e5bc"
+        },
+        {
+          "name": "bsv2-series",
+          "sha256": "83204c1cd0c8d33314bc78a8581f4ec4232ca28e73228ff072431e7fcdc32f3a"
+        },
+        {
+          "name": "d-family",
+          "sha256": "887952615093be39c317922cf2e8357ae031e63d50b59aa4a3cc0d253326cc08"
+        },
+        {
+          "name": "dadsv5-series",
+          "sha256": "cd2febd9f7c4f63ed852a5004a909aa70a3f131975e5ee7450511eb691697c54"
+        },
+        {
+          "name": "dadsv6-series",
+          "sha256": "6687f754a6b5dda4ad1de23ce7652e04643342d79103580957c75be1baf7da0f"
+        },
+        {
+          "name": "dadsv7-series",
+          "sha256": "7de44a6599801ee120c2c56ba0bb124c0343bb4d34f2bed04330677839c764cc"
+        },
+        {
+          "name": "daldsv6-series",
+          "sha256": "29f1c7d77f3360f8af46dcb16b98c84a53e4c3b60e8793e9e6554b507ef3ce46"
+        },
+        {
+          "name": "daldsv7-series",
+          "sha256": "5368264936507368ac4724db02f19a22229e8b67609d89c568f0bee8d9ba2219"
+        },
+        {
+          "name": "dalsv6-series",
+          "sha256": "7f4532d24e490cfa59e4cdd9d37946e03f0c0b7169b70b6a23228f95bead0986"
+        },
+        {
+          "name": "dalsv7-series",
+          "sha256": "7645567619c3ce00040075c3775c57acb81514f3e6f7dcdf344ecfdb442eb4c2"
+        },
+        {
+          "name": "dasv4-series",
+          "sha256": "1c340eed5c171ccfa17bbc18deeaa6275fb11f7e14a3d4cff493e3652684c360"
+        },
+        {
+          "name": "dasv5-series",
+          "sha256": "034b324ea9cf1abc572aeba45a1d168ef3080d64a78b34d779bfe27755d5e5ab"
+        },
+        {
+          "name": "dasv6-series",
+          "sha256": "b5473cb7a61f4e3fa77500c338322d9812b61f5f1b3bb349945b6a3cb11f3cfb"
+        },
+        {
+          "name": "dasv7-series",
+          "sha256": "fc2b89efd9ea33b08d35b8c0c88e6323ae2d849089107246b3e7babcde49bb28"
+        },
+        {
+          "name": "dav4-series",
+          "sha256": "03612ac397798e60cf88920558b96f39880002c0cd5e3c523610a6aba14c6e1a"
+        },
+        {
+          "name": "ddsv5-series",
+          "sha256": "dcd59248c5b0d90ce5e3525191476a436c2615ea0e877919c9c589e008d32f55"
+        },
+        {
+          "name": "ddsv6-series",
+          "sha256": "1b71115d4209c44a7f2cf876bb959e1b09e7fe6cf6b384348f57eb9e54bf372b"
+        },
+        {
+          "name": "ddsv7-series",
+          "sha256": "360bc0dde7c3df4934c5902dd222581cc59febda8eabc833773c0d8ab599e0c8"
+        },
+        {
+          "name": "ddv4-series",
+          "sha256": "33feb874e42f1a8755f0ec16a7845c718cc2288a6f74a280eafa8c00e1c7347e"
+        },
+        {
+          "name": "ddv5-series",
+          "sha256": "7a354407e57aabf0184f0e0eed10d7eb7036b3a9940e85255c7062a5bb3ec075"
+        },
+        {
+          "name": "dldsv5-series",
+          "sha256": "515b2a15f5a3d4ed5f8f0a6d38bfbf2709a183ece78ad668d9c63825e51d463d"
+        },
+        {
+          "name": "dldsv6-series",
+          "sha256": "ed5f3c81874837e59eaeb800cf2d256ee98c928573fa020dcdc23bdef7d6797a"
+        },
+        {
+          "name": "dldsv7-series",
+          "sha256": "3bfd0d6f598acdb8e47e2c354eeeec93543584e2bc17549fcfba503f59e08093"
+        },
+        {
+          "name": "dlsv5-series",
+          "sha256": "9a2ed3e5c2b7aaf5a3efd361453c5c7fc42d5664021bd49bd917f7cefd4dfd78"
+        },
+        {
+          "name": "dlsv6-series",
+          "sha256": "b1c9a60932180d750949f191fccc088aaa01bb8b11a0d06dd8d0d5269c0742da"
+        },
+        {
+          "name": "dlsv7-series",
+          "sha256": "5242ab06abf4422eb03f46989d2a3a1e7e18bfef43de76f62cbf09579f177638"
+        },
+        {
+          "name": "dsv5-series",
+          "sha256": "748f8e9b8e78ca8a2ce24982a0cae751b8edfcd1c39fe016b0fe3f1b310abafa"
+        },
+        {
+          "name": "dsv6-series",
+          "sha256": "6b246db2db99e53194f23c5e7d25e35304b693685e17d03ead31722a143f7c06"
+        },
+        {
+          "name": "dsv7-series",
+          "sha256": "4f496e4df09c011a228df13ee64aae3588bc2248bc0ab31d10c122405029c52a"
+        },
+        {
+          "name": "dv4-series",
+          "sha256": "cf65c4bf232c35f0da565d1f1f7b6e7381d11d6bc92d7fc2d35f5cd95cfe4745"
+        },
+        {
+          "name": "dv5-series",
+          "sha256": "ba3c0a5369bf1e7961cd18fd3a663dd5f6e7510c8b68977a2d682b2611163334"
+        }
+      ]
+    },
+    {
+      "path": "azure/virtual-machines/sizes/memory-optimized",
+      "toc": "azure/virtual-machines/toc.json",
+      "include": "^((?!dc|ec|dp|ep|dn|en)[def][a-z]*v[5-7]-series|[de]-family|(da|das|ea|eas|d|dd|e|ed)v4-series|(ens|ends|dns|dnds|dnls|dnlds)v[67]-series|eb-family|(?!ec|ep)e[a-z]*v[5-7]-e[a-z]*v[5-7]-series)$",
+      "githubSource": "MicrosoftDocs/azure-compute-docs/articles/virtual-machines/sizes/memory-optimized (watched there until 2026-10-03)",
+      "localDerivatives": [
+        "CLAUDE.md domain facts: accelerated networking REQUIRED on every D and E v6 size since 2026-10-27 (DRIFT-11) and SUPPORTED on v7, where a Linux machine with no MANA driver keeps it off (AN-KEEP-1); temporary disk counts (TEMPPOOL-1); NIC and data-disk counts that shrink on v6 (NIC-1, DISK-3); host caching (DISK-3)",
+        "src/VmMigrationFactory/data/target-families.json",
+        "engine:planner (target size choice)",
+        "src/VmMigrationFactory/data/target-families.json generations.v5 (GEN-V5-1): accelerated networking Required on Intel D and Intel E v5 (E since 2026-10-01, DRIFT-5) and Supported on AMD v5; Generation 1 and 2 on v5",
+        "src/VmMigrationFactory/data/target-families.json generations.v6 (DRIFT-11): accelerated networking Required on every D and E v6 size, Intel and AMD, and generations.v7: none, because the v7 pages say Supported; the start a machine with it off gets (Select-VmfAnKeepingStart) and the card that keeps the processor (Select-VmfOwnMakerOption)",
+        "src/VmMigrationFactory/data/target-families.json lifecycle (GEN-V5-1): Microsoft says to read a family's lifecycle stage from its family page",
+        "src/VmMigrationFactory/data/target-families.json replacements (DAV4-TEMPDISK-1): the dav4, dasv4, eav4 and easv4 pages show a temporary disk on every size, so the planner gives those machines the AMD d size first",
+        "src/VmMigrationFactory/data/target-families.json replacements (V4-NAMES-1): the dv4, ddv4, ev4 and edv4 pages show which Intel v4 series has a temporary disk, so the planner gives a Ddv4 or Edv4 machine the Intel d size and a Dv4 or Ev4 machine the size without one",
+        "src/VmMigrationFactory/data/target-families.json replacements (V5-NAMES-1): the dv5, ddv5, ev5 and edv5 pages show which Intel v5 series has a temporary disk, so the planner gives a Ddv5 or Edv5 machine the Intel d size on v6 and v7 and a Dv5 or Ev5 machine the size without one",
+        "src/VmMigrationFactory/data/target-families.json generations.v5.manaProcessors (GEN-V5-1): the size pages take their Interfaces row - NetVSC, ConnectX, MANA - from the spec files listed under includes. Learn serves each size page with its spec file expanded in place, so a change to a spec file is a change to its size page",
+        "src/VmMigrationFactory/data/target-families.json burstableTargets (BSV2-TARGET-1): the bsv2-series page gives the Bsv2 sizes with their vCPUs and memory, no local storage, Generation 1 and Generation 2 Supported, accelerated networking Supported, Intel processors and the interfaces NetVSC, ConnectX and MANA. A B v1 machine is offered its Bsv2 size on v5 because these are the Intel v5 facts; a change here can change which machines are offered Bsv2, or the move it is",
+        "src/VmMigrationFactory/data/target-families.json microsoftSizes (V5-SUCCESSOR-1, SIZE-LISTING-V5-1, SIZE-LISTING-D-1): every E size page of v5, v6 and v7 (Intel and AMD), with the Ebdsv5 and Ebsv5 page, the Eb family page, and the Dnsv6, Dndsv6, Dnlsv6 and Dnldsv6 pages give the size names Microsoft lists. A size not in the list is refused as one Microsoft does not list, never as a size the region does not have, so a new size or a new page here can change which machines are told that"
+      ],
+      "includes": [
+        {
+          "name": "eadsv5-series-specs",
+          "includedIn": "eadsv5-series"
+        },
+        {
+          "name": "easv5-series-specs",
+          "includedIn": "easv5-series"
+        },
+        {
+          "name": "edsv5-series-specs",
+          "includedIn": "edsv5-series"
+        },
+        {
+          "name": "edv5-series-specs",
+          "includedIn": "edv5-series"
+        },
+        {
+          "name": "esv5-series-specs",
+          "includedIn": "esv5-series"
+        },
+        {
+          "name": "ev5-series-specs",
+          "includedIn": "ev5-series"
+        }
+      ],
+      "pages": [
+        {
+          "name": "dndsv6-series",
+          "sha256": "f1aa0e07a905dedd152f41ed744bd35689d4fc52454120e556ad2c62c3b1f5c7"
+        },
+        {
+          "name": "dnldsv6-series",
+          "sha256": "881ccf2a3ac3af6f82427ead3264db2871cfb53469c0fd543dcdd30d7d16e90f"
+        },
+        {
+          "name": "dnlsv6-series",
+          "sha256": "446bd9c17a67221083c3b749b7e0bbec2843d0ff181a6001f69045716a3fdf12"
+        },
+        {
+          "name": "dnsv6-series",
+          "sha256": "918e7c44ac42df0e5bb38a3a5aca3ef0da31dd72fd057d50d5f6d0ebb131920b"
+        },
+        {
+          "name": "e-family",
+          "sha256": "e315f293d062ff700520bc3feef15e2a8de93445f4dc101bf13d542c1e72bd64"
+        },
+        {
+          "name": "eadsv5-series",
+          "sha256": "c13e953952a53183169ae29043ac7d97e22fd9ded6e0ea0e973c7758a09f6d4f"
+        },
+        {
+          "name": "eadsv6-series",
+          "sha256": "e7eb0343bbbd27ceba37e5b05e6a3956f7f6e378d91d4401d2af3682fdd23483"
+        },
+        {
+          "name": "eadsv7-series",
+          "sha256": "46e2be5ef0f506fde88fa65840c1da2f40c27ed05f80fe08ea75e1e1cc52fee5"
+        },
+        {
+          "name": "easv4-series",
+          "sha256": "5df9ec835528ba46588e07c1638aed4f4e5a29da692a5978e9379b07cfc3eec5"
+        },
+        {
+          "name": "easv5-series",
+          "sha256": "4603347369d420f9373b978c09c67733cb56297c5b26418820b8481c83a6e1b1"
+        },
+        {
+          "name": "easv6-series",
+          "sha256": "bce14078061ad3e95a6a34f9ee9e428e4c31024caa5caad91bdb2a9eb42f2a85"
+        },
+        {
+          "name": "easv7-series",
+          "sha256": "06bc6d1e51ac1b78806fafe0b9b65d9d41f5af58e2c6081ac42e5e29b2bd38e5"
+        },
+        {
+          "name": "eav4-series",
+          "sha256": "37f29372785943ec5ec9dec5c3f623d59ce9b6b3f825a68c8d1f804aeea4e033"
+        },
+        {
+          "name": "eb-family",
+          "sha256": "83c9220162cd6523c1883ad2ea1ebd83633409f43b58512417e79c994d69b956"
+        },
+        {
+          "name": "ebdsv5-ebsv5-series",
+          "sha256": "346a82a3e6b0402e75d3daa78bfbbdf4087fd3674991ce84256336692a0a6e25"
+        },
+        {
+          "name": "ebdsv6-series",
+          "sha256": "19342313da8a02a26eb224b7e39927dfdc644cebea41958df35eb6fd1b66ac88"
+        },
+        {
+          "name": "ebsv6-series",
+          "sha256": "9f9b86173d67ca91776fbe32f7cb5e33c2866aecad840eaf54b036c22998d218"
+        },
+        {
+          "name": "edsv5-series",
+          "sha256": "d5a74eeb080f5a1d094e74882c087a56ebb703ab2bbe2cf04d4a3dac4f67b025"
+        },
+        {
+          "name": "edsv6-series",
+          "sha256": "4b00c3fbf938ea83941fdc9797887aea68af583ba2f711f6c6fcbb5b19b8e4db"
+        },
+        {
+          "name": "edsv7-series",
+          "sha256": "f832c71093998235902bf43b104fc64d20e7361165634cf796def2703c73ba63"
+        },
+        {
+          "name": "edv4-series",
+          "sha256": "672015dd434c5675a21a8614aab41126209cfbad9c168d32c29e232084da4add"
+        },
+        {
+          "name": "edv5-series",
+          "sha256": "78defb17ee9b39a8c91912b60e35c10d7d7a477bb86fd23e071e79907946cff5"
+        },
+        {
+          "name": "endsv6-series",
+          "sha256": "0fa4bd7d5ef23f6e7930c156bf29f317620e7f4ffa5eff6def58af334bb62cd4"
+        },
+        {
+          "name": "ensv6-series",
+          "sha256": "daa257c119337ebd241c6bd5f738ad83f3e3054d0bca46a59cf23f46fbfffed2"
+        },
+        {
+          "name": "esv5-series",
+          "sha256": "0bedbf23a3daae935f22928f6d4e55b87c4ca2d6adbc7a1c5ca978cf7b6d19c1"
+        },
+        {
+          "name": "esv6-series",
+          "sha256": "b73a474943437a0a29e6f598e0b77c7bc8d2ea975a0da7d46f9a604b0a4c04fd"
+        },
+        {
+          "name": "esv7-series",
+          "sha256": "597e97d6f73bf87190e13e178051c6e39a59397cdc56308823b5c5c87ce68599"
+        },
+        {
+          "name": "ev4-series",
+          "sha256": "cf801764eb5ec2441802d331f203845257dd4a515dbb3aa78142b34210424223"
+        },
+        {
+          "name": "ev5-series",
+          "sha256": "d6f757a532da08b3b2fcd1efc8917ded44836549b5a04dc2eb7eeeaff574e966"
+        }
+      ]
+    },
+    {
+      "path": "azure/virtual-machines/sizes/compute-optimized",
+      "toc": "azure/virtual-machines/toc.json",
+      "include": "^(?!dc|ec|dp|ep|dn|en)[def][a-z]*v[67]-series$",
+      "githubSource": "MicrosoftDocs/azure-compute-docs/articles/virtual-machines/sizes/compute-optimized (watched there until 2026-10-03)",
+      "localDerivatives": [
+        "CLAUDE.md domain facts: accelerated networking REQUIRED on every D and E v6 size since 2026-10-27 (DRIFT-11) and SUPPORTED on v7, where a Linux machine with no MANA driver keeps it off (AN-KEEP-1); temporary disk counts (TEMPPOOL-1); NIC and data-disk counts that shrink on v6 (NIC-1, DISK-3); host caching (DISK-3)",
+        "src/VmMigrationFactory/data/target-families.json",
+        "engine:planner (target size choice)"
+      ],
+      "pages": [
+        {
+          "name": "fadsv7-series",
+          "sha256": "9e88e81e9c88a19fd742b76a7bbaf77525353990c89fe9586c67995273052ff4"
+        },
+        {
+          "name": "faldsv7-series",
+          "sha256": "518f063efe3c59440d8d76706d2647c615156e4f777f3c86b272b92e8a23d3d4"
+        },
+        {
+          "name": "falsv6-series",
+          "sha256": "59cc1a551048f1c280d5561cf0add7cc3e726a57bf962a9b6971ea795a10853d"
+        },
+        {
+          "name": "falsv7-series",
+          "sha256": "17903da9a400a185ab45639e95e7d6a5fbe7043f96b3273e8554bb4d3d8bfa6c"
+        },
+        {
+          "name": "famdsv7-series",
+          "sha256": "684c37d4f57ac7ef8889458c3c3e673c39375f87a109057122b878bbffb145c8"
+        },
+        {
+          "name": "famsv6-series",
+          "sha256": "89f09f61aa2b4488816a0275fd752367842d13cea93ee18d6f7808e07a16a520"
+        },
+        {
+          "name": "famsv7-series",
+          "sha256": "4750594e94902f190d5c5e0dbe1d8c709c831fdb85279ee799a8adb0249ab390"
+        },
+        {
+          "name": "fasv6-series",
+          "sha256": "d35b2533cb16d44cb0cd4a2adbcb72d9c7c043dff28d56ded413fd22702f6397"
+        },
+        {
+          "name": "fasv7-series",
+          "sha256": "4140ae658e6bd761c30f1c67f9f389867aa34b060ec926614f4725d7a9c7455e"
+        }
+      ]
+    },
+    {
+      "path": "azure/virtual-network",
+      "toc": "azure/virtual-network/toc.json",
+      "include": "^accelerated-networking-(overview|mana-overview|mana-linux|mana-windows|mana-existing-sizes)$",
+      "githubSource": "MicrosoftDocs/azure-docs/articles/virtual-network (watched there until 2026-10-03)",
+      "localDerivatives": [
+        "src/VmMigrationFactory/data/driver-floors.json (the MANA table, the Windows list, the 6.14 fallback)",
+        "AN-KEEP-1 and RHEL8-MANA-1 (Resolve-VmfAcceleratedNetworkingForMove, Get-VmfManaDriverPresence, Find-VmfManaTableEntry)",
+        "MANA-WIN-1 (src/guest/windows/Install-ManaDriver.ps1: the MANA device it looks for in the Windows driver store, and the pinned driver from the download link)",
+        "docs/research/accelerated-networking-by-os.md",
+        "CLAUDE.md domain facts on MANA, Mellanox and the virtual switch fallback"
+      ],
+      "pages": [
+        {
+          "name": "accelerated-networking-mana-existing-sizes",
+          "sha256": "01a35e0ca592de4cb2fb6d1e6dcf289c864311f9f833357c69a1e60c6e67af4c"
+        },
+        {
+          "name": "accelerated-networking-mana-linux",
+          "sha256": "61df966e888cf793b66954a9bb8e7f3f3b72d41a2877482c76f2f06f3053308c"
+        },
+        {
+          "name": "accelerated-networking-mana-overview",
+          "sha256": "9d81113ebabbd262b314e75c16ad79619f1484df1b859d2affe5856cd937be88"
+        },
+        {
+          "name": "accelerated-networking-mana-windows",
+          "sha256": "5147b783792f63e39caa2cac736fd528d689933958be921c8cc588f71a77672c"
+        },
+        {
+          "name": "accelerated-networking-overview",
+          "sha256": "8d6e2a6e4918b98d0822307a4fb6d969a6a35fcb9ff67e2e896be130e495146d"
+        }
+      ]
+    },
+    {
+      "path": "azure/virtual-network/ip-services",
+      "toc": "azure/virtual-network/ip-services/toc.json",
+      "include": "^(public-ip-addresses|public-ip-basic-upgrade-guidance)$",
+      "localDerivatives": [
+        "docs/manual/reference/before-a-machine-moves.md, A dynamic public IP address (DYNAMIC-PUBLIC-IP-WORDS-1, 2026-11-15: manual only, the product does not read public IP addresses): a Basic public IP address with the allocation method Dynamic can change when the move stops the machine, and Static keeps it. If Microsoft changes which SKU can be Dynamic, or what happens at a stop, change that section",
+        "The same section: Microsoft retired Basic public IP addresses on 30 September 2025 and recommends an upgrade to Standard (the upgrade guidance). They remain operational, unsupported and with no SLA, so one can still be on a machine that the product moves"
+      ],
+      "pages": [
+        {
+          "name": "public-ip-addresses",
+          "sha256": "118026d1e100a0b95a5e4b820e5fcb253c84498dcfa9a037b0d9856bd387cd74"
+        },
+        {
+          "name": "public-ip-basic-upgrade-guidance",
+          "sha256": "927a86a71cf0f18ed35dafe38ff4efcc60dbc48faa8dfa28e237b8bcf772c83b"
+        }
+      ]
+    },
+    {
+      "path": "entra/identity/managed-identities-azure-resources",
+      "toc": "entra/identity/managed-identities-azure-resources/toc.json",
+      "include": "^managed-identities-faq$",
+      "githubSource": "MicrosoftDocs/entra-docs/docs/identity/managed-identities-azure-resources (watched there until 2026-10-03)",
+      "localDerivatives": [
+        "IDENTITY-2 (a system-assigned identity cannot survive a rebuild as itself - onSystemAssignedIdentity, and its assessment finding in assessment-reasons.json)"
+      ],
+      "pages": [
+        {
+          "name": "managed-identities-faq",
+          "sha256": "12eb09c11525a0a7b2ad24d1c246613f1dccef1c76fd783ef780706c2b89cd0a"
+        }
+      ]
+    },
+    {
+      "path": "azure/cyclecloud/how-to",
+      "toc": "azure/cyclecloud/toc.json",
+      "view": "cyclecloud-8",
+      "include": "^tag-nodes$",
+      "githubSource": "MicrosoftDocs/azure-docs/articles/cyclecloud/how-to (never watched on GitHub; the public copy of the page is there, under CC BY 4.0, read 2026-11-07)",
+      "localDerivatives": [
+        "BATCH-CYCLECLOUD-SIGNAL-1 (src/VmMigrationFactory/Private/assess/CycleCloudDetection.ps1: the tags CycleCloudCluster, CycleCloudNodeArray and ClusterId, and their formats, decide that a machine is in an Azure CycleCloud cluster; its finding in assessment-reasons.json)"
+      ],
+      "note": "DRIFT-VERSIONED-1: Learn serves every Azure CycleCloud page at a versioned address and redirects the plain address to it (measured 2026-11-07: the plain address and the toc.json both answer 301 to ?view=cyclecloud-8, the default version, and an unknown version answers 301 to cyclecloud-8 with viewFallbackFrom). So this folder is read at view=cyclecloud-8, and a redirect from there is drift. Pinned 2026-11-07 from the live page.",
+      "pages": [
+        {
+          "name": "tag-nodes",
+          "sha256": "8e17ae2199a4d938744d7a58faff84e0f078311c387c09785c8f5447c79c6f5a"
+        }
+      ]
+    },
+    {
+      "path": "azure/quotas",
+      "toc": "azure/quotas/toc.json",
+      "include": "^(per-vm-quota-requests|regional-quota-requests)$",
+      "localDerivatives": [
+        "src/dashboard/waves.js, quotaNextSupportFamily (QUOTA-REQUEST-POLL-1, 2026-11-17): after Azure refuses a quota increase request for a size family, the wave editor sends the operator to Increase VM-family vCPU quotas: on the Quotas page, select Compute, then the Information icon beside the quota, then Create a support request, and enter the new vCPU limit in the Quota details pane. If Microsoft changes these steps or the page title, change that sentence, QUOTA_HELP and docs/manual/use/capacity.md",
+        "src/dashboard/waves.js, quotaNextSupportRegional (the same item): for the Total Regional vCPUs quota, the operator follows Increase regional vCPU quotas: on the Quotas page, select Compute, select the quota, then New Quota Request; if Azure does not give the increase, the portal shows a link to open a support request. If Microsoft changes these steps or the page title, change that sentence, QUOTA_HELP and docs/manual/use/capacity.md"
+      ],
+      "pages": [
+        {
+          "name": "per-vm-quota-requests",
+          "sha256": "a2358aa504dad570d389d12fc2764b663d07bd96cf87885d6eab184b089853c4"
+        },
+        {
+          "name": "regional-quota-requests",
+          "sha256": "fb5690b372692ccabbdf30fea22a680dd8125cf7f581d27e661cd6ad59972a5f"
+        }
+      ]
+    }
+  ],
+  "notWatched": [
+    {
+      "url": "https://learn.microsoft.com/troubleshoot/azure/virtual-machines/linux/troubleshoot-linux-rhui-certificate-issues",
+      "reason": "RHUI certificate issues (RHUI-REFRESH-1, KERNEL-OFFER-EDGES-1). A rule rests on it: kernel-update.sh runs its command for an expired RHUI client certificate, limited to the installed RHUI client packages, and the EUS, SAP and HA clients lock releasever. The page is in the Microsoft troubleshooting set, which no watched folder reads yet; read by hand on 2026-11-14 (page updated 2026-06-11). Watching it is RHUI-PAGE-WATCH-1."
+    },
+    {
+      "url": "https://learn.microsoft.com/azure/virtual-machines/dedicated-hosts/overview",
+      "reason": "Azure Dedicated Hosts (REBUILD-MOVE-HOST-1). A pointer in the reason for a machine the product refuses by scope (2026-11-11); the rule is only that Azure records a dedicated host or a host group on the machine, and no rule rests on the page, so a change to it changes nothing the product does."
+    },
+    {
+      "url": "https://learn.microsoft.com/rest/api/compute/resource-skus/list",
+      "reason": "The size list (SCAN-PARTIAL-SUBS-1). A pointer in the message for a machine whose size list the scan could not read; the rule is only that the read failed, and no rule rests on the page, so a change to it changes nothing the product does."
+    },
+    {
+      "url": "https://learn.microsoft.com/azure/virtual-machines/marketplace-images",
+      "reason": "Marketplace purchase plans (NO-PLAN-SCOPE-1). A pointer in the message for a machine the product refuses by scope; the rule is only that Azure records a plan on the machine or its OS disk, and no rule rests on the page, so a change to it changes nothing the product does."
+    },
+    {
+      "url": "https://learn.microsoft.com/windows-server/failover-clustering/failover-clustering-overview",
+      "reason": "Failover clustering. A pointer in the warning that a machine may be a cluster node (CLUSTER-DETECT-1); the product refuses a cluster node by scope, and no rule rests on the page, so a change to it changes nothing the product does."
+    },
+    {
+      "url": "https://learn.microsoft.com/azure/aks/resize-node-pool",
+      "reason": "AKS nodes. A pointer in the message for a machine the product refuses by scope; no migration rule rests on the page, so a change to it changes nothing the product does."
+    },
+    {
+      "url": "https://learn.microsoft.com/azure/architecture/networking/guide/network-virtual-appliance-high-availability",
+      "reason": "Network virtual appliances. A pointer in the message for a machine the product refuses by scope; no migration rule rests on the page, so a change to it changes nothing the product does."
+    },
+    {
+      "url": "https://learn.microsoft.com/azure/confidential-computing/confidential-vm-overview",
+      "reason": "Confidential VMs. A pointer in the message for a machine the product refuses by scope; no migration rule rests on the page, so a change to it changes nothing the product does."
+    },
+    {
+      "url": "https://learn.microsoft.com/azure/virtual-machines/sizes/overview",
+      "reason": "Data disk limits of each size (DISKS-32-1). A pointer in the message for a machine the product refuses by scope - more than 32 data disks; the limit of 32 is a scope decision, not read from the page, so a change to it changes nothing the product does."
+    },
+    {
+      "url": "https://learn.microsoft.com/azure/sap/workloads/certifications",
+      "reason": "SAP systems. A pointer in the message for a machine the product refuses by scope; no migration rule rests on the page, so a change to it changes nothing the product does."
+    },
+    {
+      "url": "https://learn.microsoft.com/azure/virtual-desktop/add-session-hosts-host-pool",
+      "reason": "Azure Virtual Desktop session hosts. A pointer in the message for a machine the product refuses by scope; no migration rule rests on the page, so a change to it changes nothing the product does."
+    },
+    {
+      "url": "https://learn.microsoft.com/azure/virtual-machine-scale-sets/virtual-machine-scale-sets-upgrade-scale-set",
+      "reason": "Scale set members. A pointer in the message for a machine the product refuses by scope; no migration rule rests on the page, so a change to it changes nothing the product does."
+    },
+    {
+      "url": "https://learn.microsoft.com/azure/azure-resource-manager/managed-applications/overview",
+      "reason": "Azure managed applications (DETECT-PATTERNS-1). A pointer in the message for a machine the product refuses by scope; the rule reads the resource group's managedBy from Azure, not from the page, so a change to it changes nothing the product does."
+    },
+    {
+      "url": "https://learn.microsoft.com/azure/azure-sql/virtual-machines/windows/availability-group-overview",
+      "reason": "SQL Server Always On availability groups (DETECT-PATTERNS-1). A pointer in the message for a machine the product refuses by scope; the rule reads sqlVirtualMachineGroupResourceId from Azure, so a change to the page changes nothing the product does."
+    },
+    {
+      "url": "https://learn.microsoft.com/azure/azure-sql/virtual-machines/windows/sql-server-on-azure-vm-iaas-what-is-overview",
+      "reason": "SQL Server on Azure virtual machines (DETECT-PATTERNS-1). A pointer in a warning that lets the machine move; no migration rule rests on the page."
+    },
+    {
+      "url": "https://learn.microsoft.com/azure/virtual-machines/disks-shared",
+      "reason": "Shared disks (DETECT-PATTERNS-1). A pointer in the message for a machine the product refuses by scope; the rule reads maxShares from Azure, so a change to the page changes nothing the product does."
+    }
+  ]
+}

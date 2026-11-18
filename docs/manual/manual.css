@@ -1,0 +1,104 @@
+/* DOC-4: the manual in the dashboard's own theme (src/dashboard/app.css). The
+   values are the dashboard's tokens, copied by name so the two agree. */
+:root {
+  --theme-color: #446e9b;
+  --theme-hue: 212;
+  --base-font-size: 14.5px;
+  --sidebar-width: 300px;
+  --bg: #f8f9fa;
+  --card: #ffffff;
+  --card-2: #eeeeee;
+  --line: #dee2e6;
+  --nav: #446e9b;
+  --ink: #2d2d2d;
+  --body: #495057;
+  --muted: #6c6c6c;
+  --brand: #446e9b;
+  --brand-soft: #dae2eb;
+  --brand-on: #1b2c3e;
+  --link: #0c74ce;
+  --warn-soft: #f6e3cc;
+  --warn-on: #552f00;
+  --font: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, Helvetica, Arial, sans-serif;
+  --mono: Consolas, 'Cascadia Mono', monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #222222; --card: #303030; --card-2: #3a3a3a; --line: #444444; --nav: #375a7f;
+    --ink: #ffffff; --body: #dee2e6; --muted: #9aa4b0;
+    --brand: #759bc3; --brand-soft: #31363b; --brand-on: #7ea1c7; --link: #8ec4f7;
+    --warn-soft: #4b3f2c; --warn-on: #f39c12;
+  }
+}
+html, body { background: var(--bg); }
+body { font-family: var(--font); color: var(--body); }
+.sidebar { background: var(--card); border-right: 1px solid var(--line); color: var(--body); }
+/* The manual's name, set like the dashboard's bar. */
+.sidebar > h1 { margin: 0 0 14px; }
+/* BRAND-1: the brand comes FIRST. docsify inserts its search box before the
+   name, so the sidebar opened with a search field and the product appeared
+   under it. Ordering is done here rather than by moving markup, because the
+   search box is inserted by the plugin at run time. */
+.sidebar { display: flex; flex-direction: column; }
+.sidebar > h1 { order: -1; }
+.sidebar .search { order: 0; }
+.sidebar .sidebar-nav { order: 1; }
+
+/* BRAND-1: the banner carries the product's mark and name, the same lockup
+   the dashboard wears. The mark is mark.svg as a still MASK, so it is painted
+   in the banner's own white. logo.svg is the tab icon (LOGO-SERVERS-1). */
+.sidebar > h1 a { display: flex; align-items: center; gap: 11px; background: var(--nav); color: #ffffff; padding: 13px 18px; text-decoration: none; }
+.sidebar > h1 a .m-logo { width: 30px; height: 30px; flex: none; background: currentColor;
+  -webkit-mask: url(mark.svg) center/contain no-repeat; mask: url(mark.svg) center/contain no-repeat; }
+.sidebar > h1 a .m-name { display: flex; flex-direction: column; gap: 2px; }
+.sidebar > h1 a .m-title { display: flex; align-items: baseline; gap: .3em; font-size: 15.5px; line-height: 1; letter-spacing: -.01em; }
+.sidebar > h1 a .m-title .b-1 { font-weight: 400; opacity: .9; }
+.sidebar > h1 a .m-title .b-2 { font-weight: 700; }
+.sidebar > h1 a .m-sub { font-size: 10.5px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; opacity: .72; }
+.sidebar ul li a { font-size: 14px; color: var(--body); }
+.sidebar ul li a:hover { color: var(--link); text-decoration: none; }
+.sidebar ul li.active > a { border-right: 3px solid var(--brand); color: var(--brand-on); font-weight: 600; }
+/* A section name (Understand, Install) is a <p> with no link in it. A
+   top-level page (Start here) is also a <p>, with a link inside: it stays a
+   page name, not in capitals: capitals in only some places looked wrong. */
+.sidebar ul li > p { font-size: 11.5px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); margin: 18px 0 4px; font-weight: 700; }
+.sidebar ul li > p:has(> a) { text-transform: none; letter-spacing: 0; font-size: 14px; font-weight: 400; margin: 0; }
+.sidebar ul li > p > a { text-transform: none; letter-spacing: 0; font-size: 14px; }
+.sidebar .app-sub-sidebar li a { text-transform: none; letter-spacing: 0; font-size: 13px; font-weight: 400; }
+.sidebar .search { border-bottom: 1px solid var(--line); }
+.sidebar .search input { background: var(--card); color: var(--ink); }
+.sidebar .search .results-panel { background: var(--card); }
+.sidebar-toggle { background: transparent; }
+.content { background: var(--bg); }
+/* Text stays a readable measure; pictures, diagrams and tables take the
+   whole column: the journey picture was too small to read. */
+.markdown-section { max-width: 1140px; color: var(--body); }
+.markdown-section > p, .markdown-section > ul, .markdown-section > ol, .markdown-section > h1, .markdown-section > h2,
+.markdown-section > h3, .markdown-section > h4, .markdown-section > blockquote { max-width: 78ch; }
+.markdown-section > p:has(> img:only-child) { max-width: none; }
+.markdown-section h1 { font-size: 1.9rem; font-weight: 700; color: var(--ink); }
+.markdown-section h2 { font-size: 1.35rem; font-weight: 700; color: var(--ink); border-bottom: 1px solid var(--line); padding-bottom: 4px; margin-top: 2.2rem; }
+.markdown-section h3 { font-size: 1.1rem; font-weight: 700; color: var(--ink); }
+.markdown-section p, .markdown-section li { line-height: 1.6; }
+.markdown-section strong { color: var(--ink); }
+.markdown-section a { color: var(--link); text-decoration: none; font-weight: 500; }
+.markdown-section a:hover { text-decoration: underline; }
+.markdown-section img { border: 1px solid var(--line); border-radius: 8px; box-shadow: 0 1px 2px rgba(0,0,0,.06), 0 4px 14px rgba(0,0,0,.05); margin: 8px 0 16px; background: var(--card); }
+.markdown-section img[src$=".svg"] { border: none; box-shadow: none; border-radius: 12px; width: 100%; }
+.markdown-section table { display: table; width: 100%; }
+.markdown-section th { background: var(--card-2); color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: .06em; border: 1px solid var(--line); }
+.markdown-section td { border: 1px solid var(--line); color: var(--body); }
+.markdown-section td, .markdown-section th { padding: 8px 10px; }
+.markdown-section tr:nth-child(2n) { background: var(--card-2); }
+.markdown-section code { background: var(--card-2); color: var(--ink); border-radius: 4px; font-family: var(--mono); font-size: .88em; }
+.markdown-section pre { background: #101725; }
+.markdown-section pre > code { background: transparent; color: #d5deef; font-family: var(--mono); }
+/* A step the reader takes, set off from the explanation around it. */
+.markdown-section blockquote { border-left: 4px solid var(--brand); background: var(--brand-soft); color: var(--brand-on); padding: 10px 14px; border-radius: 0 8px 8px 0; }
+.markdown-section blockquote p { margin: 4px 0; color: var(--brand-on); }
+.markdown-section blockquote pre { margin: 6px 0; }
+.markdown-section .mermaid { text-align: center; background: var(--card); border: 1px solid var(--line); border-radius: 8px; padding: 12px; margin: 12px 0 20px; }
+/* NO-POPUPS-1: the link back to the dashboard, which opened the manual in its own tab. */
+.m-back { position: fixed; top: 12px; right: 16px; z-index: 30; background: var(--card); color: var(--link); border: 1px solid var(--line); border-radius: 8px; padding: 6px 12px; font-size: 13px; font-weight: 600; text-decoration: none; box-shadow: 0 1px 2px rgba(0,0,0,.06); }
+.m-back:hover, .m-back:focus-visible { text-decoration: underline; }
+@media print { .m-back { display: none; } }

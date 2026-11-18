@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 1,
+  "assessmentId": "contoso-scan-1",
+  "assessmentHash": "0000000000000000000000000000000000000000000000000000000000000000",
+  "adviceVersion": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "savedBy": {
+    "identity": "operator@example.com",
+    "tenantId": "00000000-0000-0000-0000-000000000000"
+  },
+  "savedUtc": "2026-10-02T18:00:00.0000000Z",
+  "machines": [
+    "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-app/providers/Microsoft.Compute/virtualMachines/app-01",
+    "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-app/providers/Microsoft.Compute/virtualMachines/legacy-01"
+  ]
+}

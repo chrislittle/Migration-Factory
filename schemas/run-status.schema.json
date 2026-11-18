@@ -1,0 +1,96 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://vmf.local/schemas/run-status.schema.json",
+  "title": "VMF run status snapshot",
+  "description": "The running wave's snapshot (written every ten seconds by the orchestrator) and, from v3, the summary of the whole migration (written whenever the migration changes in a way the migrations list shows). Consumed by the dashboard, reports and the resume watchdog. A v3 or later document of a migration whose waves have not run yet holds the summary only. v4 added signOffOutOfDate to summary.next.waitsFor. v5 added summary.restoredStops, the restoredStops of each wave, and the reason putBack. v6 added summary.waitsOnPerson and the waitsOnPerson of each wave. v8 requires both counts in the summary and in each wave.",
+  "type": "object",
+  "required": ["schemaVersion", "runId", "summary"],
+  "additionalProperties": false,
+  "properties": {
+    "schemaVersion": { "const": 8, "description": "8 (RUN-STATUS-OLD-SUMMARY-1): the summary and each wave require restoredStops and waitsOnPerson. Every earlier version is in docs/schema-migrations.md." },
+    "runId": { "type": "string" },
+    "wave": { "type": "string", "description": "The wave the live fields describe: the one running, or the one that ran last." },
+    "updatedUtc": { "type": "string", "format": "date-time", "description": "When the live fields were last written by a running wave. Absent until a wave has run. A summary write never changes it." },
+    "stateCounts": { "type": "object", "additionalProperties": { "type": "integer", "minimum": 0 }, "description": "Machine states of the WAVE in `wave` only. The whole migration is summary.stateCounts." },
+    "running": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["vmId", "state"],
+        "additionalProperties": false,
+        "properties": {
+          "vmId": { "type": "string" },
+          "state": { "type": "string" },
+          "sinceUtc": { "type": "string", "format": "date-time" },
+          "workerId": { "type": "string" }
+        }
+      }
+    },
+    "breaker": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "halted": { "type": "boolean" },
+        "consecutiveFailures": { "type": "integer", "minimum": 0 },
+        "recentFailureRate": { "type": "number", "minimum": 0, "maximum": 1 }
+      }
+    },
+    "throttle": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "limit": { "type": "integer", "minimum": 1 },
+        "containers": { "type": "integer", "minimum": 1, "description": "SCALE-2 (v2): how many engine containers work this wave; limit is the wave's TOTAL at once." },
+        "recent429s": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "etaUtc": { "type": ["string", "null"], "format": "date-time" },
+    "summary": {
+      "type": "object",
+      "description": "APPROVE-GROUP-1 (v3): the whole migration - every wave in the order it runs, and what the next wave waits for.",
+      "required": ["writtenUtc", "reason", "halted", "machines", "stateCounts", "restoredStops", "waitsOnPerson", "waves", "next"],
+      "additionalProperties": false,
+      "properties": {
+        "writtenUtc": { "type": "string", "format": "date-time" },
+        "reason": {
+          "enum": ["planSaved", "waveApproved", "planSignedOff", "optionsAccepted", "acknowledged", "waveRunning", "waveEnded",
+                   "decision", "machineSkipped", "runStopped", "paused", "resumed", "putBack", "dailyCheck"],
+          "description": "The change that wrote this summary. putBack (v5): a restore, or a finish of a restore or a rollback, ended."
+        },
+        "halted": { "type": "boolean", "description": "The migration is paused or stopped (halt.flag)." },
+        "machines": { "type": "integer", "minimum": 0, "description": "Machines the plan moves, in a wave." },
+        "stateCounts": { "type": "object", "additionalProperties": { "type": "integer", "minimum": 0 }, "description": "Machine states across every wave. A machine with no state document is PLANNED." },
+        "restoredStops": { "type": "integer", "minimum": 0, "description": "RESTORED-HOLD-1 (v5): machines counted in stateCounts under a stop state (FAILED_ROLLED_BACK, FAILED_NEEDS_ATTENTION, NEEDS_DECISION) whose stop a restore ended (Get-VmfMachineOutcome: putBack). They wait for no person." },
+        "waitsOnPerson": { "type": "integer", "minimum": 0, "description": "RUN-SUMMARY-SWAP-1 (v6): machines across every wave whose outcome waits for a person (Test-VmfOutcomeWaitsOnPerson over Get-VmfMachineOutcome: attention or rolledBack). It counts a machine a restore left stopped with a data disk swap left (swapPending), whose state stays MIGRATED. The overview and the migrations list read it." },
+        "waves": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["wave", "machines", "stateCounts", "restoredStops", "waitsOnPerson"],
+            "additionalProperties": false,
+            "properties": {
+              "wave": { "type": "string" },
+              "machines": { "type": "integer", "minimum": 0 },
+              "members": { "type": "string", "pattern": "^[0-9a-f]{64}$", "description": "The version of the wave's sorted machine ids. A later write keeps this wave's counts without reading its machines only while it is the same and nothing in the wave is on its way." },
+              "stateCounts": { "type": "object", "additionalProperties": { "type": "integer", "minimum": 0 } },
+              "restoredStops": { "type": "integer", "minimum": 0, "description": "The machines of this wave in a stop state whose stop a restore ended." },
+              "waitsOnPerson": { "type": "integer", "minimum": 0, "description": "The machines of this wave whose outcome waits for a person." }
+            }
+          }
+        },
+        "next": {
+          "type": "object",
+          "required": ["wave", "waitsFor"],
+          "additionalProperties": false,
+          "properties": {
+            "wave": { "type": ["string", "null"], "description": "The wave running, or the next wave to run; null when every wave has run." },
+            "waitsFor": {
+              "enum": ["running", "none", "decision", "acknowledgement", "acceptance", "approval", "signOffOutOfDate", "unknown", "start"],
+              "description": "running: a machine is on its way. none: every wave has run. decision: a machine waits for a person. acknowledgement: the note about machines defined in code is not accepted. acceptance: the settings of the next wave are not accepted. approval: the next wave is not approved and the plan is not signed off. signOffOutOfDate (v4): the next wave changed after the plan was signed off, so the timer and a start time do not start it - a person does (the timer's own refusal code). unknown: a start gate fails that the engine does not name. start: nothing holds the next wave."
+            }
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,96 @@
+# INSTALL-1: one command installs the product - `azd up`.
+#
+# What happens behind it, in order:
+#   preprovision  - shows the disclaimer first (DISCLAIMER-1: not an official
+#                   Microsoft product, not supported by Microsoft), then
+#                   checks the subscription is ready (providers, region,
+#                   quota, tools), asks the decision page once (the hosting
+#                   plan; what the product may do with the machines),
+#                   REFUSES if azd's deployment-stack mode is on for this
+#                   machine (NO-STACKS-2), creates the resource group, deploys
+#                   the Entra registrations (infra/identity.bicep - an Entra
+#                   object cannot be deployed by the platform template), and
+#                   hands the API id to that template.
+#   provision     - infra/main.bicep as an ordinary subscription deployment:
+#                   the platform (infra/platform.bicep) and the two custom
+#                   roles (infra/roles.bicep). Nothing is protected from
+#                   deletion; one resource group holds it all.
+#   postprovision - builds the engine image in the customer's own registry
+#                   (cloud-side; the laptop never runs Docker), pins the
+#                   engine job to it by digest, publishes the facade and the
+#                   dashboard, proves the facade answers, and prints the
+#                   front door.
+#   predown       - says what safety copies the removal leaves behind, and the
+#                   command that finds them afterwards. It stops nothing.
+#   postdown      - removes the Entra registrations, AFTER the platform is
+#                   gone, because it runs only when the removal succeeded.
+#
+# Of the three decisions made on 2026-09-05, one stands and two are
+# reversed. The hosting plan is still a parameter, default Free (A):
+#   Free: App Service Free (F1) for the dashboard, Azure Functions Consumption (Y1) for the service.
+#   Basic: one App Service Basic (B1) plan for both, with Always On.
+#
+# FIRSTRUN-1, 2026-09-15, REVERSES DECISION B - "the engine's first scope is a
+# separate step in the app". What it cost, found in use: every route to a
+# working install ran through the Admin page, and that page needs permissions
+# over the DIRECTORY that one person with one subscription may not hold. The
+# install now ASKS, with no as the default, and grants what the person answers.
+# What decision B protected is kept: the product grants itself nothing.
+#
+# NO-STACKS-1, 2026-09-11: THE FIRST ONE IS REVERSED. A deployment stack held
+# the platform from 2026-09-05 until today. It does not now, and there is no
+# `deploymentStacks` block below.
+#
+# Three teardown failures in two days decided it, all on azd 1.34.0, none of
+# them a fault of the Azure service:
+#
+#   * a removal that DETACHED all 14 resources and printed "SUCCESS: Your
+#     application was removed from Azure in 15 seconds";
+#   * 25 deny assignments that outlived their stack and then refused every
+#     attempt to delete the resource group by hand - a deny assignment is not
+#     user-deletable, so the only way out was to recreate the stack;
+#   * a removal blocked by a Container Apps job the stack did not manage,
+#     created by `infra/deploy.ps1`, which is a legitimate second deployment
+#     path this product needs.
+#
+# The third is the one that decides it. azd behaved correctly there; the MODEL
+# is the problem. A stack deletes resource by resource in an order computed
+# from its own inventory, and anything in the group it does not manage can
+# block that. Without a stack, `azd down` deletes the RESOURCE GROUP and Azure
+# orders what is inside it, whoever made it.
+#
+# What was given up, knowingly: deny-delete on every resource (it never
+# prevented a deletion and caused one hour-long recovery), and the deletion of
+# a resource a newer version stops declaring - which is replaced by a migration
+# note, because a customer finding a resource gone with no notice is worse than
+# one reading why. The drift check already reports such a leftover.
+#
+# See docs/research/option-b-dropping-deployment-stacks.md.
+name: vm-migration-factory
+metadata:
+  template: vm-migration-factory@0.1.0
+infra:
+  provider: bicep
+  path: infra
+  module: main
+hooks:
+  preprovision:
+    shell: pwsh
+    run: ./infra/hooks/preprovision.ps1
+    interactive: true
+  postprovision:
+    shell: pwsh
+    run: ./infra/hooks/postprovision.ps1
+    interactive: true
+  predown:
+    shell: pwsh
+    run: ./infra/hooks/predown.ps1
+    interactive: true
+  # TEARDOWN-1: the registrations are removed HERE, after the platform is gone,
+  # because postdown runs only when the removal succeeded. predown ran before
+  # anything was deleted, so a teardown that then failed left the product
+  # running with nobody able to sign in to it - measured 2026-09-11.
+  postdown:
+    shell: pwsh
+    run: ./infra/hooks/postdown.ps1
+    interactive: true

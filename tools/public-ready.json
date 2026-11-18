@@ -1,0 +1,97 @@
+{
+  "_about": "PUBLIC-READY-GATE-1. Data for tools/Test-VmfPublicReady.ps1. Nothing here is a value the gate hunts for: known values are SHA-256 hashes of their lower-case text, and every list is an allow-list of placeholders and published ids.",
+  "skipFiles": ["*.min.js", "package-lock.json"],
+  "labIdHashes": [
+    "dba1019c94c3cb3d8add52ec00ca6c159655b728dcfccd4f1ae51268bd3b9cb7",
+    "e7dca203831d4fb8acb8b9c7af89d6dc6f88330b3c9cff7a58c0f9b7970ecba7",
+    "23f7212585e9238b4d82c49106392568e48509d7d844bdad4cff80889658d3d0",
+    "12941cc04f644ed116689c74c09d9120de9dfb7b620e828f2ce2e214b1eae327",
+    "78c63fe869d9014f9ea215d528089580d7a049a1d4a9da522769e6367d4eca57"
+  ],
+  "employerNames": [
+    {
+      "words": 2,
+      "word": "d487a0157ebb2ec68762a8c0614ad92612666a58a48bd3c1f9d7375b07f9aa19",
+      "name": "acba436d7664e8e0615773f46237a99e219d7e553ab73d6adfe8e936a5dadbe9"
+    }
+  ],
+  "allowedSubscriptionIds": [
+    "aaaa0a0a-bb1b-cc2c-dd3d-eeeeee4e4e4e",
+    "00000000-0000-0000-0000-000000000000",
+    "11111111-2222-3333-4444-555555555555",
+    "00000000-1111-1111-1111-111111111111"
+  ],
+  "allowedSubscriptionPrefixes": ["aaaa0a0a", "bbbb0b0b", "00000000", "11111111"],
+  "allowedShortIds": {
+    "aaaa0a0a": "placeholder: the lab subscription",
+    "bbbb0b0b": "placeholder: the CI runner's subscription",
+    "cccc0c0c": "placeholder: any other id inside a quoted error",
+    "00000000": "placeholder",
+    "11111111": "placeholder",
+    "b24988ac": "Azure built-in role: Contributor",
+    "ba92f5b4": "Azure built-in role: Storage Blob Data Contributor",
+    "f58310d9": "Azure built-in role: Role Based Access Control Administrator",
+    "fb382eab": "Azure built-in role: Container Registry Tasks Contributor",
+    "84bccea3": "Microsoft Graph permission: AppRoleAssignment.ReadWrite.All",
+    "c79f8feb": "Microsoft Graph permission: Application.Read.All",
+    "e87a87f5": "Azure built-in policy definition: the MANA NVA list"
+  },
+  "allowedGuids": {
+    "aaaa0a0a-bb1b-cc2c-dd3d-eeeeee4e4e4e": "placeholder: the lab subscription, redacted",
+    "e87a87f5-e6dd-4919-be21-abb0a4ea4630": "Azure built-in policy definition: the MANA NVA list",
+    "b24988ac-6180-42a0-ab88-20f7382dd24c": "Azure built-in role: Contributor",
+    "acdd72a7-3385-48ef-bd42-f606fba81ae7": "Azure built-in role: Reader",
+    "8e3af657-a8ff-443c-a75c-2fe8c4bcb635": "Azure built-in role: Owner",
+    "18d7d88d-d35e-4fb5-a5c3-7773c20a72d9": "Azure built-in role: User Access Administrator",
+    "f58310d9-a9f6-439a-9e8d-f62e7b41a168": "Azure built-in role: Role Based Access Control Administrator",
+    "ba92f5b4-2d11-453d-a403-e96b0029c9fe": "Azure built-in role: Storage Blob Data Contributor",
+    "b7e6dc6d-f1e8-4753-8033-0f276bb0955b": "Azure built-in role: Storage Blob Data Owner",
+    "2a2b9908-6ea1-4ae2-8e65-a410df84e7d1": "Azure built-in role: Storage Blob Data Reader",
+    "974c5e8b-45b9-4653-ba55-5f855dd0fb88": "Azure built-in role: Storage Queue Data Contributor",
+    "0a9a7e1f-b9d0-4cc4-a60d-0319b160aaa3": "Azure built-in role: Storage Table Data Contributor",
+    "7f951dda-4ed3-4680-a7ca-43fe172d538d": "Azure built-in role: AcrPull",
+    "3913510d-42f4-4e42-8a64-420c390055eb": "Azure built-in role: Monitoring Metrics Publisher",
+    "14b46e9e-c2b7-41b4-b07b-48a6ebf60603": "Azure built-in role: Key Vault Crypto Officer",
+    "e147488a-f6f5-4113-8e2d-b22465e65bf6": "Azure built-in role: Key Vault Crypto Service Encryption User",
+    "72fafb9e-0641-4937-9268-a91bfd8191a3": "Azure built-in role: Cost Management Reader",
+    "797f4846-ba00-4fd7-ba43-dac1f8f63013": "Microsoft application: Windows Azure Service Management API",
+    "41094075-9dad-400e-a0bd-54e686782033": "Microsoft permission: Azure Service Management user_impersonation",
+    "04b07795-8ddb-461a-bbee-02f9e1bf7b46": "Microsoft application: Azure CLI",
+    "e406a681-f3d4-42a8-90b6-c2b029497af1": "Microsoft application: Azure Storage",
+    "03e0da56-190b-40ad-a80c-ea378c433f7f": "Microsoft permission: Azure Storage user_impersonation",
+    "84bccea3-f856-4a8a-967b-dbe0a3d53a64": "Microsoft Graph permission: AppRoleAssignment.ReadWrite.All",
+    "c79f8feb-a9db-4090-85f9-90d820caa0eb": "Microsoft Graph permission: Application.Read.All",
+    "5f8c59db-677d-491f-a6b8-5f174b11ec1d": "Microsoft Graph permission: Group.Read.All",
+    "b340eb25-3456-403f-be2f-af7a0d370277": "Microsoft Graph permission: User.ReadBasic.All",
+    "e4c9e354-4dc5-45b8-9e7c-e1393b0b1a20": "Microsoft Graph permission: AuditLog.Read.All",
+    "c12a7328-f81f-11d2-ba4b-00a0c93ec93b": "GPT partition type: EFI system partition",
+    "ebd0a0a2-b9e5-4433-87c0-68b6b72699c7": "GPT partition type: Microsoft basic data",
+    "0fc63daf-8483-4772-8e79-3d69d8477de4": "GPT partition type: Linux file system",
+    "f750e6c3-38ee-11d1-85e5-00c04fc295ee": "Windows catalog root folder",
+    "55c92734-d682-4d71-983e-d6ec3f16059f": "Windows licensing application id",
+    "df51ba85-4e1e-4eda-b1d8-f0881970e997": "Microsoft support article id, in its address",
+    "845ec199-03fa-4629-bdc3-822ae0bbe6ca": "Microsoft support article id, in its address",
+    "064bdcfb-86ae-49f3-bf9d-b956493e2a1d": "a file system UUID in a Microsoft page copied under docs/upstream-docs",
+    "6f1c3a10-0001-4b6e-9e6a-100000000001": "this product: app role id in infra/identity.bicep",
+    "6f1c3a10-0002-4b6e-9e6a-100000000002": "this product: app role id in infra/identity.bicep",
+    "6f1c3a10-0003-4b6e-9e6a-100000000003": "this product: app role id in infra/identity.bicep",
+    "6f1c3a10-0004-4b6e-9e6a-100000000004": "this product: app role id in infra/identity.bicep",
+    "6f1c3a10-00aa-4b6e-9e6a-1000000000aa": "invented by a unit test, in the shape of the app role ids",
+    "7f3f3a52-9c1e-4b8a-b9d0-52c1f6b0a9e4": "this product: the module manifest GUID",
+    "7c1f4a3e-9b2d-4e8f-a1c6-5d0e8b7f2a91": "this product: the facade module manifest GUID",
+    "3f2504e0-4f89-11d3-9a0c-0305e82c3301": "the example GUID in the GUID format documentation, used by a unit test as a file system UUID",
+    "5e6f7a8b-9c0d-4e1f-a2b3-c4d5e6f70819":"invented by a schema sample: an operation id",
+    "0b7c2d4e-5f60-4a71-8b92-c3d4e5f60718": "invented by a schema sample: an operation id",
+    "843ae164-85ec-4fe4-96dd-993c7d5e5297": "the architecture page link in CLAUDE.md, which does not ship; the claudeLink rule stops it in a file that does"
+  },
+  "allowedSuffixes": [
+    "examplesuffix", "contoso", "example", "sample", "abc123", "abc12", "def456", "k3x9q2",
+    "appsettings", "deploy", "retention", "prod", "plan", "sched"
+  ],
+  "allowedTokens13": ["throttled429s", "ubuntupro2004", "vmfcipool0001"],
+  "allowedProfiles": ["x", "testvm", "vmfrunner", "vmfadmin", "vmfrunner.vmfcipool0001", "<user>", "<name>", "<account>"],
+  "docDomains": [
+    "example.com", "example.org", "example.net", "example.local",
+    "contoso.com", "contoso.local", "localhost", "invalid", "test"
+  ]
+}
