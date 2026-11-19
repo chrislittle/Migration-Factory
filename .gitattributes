@@ -1,0 +1,5 @@
+# Force LF everywhere: the guest-script manifest records sha256 of file bytes,
+# so line endings must be identical on every machine and CI runner.
+* text=auto eol=lf
+*.png binary
+*.jpg binary

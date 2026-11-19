@@ -1,0 +1,77 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://vmf.local/schemas/retention-status.schema.json",
+  "title": "VMF daily cleanup record",
+  "description": "RETAIN-UX-1, PERF-RETENTION-TIMEOUT-1. The record the service's daily cleanup (RetentionRunner) keeps at the top of the run store, read by the Safety copies card on the Overview and Migrations pages. The day's cleanup is a CYCLE that starts at 03:30 UTC; the timer fires every hour, and each pass examines runs until its time budget is spent, then the next pass starts at resumeAtRunId. The counts, the failures and the engine jobs started are for the whole cycle, so the card reads them as one daily pass. MIGRATION NOTE (schema 1 to 2): schema 1 had no schema file, and was written only at the end of a whole pass, with lastPassUtc, runsExamined, runsWithCopiesDue, machinesDue, executionsStarted, failures, nextPassUtc and finishedUtc. A schema 1 record is read as a finished cycle that started at its lastPassUtc (Get-VmfRetentionPassAction); the first pass after the upgrade writes schema 2. The pages read only fields that schema 1 also has.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "cycleStartedUtc", "lastPassUtc", "finishedUtc", "passesInCycle", "runsInStore", "runsExamined",
+               "runsWithCopiesDue", "machinesDue", "executionsStarted", "failures", "resumeAtRunId", "resumeStops", "nextPassUtc"],
+  "properties": {
+    "schemaVersion": { "const": 2 },
+    "cycleStartedUtc": {
+      "type": ["string", "null"],
+      "format": "date-time",
+      "description": "When the first pass of this cycle started. Null on the record of a pass that failed before it could read the runs: the next pass then starts the cycle again, and never reads that record as a finished day."
+    },
+    "lastPassUtc": { "type": "string", "format": "date-time", "description": "When the pass that wrote this record started." },
+    "finishedUtc": {
+      "type": ["string", "null"],
+      "format": "date-time",
+      "description": "When that pass ended. NULL WHILE A PASS WORKS: the record is written at the start of a pass and after every run, so a record with no finish is a pass that works now, or one the host stopped."
+    },
+    "passesInCycle": { "type": "integer", "minimum": 1 },
+    "runsInStore": { "type": "integer", "minimum": 0, "description": "The runs the last pass listed in the store." },
+    "runsExamined": { "type": "integer", "minimum": 0, "description": "The runs this cycle reached, including those passed over with a failure. Equal to runsInStore when the cycle examined every run and no run was added." },
+    "runsWithCopiesDue": { "type": "integer", "minimum": 0 },
+    "machinesDue": { "type": "integer", "minimum": 0 },
+    "executionsStarted": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["runId", "machines", "execution"],
+        "properties": {
+          "runId": { "type": "string" },
+          "machines": { "type": "integer", "minimum": 0 },
+          "execution": { "type": "string", "description": "The engine job execution that deletes what is due. The service holds no right to delete." }
+        }
+      }
+    },
+    "failures": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["runId", "reason"],
+        "properties": {
+          "runId": { "type": "string", "description": "Empty when the pass failed before it reached a run." },
+          "reason": { "type": "string" }
+        }
+      }
+    },
+    "resumeAtRunId": {
+      "type": ["string", "null"],
+      "description": "The run the next pass starts at, in ordinal order of run id. Null when the cycle examined every run: the passes until the next 03:30 UTC then do nothing."
+    },
+    "resumeStops": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "How many passes the host stopped while on resumeAtRunId. At two, the next pass passes the run over, and names it in failures and in the run's activity."
+    },
+    "slowestRun": {
+      "type": ["object", "null"],
+      "additionalProperties": false,
+      "required": ["runId", "milliseconds", "reportMs", "summaryMs", "copiesMs"],
+      "description": "The run of this cycle that took the longest, and its three checks: the report, the run summary and the safety copies that are due.",
+      "properties": {
+        "runId": { "type": "string" },
+        "milliseconds": { "type": "integer", "minimum": 0 },
+        "reportMs": { "type": "integer", "minimum": 0 },
+        "summaryMs": { "type": "integer", "minimum": 0 },
+        "copiesMs": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "nextPassUtc": { "type": ["string", "null"], "format": "date-time", "description": "The next pass with work to do: the next 03:30 UTC when the cycle examined every run, otherwise the next timer at half past the hour." }
+  }
+}

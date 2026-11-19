@@ -1,0 +1,53 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://vmf.local/schemas/plan-approval.schema.json",
+  "title": "VMF plan approval",
+  "description": "PLANRUN-1: one identity-bound signature for EVERY wave in a plan. Written by Approve-VmfPlan at plan-approval.json in the run's top level, not in approvals/, so no wave name can collide with it. The engine's approval gate accepts it for any wave of the plan while planHash matches the current plan. From v3 (WAVE-APPROVE-1) Approve-VmfPlan also writes one wave approval per wave, each signing its own wave, so a change to one wave asks again for that wave only. It is also the consent for the run to carry on by itself: when a wave finishes, the next one starts, unless it has a start time or a machine is waiting for a person.",
+  "type": "object",
+  "required": ["schemaVersion", "runId", "waves", "approvedBy", "approvedUtc", "planHash", "note"],
+  "additionalProperties": false,
+  "properties": {
+    "schemaVersion": { "enum": [4], "description": "v4 (SQL-TEMPDB-SIGNOFF-1) adds sqlTempdbChecked. Nothing is public before 1.0, so no store holds v3 and Approve-VmfPlan writes only v4. v2 (DECIDE-KEEP-1) added amendments. v3 (WAVE-APPROVE-1) adds no field: it is written WITH one wave approval per wave (approvals/<wave>.json), which are the gate of each wave, and it stays the consent for the run to carry on after a change to one wave. MIGRATIONS-PAGE-OLD-READERS-1 (narrowed, 2026-11-12): v1 and v2 left the contract, and since SQL-TEMPDB-SIGNOFF-1 v3 has left it too." },
+    "runId": { "type": "string" },
+    "waves": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "type": "string", "minLength": 1 },
+      "description": "The waves the approver was signing, in the order they run - a record of what was on the screen. The gate relies on planHash, not on this list."
+    },
+    "approvedBy": {
+      "type": "object",
+      "required": ["identity"],
+      "additionalProperties": false,
+      "properties": {
+        "identity": { "type": "string", "minLength": 1, "description": "The approver's signed-in Entra identity - captured from their sign-in, never typed" },
+        "tenantId": { "type": ["string", "null"] }
+      }
+    },
+    "approvedUtc": { "type": "string", "format": "date-time" },
+    "planHash": { "type": "string", "pattern": "^[0-9a-f]{64}$", "description": "The version of plan.json that was signed" },
+    "note": { "type": "string", "minLength": 1, "description": "What was reviewed and why the plan may proceed" },
+    "sqlTempdbChecked": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "type": "string", "minLength": 1 },
+      "description": "SQL-TEMPDB-SIGNOFF-1 (v4): the machine ids, in the plan's spelling, of each machine that moves where the scan found SQL Server, from a SCSI temporary disk to an NVMe temporary disk or none (Test-VmfSqlTempdbRisk). The approver ticked the box that says they checked where tempdb is; Approve-VmfPlan refuses the sign-off until every such machine is named. Absent when the plan has no such machine. Approve-VmfWave refuses a wave with such a machine that this list does not name."
+    },
+    "amendments": {
+      "type": "array",
+      "description": "DECIDE-KEEP-1: decisions recorded on this record after it was made. An approver's decision that changed one machine's setting moves the record to the plan as it is after the decision, when the record was current just before it. Anything else that changes the plan still needs a new record.",
+      "items": {
+        "type": "object",
+        "required": ["by", "utc", "vmId", "change", "reason"],
+        "additionalProperties": false,
+        "properties": {
+          "by": { "type": "string", "minLength": 1, "description": "Who made the decision" },
+          "utc": { "type": "string", "format": "date-time" },
+          "vmId": { "type": "string", "minLength": 1, "description": "The one machine the decision changed" },
+          "change": { "type": "string", "minLength": 1, "description": "The settings it changed, as name=value" },
+          "reason": { "const": "decision" }
+        }
+      }
+    }
+  }
+}

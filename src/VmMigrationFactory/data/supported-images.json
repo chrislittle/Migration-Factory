@@ -1,0 +1,77 @@
+{
+  "schemaVersion": 1,
+  "updatedUtc": "2026-11-14",
+  "why": "IMAGE-1: the product migrates only machines running OS images Microsoft publishes or endorses on Azure. Azure's image API answers whether an image CAN boot on NVMe (DiskControllerTypes) but says nothing about whether anyone still supports it - CentOS 7.9 is end-of-life and still reports NVMe support. Support is therefore a curated judgement and lives here as DATA, with a date, so it can be reviewed and changed without touching code.",
+  "publishers": [
+    { "publisher": "MicrosoftWindowsServer", "os": "Windows", "support": "microsoft-published" },
+    {
+      "publisher": "MicrosoftWindowsDesktop",
+      "os": "Windows",
+      "support": "unsupported",
+      "note": "This image is a Windows client image, for example Windows 10, Windows 11 or an Azure Virtual Desktop image. The product migrates only server operating systems. The product does not move this machine.",
+      "why": "CLIENT-IMAGE-DATA-1 (2026-11-14): this entry said microsoft-published while the scan excludes every machine of this publisher as a client operating system (Rules.ps1, scope ruling 2026-08-28: the product is for server operating systems only). The scan's exclusion is the rule, so the list says the same. The scan gives such a machine its client reason only, not this note as a second reason. ImageSupport.Tests.ps1 fails when the list and the scan disagree on a Windows publisher."
+    },
+    { "publisher": "MicrosoftSQLServer", "os": "Windows", "support": "microsoft-published" },
+    { "publisher": "microsoft-dsvm", "os": "Linux", "support": "microsoft-published" },
+    {
+      "publisher": "MicrosoftCBLMariner",
+      "offerPattern": "^cbl-mariner$",
+      "name": "CBL-Mariner",
+      "os": "Linux",
+      "support": "unsupported",
+      "note": "The scripts that the product runs in the machine do not support CBL-Mariner. The product does not move this machine.",
+      "source": "https://learn.microsoft.com/azure/azure-linux/azure-linux-vm-vmss-overview",
+      "readUtc": "2026-11-14",
+      "why": "IMAGE-SCRIPT-MATCH-1 (2026-11-14: refuse it for 1.0): CBL-Mariner runs the os-release ID mariner, and nvme-fix.sh and nvme-check.sh have no branch for it, so a move stopped in Preparing after the safety copies with 'unsupported distro'. ImageScriptMatch.Tests.ps1 fails when the list admits an image that a guest script has no branch for. The publisher has no entry for all its offers: an offer this list does not name is refused as an offer the product does not recognize (az vm image list-offers, centralus, 2026-11-14: azure-linux-3, cbl-mariner, cbl-mariner-test)."
+    },
+    {
+      "publisher": "MicrosoftCBLMariner",
+      "offerPattern": "^azure-linux-3$",
+      "name": "Azure Linux 3.0",
+      "os": "Linux",
+      "support": "unsupported",
+      "note": "The scripts that the product runs in the machine do not support Azure Linux 3.0. The product does not move this machine.",
+      "source": "https://learn.microsoft.com/azure/azure-linux/azure-linux-vm-vmss-overview",
+      "readUtc": "2026-11-14",
+      "why": "IMAGE-SCRIPT-MATCH-1 (2026-11-14: refuse it for 1.0; support is AZURE-LINUX-3-SUPPORT-1, after 1.0): Azure Linux 3.0 runs the os-release ID azurelinux, and nvme-fix.sh and nvme-check.sh have no branch for it. Microsoft lists Azure Linux 3.0 for NVMe (data/nvme-linux-releases.json), so this entry is the only thing that refuses it: when the guest scripts have the branch, change support to microsoft-published."
+    },
+    {
+      "publisher": "microsoftazurelinux",
+      "offerPattern": "^azurelinux-(\\d+)$",
+      "os": "Linux",
+      "support": "unsupported",
+      "note": "Microsoft says that Azure Linux 4.0 is in preview, for evaluation and testing only, and not for production use. The product does not move this machine.",
+      "source": "https://learn.microsoft.com/azure/azure-linux/azure-linux-vm-vmss-overview",
+      "readUtc": "2026-11-12",
+      "why": "DRIFT-12: Azure Linux 4.0 images are published under the microsoftazurelinux publisher, offer azurelinux-4 (the source page; measured 2026-11-12 with az vm image list-skus: SKUs 4, 4-fips, 4-arm64, 4-arm64-fips, Generation 2, DiskControllerTypes SCSI, NVMe). The automatic guest patching page names the publisher Microsoft; Azure has no publisher of that name in five regions. offerPattern limits this entry to the azurelinux-<n> offers, and its group is the release the advice reads (Get-VmfImageRelease). An Arm64 SKU is refused by its size, as every Arm64 machine is. When Microsoft makes 4.0 generally available, change support to microsoft-published."
+    },
+    { "publisher": "Canonical", "os": "Linux", "support": "endorsed" },
+    { "publisher": "RedHat", "os": "Linux", "support": "endorsed" },
+    { "publisher": "SUSE", "os": "Linux", "support": "endorsed" },
+    {
+      "publisher": "SUSE",
+      "offerPattern": "^opensuse-leap",
+      "name": "openSUSE Leap",
+      "os": "Linux",
+      "support": "unsupported",
+      "note": "The scripts that the product runs in the machine do not support openSUSE Leap. The product does not move this machine.",
+      "source": "https://learn.microsoft.com/azure/virtual-machines/linux/endorsed-distros",
+      "readUtc": "2026-11-14",
+      "why": "IMAGE-SCRIPT-MATCH-1 (2026-11-14: refuse it for 1.0): openSUSE Leap runs the os-release ID opensuse-leap, and nvme-fix.sh and nvme-check.sh have no branch for it, so a move stopped in Preparing after the safety copies with 'unsupported distro'. The SUSE entry above covers every other offer of the publisher; this entry wins for the offers it matches (Get-VmfImageMatrixEntry). Offers read with az vm image list-offers, centralus, 2026-11-14: openSUSE-Leap, opensuse-leap-15-3 to opensuse-leap-15-6, opensuse-leap-15-6-arm64."
+    },
+    { "publisher": "Debian", "os": "Linux", "support": "endorsed" },
+    { "publisher": "Oracle", "os": "Linux", "support": "endorsed" },
+    {
+      "publisher": "OpenLogic",
+      "os": "Linux",
+      "support": "unsupported",
+      "note": "CentOS reached end of life, and no one releases fixes for it. The image still reports NVMe support. The product does not move this machine."
+    },
+    {
+      "publisher": "center-for-internet-security-inc",
+      "os": "Linux",
+      "support": "unsupported",
+      "note": "This is a hardened image from a third party. Microsoft does not support its guest agent and drivers. The product does not move this machine."
+    }
+  ]
+}

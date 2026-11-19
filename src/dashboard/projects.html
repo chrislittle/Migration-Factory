@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Migration Factory - Projects</title>
+<!--
+  PROJECT-1: the Projects page. A project is the container holding an estate's
+  assessments and the migrations planned from them - Azure Migrate's shape,
+  the one operators already know.
+
+  READ-ONLY over the store with the viewer's own token, like Assessments and
+  Reports. The one WRITE - creating a project - goes through the facade,
+  because the browser's token cannot write to the store and should not be able
+  to.
+-->
+<script src="msal-browser.min.js"></script>
+<!-- DARK-1: one stylesheet, Bootswatch Darkly. Rules in docs/ux.md;
+     the short version is that no page carries CSS of its own. -->
+<script src="theme.js"></script>
+<link rel="icon" href="logo.svg" type="image/svg+xml">
+<link rel="stylesheet" href="app.css">
+</head>
+<body class="p-projects">
+<header class="topbar">
+  <!-- The product name, not a control. It used to link to Migrations,
+       which is ONE of the five areas, so the name of the whole product
+       acted as a shortcut to
+       a part of it. The navigation beside it names every area. -->
+  <span class="brand"><span class="logo" aria-hidden="true"></span><span class="brand-name"><span class="b-1">Migration</span><span class="b-2">Factory</span></span></span>
+  <nav class="topnav"></nav>
+  <span id="demo-tag" class="demo-tag" style="display:none">SAMPLE DATA</span>
+</header>
+
+<main class="wrap">
+  <div id="err"></div>
+  <div id="ok" style="display:none;background:var(--good-soft);color:var(--good);border-radius:10px;padding:11px 16px;margin:12px 0;font-size:13.5px"></div>
+  <!-- SIGNIN-1: filled by VmfHelp.showSignIn(). One card, on all of them. -->
+  <div id="login-view"></div>
+
+  <div id="app" style="display:none">
+    <!-- PAGE-SCALE-PROJECTS-1: the heading, its sentence and New project at
+         the top; then the count tiles and the one list (VmfHelp.listMount). -->
+    <div class="pagehead">
+      <div>
+        <h1 id="list-title"></h1>
+        <p class="lede" id="lede"></p>
+      </div>
+      <button id="new-btn" class="btn"></button>
+    </div>
+    <div id="new-form" class="card" style="display:none;padding:16px 18px">
+      <p class="muted" id="new-help" style="margin-top:0"></p>
+      <label class="muted" for="f-name" id="l-name"></label>
+      <input id="f-name" style="width:100%;max-width:460px;display:block;margin:4px 0 12px;padding:7px 10px;border:1px solid var(--line);border-radius:8px;font:inherit">
+      <p class="muted" id="idhint" style="margin:0 0 12px"></p>
+      <label class="muted" for="f-note" id="l-note"></label>
+      <textarea id="f-note" rows="2" style="width:100%;max-width:460px;display:block;margin:4px 0 12px;padding:7px 10px;border:1px solid var(--line);border-radius:8px;font:inherit"></textarea>
+      <button id="create-btn" class="btn"></button>
+      <button id="cancel-btn" class="btn ghost" style="margin-left:8px"></button>
+    </div>
+    <div id="projects-list"></div>
+    <p id="loose" class="muted" style="display:none"></p>
+  </div></main>
+
+<script src="help.js"></script>
+
+<script src="projects.js"></script>
+</body>
+</html>

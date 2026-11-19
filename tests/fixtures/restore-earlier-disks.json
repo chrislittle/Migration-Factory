@@ -1,0 +1,79 @@
+{
+  "_comment": [
+    "RESTORE-EARLIER-DELETE-1. The earlier managed disks of a restore that kept",
+    "them: the disks Delete these disks deletes, and the list the machine's panel",
+    "shows under Its earlier managed disks. Decided in TWO places: the engine",
+    "(Get-VmfRestoreEarlierDisks, asked by Remove-VmfRestoreEarlierDisks) and the",
+    "run page (restoreEarlierDisks in migrations.js), which shows the list and",
+    "counts the disks in the confirmation. Both are held to this one list:",
+    "tests/unit/RestoreEarlierDelete.Tests.ps1 and tests/js/restore-earlier-delete.test.js.",
+    "Only the restore's own record names a disk: retainedDiskId, and each",
+    "dataDisks[].previousDiskId of a restore with diskIdChanged. A disk on",
+    "earlierDisksDeleted, and a disk that is the machine's own now, is not listed."
+  ],
+  "cases": [
+    { "why": "no restore",
+      "restore": null,
+      "disks": [] },
+    { "why": "new names: the operating system disk and each data disk, in that order",
+      "restore": { "diskIdChanged": true,
+        "previousDiskName": "vm1-os", "newDiskId": "/subscriptions/s/resourceGroups/rg/providers/Microsoft.Compute/disks/vm1-os-restored",
+        "retainedDiskId": "/subscriptions/s/resourceGroups/rg/providers/Microsoft.Compute/disks/vm1-os",
+        "dataDisks": [
+          { "lun": 0, "previousDiskId": "/subscriptions/s/resourceGroups/rg/providers/Microsoft.Compute/disks/vm1-d0", "previousDiskName": "vm1-d0", "newDiskId": "/subscriptions/s/resourceGroups/rg/providers/Microsoft.Compute/disks/vm1-d0-r", "newDiskName": "vm1-d0-r" },
+          { "lun": 3, "previousDiskId": "/subscriptions/s/resourceGroups/rg/providers/Microsoft.Compute/disks/vm1-d3", "previousDiskName": "vm1-d3", "newDiskId": "/subscriptions/s/resourceGroups/rg/providers/Microsoft.Compute/disks/vm1-d3-r", "newDiskName": "vm1-d3-r" } ] },
+      "disks": [
+        { "diskId": "/subscriptions/s/resourceGroups/rg/providers/Microsoft.Compute/disks/vm1-os", "name": "vm1-os", "lun": null },
+        { "diskId": "/subscriptions/s/resourceGroups/rg/providers/Microsoft.Compute/disks/vm1-d0", "name": "vm1-d0", "lun": 0 },
+        { "diskId": "/subscriptions/s/resourceGroups/rg/providers/Microsoft.Compute/disks/vm1-d3", "name": "vm1-d3", "lun": 3 } ] },
+    { "why": "names kept: the restore deleted the earlier disks, so none is listed",
+      "restore": { "diskIdChanged": false, "retainedDiskId": null,
+        "dataDisks": [
+          { "lun": 0, "previousDiskId": "/subscriptions/s/resourceGroups/rg/providers/Microsoft.Compute/disks/vm1-d0", "previousDiskName": "vm1-d0", "newDiskId": "/subscriptions/s/resourceGroups/rg/providers/Microsoft.Compute/disks/vm1-d0", "newDiskName": "vm1-d0" } ] },
+      "disks": [] },
+    { "why": "names kept, also when an earlier version left a retainedDiskId",
+      "restore": { "diskIdChanged": false, "retainedDiskId": "/subscriptions/s/resourceGroups/rg/providers/Microsoft.Compute/disks/vm1-os", "dataDisks": [] },
+      "disks": [] },
+    { "why": "a data disk that is on the machine now, in another letter case, is not an earlier disk",
+      "restore": { "diskIdChanged": true, "retainedDiskId": null,
+        "dataDisks": [
+          { "lun": 1, "previousDiskId": "/subscriptions/s/resourceGroups/rg/providers/Microsoft.Compute/disks/VM1-D1", "previousDiskName": "vm1-d1", "newDiskId": "/subscriptions/s/resourceGroups/rg/providers/Microsoft.Compute/disks/vm1-d1", "newDiskName": "vm1-d1" } ] },
+      "disks": [] },
+    { "why": "an operating system disk that is on the machine now is not an earlier disk",
+      "restore": { "diskIdChanged": true, "previousDiskName": "vm1-os",
+        "retainedDiskId": "/subscriptions/s/resourceGroups/rg/providers/Microsoft.Compute/disks/vm1-os",
+        "newDiskId": "/subscriptions/s/resourceGroups/rg/providers/Microsoft.Compute/disks/VM1-OS", "dataDisks": [] },
+      "disks": [] },
+    { "why": "each disk already deleted is not listed, in any letter case",
+      "restore": { "diskIdChanged": true, "previousDiskName": "vm1-os",
+        "retainedDiskId": "/subscriptions/s/resourceGroups/rg/providers/Microsoft.Compute/disks/vm1-os",
+        "dataDisks": [
+          { "lun": 0, "previousDiskId": "/subscriptions/s/resourceGroups/rg/providers/Microsoft.Compute/disks/vm1-d0", "previousDiskName": "vm1-d0", "newDiskId": "/subscriptions/s/resourceGroups/rg/providers/Microsoft.Compute/disks/vm1-d0-r", "newDiskName": "vm1-d0-r" } ],
+        "earlierDisksDeleted": [
+          { "diskId": "/subscriptions/s/resourceGroups/rg/providers/Microsoft.Compute/disks/VM1-OS", "deletedUtc": "2026-11-07T10:00:00Z", "deletedBy": "operator@example.com", "gone": false } ] },
+      "disks": [
+        { "diskId": "/subscriptions/s/resourceGroups/rg/providers/Microsoft.Compute/disks/vm1-d0", "name": "vm1-d0", "lun": 0 } ] },
+    { "why": "every disk deleted: the list is empty",
+      "restore": { "diskIdChanged": true, "retainedDiskId": "/subscriptions/s/resourceGroups/rg/providers/Microsoft.Compute/disks/vm1-os", "dataDisks": [],
+        "earlierDisksDeleted": [
+          { "diskId": "/subscriptions/s/resourceGroups/rg/providers/Microsoft.Compute/disks/vm1-os", "deletedUtc": "2026-11-07T10:00:00Z", "deletedBy": "operator@example.com", "gone": true } ] },
+      "disks": [] },
+    { "why": "a data disk with no earlier id is not listed; one with no name takes the name from its id",
+      "restore": { "diskIdChanged": true, "retainedDiskId": null,
+        "dataDisks": [
+          { "lun": 0, "previousDiskId": "", "previousDiskName": "vm1-d0", "newDiskId": "/subscriptions/s/resourceGroups/rg/providers/Microsoft.Compute/disks/vm1-d0-r", "newDiskName": "vm1-d0-r" },
+          { "lun": 2, "previousDiskId": "/subscriptions/s/resourceGroups/rg/providers/Microsoft.Compute/disks/vm1-d2", "previousDiskName": "", "newDiskId": "/subscriptions/s/resourceGroups/rg/providers/Microsoft.Compute/disks/vm1-d2-r", "newDiskName": "vm1-d2-r" } ] },
+      "disks": [
+        { "diskId": "/subscriptions/s/resourceGroups/rg/providers/Microsoft.Compute/disks/vm1-d2", "name": "vm1-d2", "lun": 2 } ] },
+    { "why": "an operating system disk with no recorded name takes the name from its id",
+      "restore": { "diskIdChanged": true, "retainedDiskId": "/subscriptions/s/resourceGroups/rg/providers/Microsoft.Compute/disks/vm1-os-asitwas", "dataDisks": [] },
+      "disks": [
+        { "diskId": "/subscriptions/s/resourceGroups/rg/providers/Microsoft.Compute/disks/vm1-os-asitwas", "name": "vm1-os-asitwas", "lun": null } ] },
+    { "why": "one disk named twice is listed once",
+      "restore": { "diskIdChanged": true, "previousDiskName": "vm1-os", "retainedDiskId": "/subscriptions/s/resourceGroups/rg/providers/Microsoft.Compute/disks/vm1-os",
+        "dataDisks": [
+          { "lun": 0, "previousDiskId": "/subscriptions/s/resourceGroups/rg/providers/Microsoft.Compute/disks/Vm1-Os", "previousDiskName": "vm1-os", "newDiskId": "/subscriptions/s/resourceGroups/rg/providers/Microsoft.Compute/disks/vm1-d0-r", "newDiskName": "vm1-d0-r" } ] },
+      "disks": [
+        { "diskId": "/subscriptions/s/resourceGroups/rg/providers/Microsoft.Compute/disks/vm1-os", "name": "vm1-os", "lun": null } ] }
+  ]
+}

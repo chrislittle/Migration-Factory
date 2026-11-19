@@ -1,0 +1,86 @@
+{
+  "schemaVersion": 17,
+  "runId": "assessment-2026-09-14-a1b2c3",
+  "generatedUtc": "2026-09-14T09:15:00.0000000Z",
+  "scope": {
+    "subscriptions": [
+      "aaaa0a0a-bb1b-cc2c-dd3d-eeeeee4e4e4e"
+    ],
+    "managementGroup": null,
+    "tagFilter": null,
+    "resourceGroups": [
+      "rg-app"
+    ]
+  },
+  "summary": {
+    "ReadyAfterPrep": 1
+  },
+  "notRead": [
+    {
+      "detail": "the reader is not authorized to perform this action",
+      "subject": "acceleratedNetworking"
+    }
+  ],
+  "vms": [
+    {
+      "vmId": "/subscriptions/aaaa0a0a-bb1b-cc2c-dd3d-eeeeee4e4e4e/resourceGroups/rg-app/providers/Microsoft.Compute/virtualMachines/app-web-01",
+      "name": "app-web-01",
+      "resourceGroup": "rg-app",
+      "location": "eastus",
+      "zones": [
+        "1"
+      ],
+      "classification": "ReadyAfterPrep",
+      "gen": null,
+      "os": "Windows",
+      "osVersion": "2022-datacenter-smalldisk-g2",
+      "runningOsName": "",
+      "runningOsVersion": "",
+      "imagePublisher": "MicrosoftWindowsServer",
+      "imageOffer": "WindowsServer",
+      "imageId": "",
+      "planPublisher": "",
+      "planProduct": "",
+      "galleryImageId": "",
+      "imageSupport": "microsoft-published",
+      "sourceSize": "Standard_D2ds_v4",
+      "sourceDiskArch": "nvme-temp",
+      "sourceTempDisks": null,
+      "diskController": "SCSI",
+      "securityType": "TrustedLaunch",
+      "dataDiskCount": 2,
+      "nicCount": 3,
+      "acceleratedNicCount": null,
+      "primaryNicAccelerated": null,
+      "hasManagedOsDisk": false,
+      "osDiskType": null,
+      "availabilitySetId": "",
+      "appGroup": "payments",
+      "platformManaged": false,
+      "hibernationEnabled": false,
+      "encryptionAtHost": false,
+      "ultraSsdEnabled": false,
+      "identityType": "",
+      "identityPrincipalId": "",
+      "tags": {
+        "app": "payments"
+      },
+      "blockers": [],
+      "workload": {
+        "type": "standalone-vm",
+        "evidence": []
+      },
+      "warnings": [],
+      "prepNeeded": [
+        "verify-generation",
+        "stornvme"
+      ],
+      "notes": [
+        "generation unknown (Azure reported none)",
+        "Windows guest prep required before conversion",
+        "current size not in SKU catalog - name-based disk-arch detection only",
+        "ADE checked live at PRECHECK (dual-OS)"
+      ]
+    }
+  ]
+}

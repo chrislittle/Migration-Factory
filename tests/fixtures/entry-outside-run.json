@@ -1,0 +1,31 @@
+{
+  "_comment": [
+    "NOT-IN-WAVE-QUEUED-1. Is this plan machine left out of the migration as",
+    "the pages and the record show it? ONE answer, decided in two languages:",
+    "the engine and the service (Test-VmfEntryOutsideRun, PowerShell) and the",
+    "pages (VmfHelp.outsideRun in src/dashboard/help.js, JavaScript).",
+    "A machine is left out when it is in no wave (no wave name, or the planner's",
+    "unscheduled - the only word the engine skips), the plan would move it",
+    "(any path but MANUAL or EXCLUDED), and it has no state document. No wave",
+    "takes it, so it never moves until a person puts it in a wave again in the",
+    "wave editor, which still lists it. A machine with a state document has",
+    "history and is always shown. MANUAL and EXCLUDED machines are always",
+    "shown: the Migrations page says why the plan does not move them.",
+    "Held by tests/unit/NotInWaveQueued.Tests.ps1 and tests/js/not-in-wave-queued.test.js."
+  ],
+  "cases": [
+    { "name": "a machine to move, in no wave, never started",          "entry": { "path": "A", "wave": "unscheduled" },      "doc": null,                              "outside": true },
+    { "name": "an empty wave name",                                     "entry": { "path": "A", "wave": "" },                 "doc": null,                              "outside": true },
+    { "name": "no wave at all",                                         "entry": { "path": "A" },                             "doc": null,                              "outside": true },
+    { "name": "a wave named unplanned is a wave the engine runs",       "entry": { "path": "A", "wave": "unplanned" },        "doc": null,                              "outside": false },
+    { "name": "an old rebuild entry in no wave",                        "entry": { "path": "B", "wave": "unscheduled" },      "doc": null,                              "outside": true },
+    { "name": "a machine that rolled back, then left its wave",         "entry": { "path": "A", "wave": "unscheduled" },      "doc": { "state": "FAILED_ROLLED_BACK" }, "outside": false },
+    { "name": "a machine with a state document at PLANNED",             "entry": { "path": "A", "wave": "unscheduled" },      "doc": { "state": "PLANNED" },            "outside": false },
+    { "name": "a machine in a wave, not started",                       "entry": { "path": "A", "wave": "wave-1" },           "doc": null,                              "outside": false },
+    { "name": "a wave named like a number",                             "entry": { "path": "A", "wave": "0" },                "doc": null,                              "outside": false },
+    { "name": "a machine the plan does not move",                       "entry": { "path": "MANUAL", "wave": "unscheduled" }, "doc": null,                              "outside": false },
+    { "name": "a machine on its target series already",                 "entry": { "path": "EXCLUDED", "wave": "unscheduled" },"doc": null,                             "outside": false },
+    { "name": "a state document with no plan entry",                    "entry": null,                                        "doc": { "state": "MIGRATED" },           "outside": false },
+    { "name": "nothing at all",                                         "entry": null,                                        "doc": null,                              "outside": false }
+  ]
+}

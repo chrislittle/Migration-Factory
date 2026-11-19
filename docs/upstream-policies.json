@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "repo": "Azure/azure-policy",
+  "branch": "master",
+  "why": "POLICY-DRIFT (2026-08-28): data/nva-offers.json is GENERATED from Microsoft's built-in MANA NVA policy, so a new policy version is exactly the kind of upstream change that invalidates local data with nothing in our code moving - the same class UPST-1 watches for scripts and UPST-3 for docs. Built-in policies are published in this public repo, so the check needs no Azure auth and no token, like the other two watchers. Fetched anonymously on purpose: an authenticated token bound to another org's SAML gets 403 here.",
+  "checkedUtc": "2026-10-20T11:43:58.2324064Z",
+  "policies": [
+    {
+      "name": "MANAExistingVMNVASupport_Modify.json",
+      "path": "built-in-policies/policyDefinitions/Compute",
+      "sha": "81f61301967be6b1afdb5360f4a5ef9bb4fac274",
+      "pinnedVersion": "1.4.0",
+      "policyDefinitionId": "/providers/Microsoft.Authorization/policyDefinitions/e87a87f5-e6dd-4919-be21-abb0a4ea4630",
+      "localDerivatives": [
+        "src/VmMigrationFactory/data/nva-offers.json (REGENERATE from the new definition, never hand-edit)",
+        "assess:nva-detection (Test-VmfNvaImage and the nva-requires-parallel-deployment rule)"
+      ]
+    }
+  ]
+}

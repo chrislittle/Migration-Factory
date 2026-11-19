@@ -1,0 +1,115 @@
+{
+  "schemaVersion": 1,
+  "updatedUtc": "2026-10-19",
+  "why": "GATE-WORDS-1: the reasons the engine's start gates give, in the words a person reads on the screen. Since RETRY-GATE-1 the Try this machine again dialog shows them, and the migration's page shows them for the next wave and for a refused wave start. They were written for a person at a PowerShell prompt: they named cmdlets, said 'levers', and the acknowledgement reason repeated its whole ten-sentence statement. Each reason is now one sentence that says what is missing and one that says what to do, with the button names of the Migrations page. The statement itself stays in the acknowledgement dialog. tools/Test-SimplifiedEnglish.ps1 checks every string here, and tests/unit/GateWords.Tests.ps1 holds the engine to this file. RESERVE-COVER-1 added the capacity gate of a wave set to Reserved: a machine with no quota record, or none reserved beside machines that are, is named with its size. RESERVE-COVER-2 gave a wave with no capacity reservation the same rule: a machine with no quota record is named with noQuotaRecordGeneral. RESERVE-RECHECK-1 made every start check the quota again, and added the words for a machine whose quota check is blocked: quotaShortGeneral, sizeBlockedGeneral and quotaBlockedGeneral. Its review added quotaCheckFailed, for a quota check that does not finish. REGIONAL-VCPU-QUOTA-1 added regionalQuotaShortGeneral and regionalQuotaShortBesideHeld, for a Total Regional vCPUs quota that is not enough. REGIONAL-QUOTA-REQUEST-1 made Request an increase ask for that quota too, so their words name it, as the family quota's words do.",
+  "fields": {
+    "gate": "Which start gate gives the reason: acknowledgement, acceptance or approval - the names the run summary's next.waitsFor uses - or capacity, the capacity gate of a wave start (RESERVE-COVER-1 for Reserved, RESERVE-COVER-2 for BestEffort), which the run summary does not ask.",
+    "missing": "One descriptive sentence: what is missing.",
+    "toDo": "One instruction: what a person does, named with the button on the Migrations page, or in the wave editor for the capacity gate. {wave} is the wave, {by} the user who accepted the settings, {machines} the machines of the capacity gate, each with its size."
+  },
+  "lines": {
+    "waveWaits": "Wave {wave} is next, and it cannot start yet."
+  },
+  "reasons": {
+    "notAcknowledged": {
+      "gate": "acknowledgement",
+      "missing": "Nobody accepted the note about machines defined in code for this migration.",
+      "toDo": "To accept the note, select Accept and let this run start on this migration."
+    },
+    "acknowledgedByNobody": {
+      "gate": "acknowledgement",
+      "missing": "The acceptance of the note about machines defined in code names no user.",
+      "toDo": "To accept the note again, select Accept and let this run start on this migration."
+    },
+    "notAccepted": {
+      "gate": "acceptance",
+      "missing": "Nobody accepted the settings of wave {wave}.",
+      "toDo": "On wave {wave}, select Review & accept options."
+    },
+    "changed": {
+      "gate": "acceptance",
+      "missing": "The settings of wave {wave} changed after {by} accepted them.",
+      "toDo": "On wave {wave}, select Review & accept options again."
+    },
+    "notApproved": {
+      "gate": "approval",
+      "missing": "Nobody approved wave {wave}.",
+      "toDo": "An approver must select Approve on wave {wave}."
+    },
+    "approvalOutOfDate": {
+      "gate": "approval",
+      "missing": "The plan changed for wave {wave} after it was approved.",
+      "toDo": "An approver must read wave {wave} again, then select Approve on it."
+    },
+    "signOffOutOfDate": {
+      "gate": "approval",
+      "missing": "Wave {wave} changed after the plan was signed off, so it does not start by itself.",
+      "toDo": "To start it, select Start this wave on wave {wave}."
+    },
+    "noQuotaRecord": {
+      "gate": "capacity",
+      "missing": "Wave {wave} has no quota record for {machines}.",
+      "toDo": "In the wave editor, select Check the quota at the top, then select Reserve capacity."
+    },
+    "noQuotaRecordGeneral": {
+      "gate": "capacity",
+      "missing": "Wave {wave} has no quota record for {machines}.",
+      "toDo": "In the wave editor, select Check the quota at the top, then select Start this wave on the Migrations page."
+    },
+    "notReservedBesideHeld": {
+      "gate": "capacity",
+      "missing": "Wave {wave} has no capacity reservation for {machines}, but its other machines have one.",
+      "toDo": "In the wave editor, select Check the quota at the top, then select Reserve capacity."
+    },
+    "quotaShortBesideHeld": {
+      "gate": "capacity",
+      "missing": "Wave {wave} has no capacity reservation for {machines}, because the quota is not enough.",
+      "toDo": "In the wave editor, select Request an increase, then Check the quota, then Reserve capacity on wave {wave}."
+    },
+    "regionalQuotaShortBesideHeld": {
+      "gate": "capacity",
+      "missing": "Wave {wave} has no capacity reservation for {machines}, because the Total Regional vCPUs quota is not enough.",
+      "toDo": "In the wave editor, select Request an increase, then Check the quota, then Reserve capacity on wave {wave}."
+    },
+    "sizeBlockedBesideHeld": {
+      "gate": "capacity",
+      "missing": "Wave {wave} has no capacity reservation for {machines}, because Azure does not offer the size there.",
+      "toDo": "In the wave editor, select Change target on these machines, then Check the quota, then Reserve capacity on the wave."
+    },
+    "reservationFailedBesideHeld": {
+      "gate": "capacity",
+      "missing": "Azure did not reserve capacity for {machines} in wave {wave}.",
+      "toDo": "In the wave editor, select Check the quota at the top, then select Reserve capacity again."
+    },
+    "quotaBlockedBesideHeld": {
+      "gate": "capacity",
+      "missing": "The quota check of wave {wave} is blocked for {machines}, and no reason is recorded.",
+      "toDo": "In the wave editor, select Check the quota at the top, then select Reserve capacity."
+    },
+    "quotaShortGeneral": {
+      "gate": "capacity",
+      "missing": "The quota is not enough for {machines} in wave {wave}.",
+      "toDo": "In the wave editor, select Request an increase, then select Check the quota again."
+    },
+    "regionalQuotaShortGeneral": {
+      "gate": "capacity",
+      "missing": "The Total Regional vCPUs quota of the subscription is not enough for {machines} in wave {wave}.",
+      "toDo": "In the wave editor, select Request an increase, then select Check the quota again."
+    },
+    "sizeBlockedGeneral": {
+      "gate": "capacity",
+      "missing": "Azure does not offer the size of {machines} in wave {wave}.",
+      "toDo": "In the wave editor, select Change target on these machines, then select Check the quota again."
+    },
+    "quotaBlockedGeneral": {
+      "gate": "capacity",
+      "missing": "The quota check of wave {wave} is blocked for {machines}, and no reason is recorded.",
+      "toDo": "In the wave editor, select Check the quota, then on the Migrations page select Start this wave."
+    },
+    "quotaCheckFailed": {
+      "gate": "capacity",
+      "missing": "The quota check of wave {wave} did not finish for {machines}.",
+      "toDo": "In the wave editor, select Check the quota, then on the Migrations page select Start this wave."
+    }
+  }
+}

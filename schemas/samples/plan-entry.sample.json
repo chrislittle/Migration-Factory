@@ -1,0 +1,49 @@
+{
+  "schemaVersion": 37,
+  "vmId": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-app01/providers/Microsoft.Compute/virtualMachines/app01-web-03",
+  "wave": "second-tranche",
+  "appGroup": "app01",
+  "assessment": {
+    "classification": "ReadyAfterPrep",
+    "gen": "V2",
+    "os": "Linux",
+    "osVersion": "22_04-lts-gen2",
+    "sourceSize": "Standard_E8bds_v5",
+    "sourceCapacityRestricted": false,
+    "sqlServerDetected": false,
+    "sourceDiskArch": "scsi-temp",
+    "blockers": [],
+    "prepNeeded": [],
+    "adeDetected": false,
+    "platformManaged": false,
+    "sourceTempDisks": 1,
+    "osDiskType": "StandardSSD_LRS"
+  },
+  "target": {
+    "size": "Standard_E8ads_v7",
+    "sizeAlternates": [
+      "Standard_E8ds_v7",
+      "Standard_E8ads_v6"
+    ],
+    "diskArch": "nvme-temp",
+    "controller": "NVMe",
+    "choice": { "option": "v7", "source": "person", "chosenBy": "operator@example.com", "method": "in-place" },
+    "trustedLaunch": false,
+    "zone": "2",
+    "tempDisks": 1
+  },
+  "path": "A",
+  "acceleratedNetworkingOutcome": { "turnsOn": null, "unknownWhy": "nics" },
+  "decisions": [
+    { "setting": "onDriverBelowFloor", "by": "operator@example.com", "utc": "2026-10-05T09:12:00Z" }
+  ],
+  "policy": {
+    "onDDataFound": "stop",
+    "onDriverBelowFloor": "updateKernel",
+    "keepSnapshotDays": 7,
+    "throttle": 15,
+    "capacityGate": "Reserved",
+    "safetyCopy": "pristine",
+    "targetGeneration": "v7"
+  }
+}

@@ -1,0 +1,43 @@
+{
+  "about": "QUOTA-CARD-LAYOUT-1: a migration with many target sizes in one region. Twelve quota family rows, and one Total Regional vCPUs row that lists every size. Three records are in a wave that reserves, so the On-demand capacity reservations list shows too. tests/js/quota-card-layout.test.js draws the Quota card from it.",
+  "checkedUtc": "2026-11-13T09:00:00Z",
+  "plan": {
+    "entries": [
+      { "wave": "wave-1", "policy": { "capacityGate": "BestEffort" } },
+      { "wave": "wave-2-long-wave-name", "policy": { "capacityGate": "Reserved" } }
+    ]
+  },
+  "claims": [
+    { "wave": "wave-1", "region": "centralus", "zone": null, "size": "Standard_B2ls_v2", "vmFamily": "standardBsv2Family", "state": "QUOTA_VERIFIED", "blockReason": null,
+      "demand": { "instances": 1, "reservableInstances": 1, "vcpus": 2, "familyVcpus": 2, "regionalVcpus": 0 }, "quota": { "limit": 100, "used": 0, "regionalLimit": 350, "regionalUsed": 24 } },
+    { "wave": "wave-1", "region": "centralus", "zone": null, "size": "Standard_D2ds_v5", "vmFamily": "standardDDSv5Family", "state": "QUOTA_VERIFIED", "blockReason": null,
+      "demand": { "instances": 1, "reservableInstances": 1, "vcpus": 2, "familyVcpus": 2, "regionalVcpus": 0 }, "quota": { "limit": 100, "used": 0, "regionalLimit": 350, "regionalUsed": 24 } },
+    { "wave": "wave-1", "region": "centralus", "zone": null, "size": "Standard_D2s_v5", "vmFamily": "standardDSv5Family", "state": "QUOTA_VERIFIED", "blockReason": null,
+      "demand": { "instances": 3, "reservableInstances": 3, "vcpus": 6, "familyVcpus": 6, "regionalVcpus": 0 }, "quota": { "limit": 100, "used": 8, "regionalLimit": 350, "regionalUsed": 24 } },
+    { "wave": "wave-1", "region": "centralus", "zone": null, "size": "Standard_D2s_v6", "vmFamily": "StandardDsv6Family", "state": "QUOTA_VERIFIED", "blockReason": null,
+      "demand": { "instances": 3, "reservableInstances": 3, "vcpus": 6, "familyVcpus": 6, "regionalVcpus": 0 }, "quota": { "limit": 110, "used": 0, "regionalLimit": 350, "regionalUsed": 24 } },
+    { "wave": "wave-1", "region": "centralus", "zone": null, "size": "Standard_E2s_v5", "vmFamily": "standardESv5Family", "state": "QUOTA_VERIFIED", "blockReason": null,
+      "demand": { "instances": 1, "reservableInstances": 1, "vcpus": 2, "familyVcpus": 2, "regionalVcpus": 0 }, "quota": { "limit": 100, "used": 0, "regionalLimit": 350, "regionalUsed": 24 } },
+    { "wave": "wave-1", "region": "centralus", "zone": null, "size": "Standard_D4ds_v6", "vmFamily": "StandardDdsv6Family", "state": "QUOTA_VERIFIED", "blockReason": null,
+      "demand": { "instances": 4, "reservableInstances": 4, "vcpus": 16, "familyVcpus": 16, "regionalVcpus": 0 }, "quota": { "limit": 1000, "used": 128, "regionalLimit": 350, "regionalUsed": 24 } },
+    { "wave": "wave-1", "region": "centralus", "zone": null, "size": "Standard_E4s_v6", "vmFamily": "StandardEsv6Family", "state": "QUOTA_VERIFIED", "blockReason": null,
+      "demand": { "instances": 2, "reservableInstances": 2, "vcpus": 8, "familyVcpus": 8, "regionalVcpus": 0 }, "quota": { "limit": 100, "used": 12, "regionalLimit": 350, "regionalUsed": 24 } },
+    { "wave": "wave-1", "region": "centralus", "zone": null, "size": "Standard_E8ds_v6", "vmFamily": "StandardEdsv6Family", "state": "QUOTA_VERIFIED", "blockReason": null,
+      "demand": { "instances": 1, "reservableInstances": 1, "vcpus": 8, "familyVcpus": 8, "regionalVcpus": 0 }, "quota": { "limit": 100, "used": 0, "regionalLimit": 350, "regionalUsed": 24 } },
+    { "wave": "wave-1", "region": "centralus", "zone": null, "size": "Standard_D2as_v5", "vmFamily": "standardDASv5Family", "state": "QUOTA_VERIFIED", "blockReason": null,
+      "demand": { "instances": 2, "reservableInstances": 2, "vcpus": 4, "familyVcpus": 4, "regionalVcpus": 0 }, "quota": { "limit": 100, "used": 0, "regionalLimit": 350, "regionalUsed": 24 } },
+    { "wave": "wave-1", "region": "centralus", "zone": null, "size": "Standard_F4s_v7", "vmFamily": "standardFsv7Family", "state": "QUOTA_VERIFIED", "blockReason": null,
+      "demand": { "instances": 1, "reservableInstances": 1, "vcpus": 4, "familyVcpus": 4, "regionalVcpus": 0 }, "quota": { "limit": 100, "used": 0, "regionalLimit": 350, "regionalUsed": 24 } },
+    { "wave": "wave-2-long-wave-name", "region": "centralus", "zone": "1", "size": "Standard_D2ls_v6", "vmFamily": "StandardDlsv6Family", "state": "RESERVED", "blockReason": null,
+      "demand": { "instances": 2, "reservableInstances": 2, "vcpus": 4, "familyVcpus": 8, "regionalVcpus": 4 }, "quota": { "limit": 100, "used": 4, "regionalLimit": 350, "regionalUsed": 24 },
+      "reservation": { "createdUtc": "2026-11-13T08:00:00Z", "releasedUtc": null, "consumedInstances": 1 } },
+    { "wave": "wave-2-long-wave-name", "region": "centralus", "zone": "2", "size": "Standard_D4ls_v6", "vmFamily": "StandardDlsv6Family", "state": "RESERVED", "blockReason": null,
+      "demand": { "instances": 1, "reservableInstances": 1, "vcpus": 4, "familyVcpus": 8, "regionalVcpus": 4 }, "quota": { "limit": 100, "used": 4, "regionalLimit": 350, "regionalUsed": 24 },
+      "reservation": { "createdUtc": "2026-11-13T08:00:00Z", "releasedUtc": null, "consumedInstances": 0 } },
+    { "wave": "wave-2-long-wave-name", "region": "centralus", "zone": null, "size": "Standard_D16as_v7", "vmFamily": "standardDasv7Family", "state": "RESERVED", "blockReason": null,
+      "demand": { "instances": 2, "reservableInstances": 2, "vcpus": 32, "familyVcpus": 32, "regionalVcpus": 4 }, "quota": { "limit": 200, "used": 0, "regionalLimit": 350, "regionalUsed": 24 },
+      "reservation": { "createdUtc": "2026-11-13T08:00:00Z", "releasedUtc": null, "consumedInstances": 2 } },
+    { "wave": "wave-1", "region": "centralus", "zone": null, "size": "Standard_E2as_v6", "vmFamily": "standardEASv6Family", "state": "QUOTA_VERIFIED", "blockReason": null,
+      "demand": { "instances": 1, "reservableInstances": 1, "vcpus": 2, "familyVcpus": 2, "regionalVcpus": 0 }, "quota": { "limit": 100, "used": 0, "regionalLimit": 350, "regionalUsed": 24 } }
+  ]
+}

@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 4,
+  "runId": "estate-scan-2026-08",
+  "waves": ["storefront-pilot", "billing-apps", "wave-3"],
+  "approvedBy": { "identity": "approver@contoso.com", "tenantId": "00000000-0000-0000-0000-000000000000" },
+  "approvedUtc": "2026-09-24T21:00:00Z",
+  "planHash": "3f79bb7b435b05321651daefd374cdc681dc06faa65e374e38337b88ca046dea",
+  "note": "Reviewed every wave with the application owners; the whole plan may proceed.",
+  "sqlTempdbChecked": ["/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-app/providers/Microsoft.Compute/virtualMachines/db-01"],
+  "amendments": [
+    { "by": "approver@contoso.com", "utc": "2026-09-24T22:10:00Z", "vmId": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-app/providers/Microsoft.Compute/virtualMachines/app-01", "change": "acceleratedNetworking=ensureOn", "reason": "decision" }
+  ]
+}

@@ -1,0 +1,24 @@
+Microsoft documentation, kept for comparison by the docs drift check
+(tools/Test-DocsDrift.ps1, DOCS-DRIFT-LEARN-1).
+
+Each .md file below this folder is the text of one page of Microsoft Learn,
+by Microsoft Corporation, as https://learn.microsoft.com/en-us/ served it with
+Accept: text/markdown. The file's path below this folder is the page's path on
+that site: for example azure/virtual-machines/nvme-overview.md is
+https://learn.microsoft.com/en-us/azure/virtual-machines/nvme-overview
+A page that Learn serves at a version was read at that version, named by the
+"view" of its folder in docs/upstream-docs.json: for example
+azure/cyclecloud/how-to/tag-nodes.md is
+https://learn.microsoft.com/en-us/azure/cyclecloud/how-to/tag-nodes?view=cyclecloud-8
+
+Changed from the source: the front matter at the top of each page (title,
+authors, dates, publishing metadata) is removed, and line endings are LF.
+Nothing else is changed. The text is replaced when the drift check is
+re-pinned after a change has been read.
+
+Licence, per each source repository's licence files, read 2026-10-03:
+- pages from MicrosoftDocs/azure-compute-docs and MicrosoftDocs/azure-docs
+  (azure/...): Creative Commons Attribution 4.0 International,
+  https://creativecommons.org/licenses/by/4.0/
+- the page from MicrosoftDocs/entra-docs (entra/...): the licence in that
+  repository's LICENSE file (MIT at the time of reading).

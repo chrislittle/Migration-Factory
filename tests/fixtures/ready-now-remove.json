@@ -1,0 +1,143 @@
+{
+  "_comment": [
+    "READY-NOW-REMOVE-1. The scan no longer gives the result ReadyNow (Already on a target size,",
+    "Already migrated). Since 2026-11-06, a machine whose size is not in the Current lifecycle",
+    "stage is assessed like any other machine - Can migrate when a target exists, else Cannot yet",
+    "with its reason. After ALREADY-CURRENT-1 the only machines that still read ReadyNow were the",
+    "v5 sizes with NVMe, Ebsv5 and Ebdsv5, and Microsoft lists Ebsv6 as their successor.",
+    "os, sourceSize, diskController: the machine as the scan reads it. stage: the lifecycle stage",
+    "the data gives for sourceSize (null: the data has none). stored: the classification an older",
+    "assessment holds (null: the scan of this build writes the record). scan: what this build's",
+    "scan writes. readAs: the classification the plan reads for v6 (Resolve-VmfEntryClassification).",
+    "nvmePrep: the NVMe preparation codes the scan writes - a machine already on NVMe gets them",
+    "too (review round 1: the scripts are idempotent, and the guard before the stop reads them). group: the group every page shows (VmfReport.machineGroup).",
+    "openV6, openV7: whether the plan finds a path to that series (Get-VmfPathSelection is not",
+    "EXCLUDED). targetDiskArch: the kind of temporary disk of the v6 size the plan gives.",
+    "Held by tests/unit/ReadyNowRemove.Tests.ps1 and tests/js/ready-now-remove.test.js."
+  ],
+  "cases": [
+    {
+      "name": "Windows on Ebsv5 with NVMe: can migrate, to Ebsv6",
+      "os": "Windows",
+      "sourceSize": "Standard_E2bs_v5",
+      "diskController": "NVMe",
+      "stage": "Extended",
+      "stored": null,
+      "scan": "ReadyAfterPrep",
+      "readAs": "ReadyAfterPrep",
+      "nvmePrep": [
+        "stornvme"
+      ],
+      "group": "can",
+      "sourceDiskArch": "diskless",
+      "targetDiskArch": "diskless",
+      "openV6": true,
+      "openV7": true
+    },
+    {
+      "name": "Linux on Ebdsv5 with NVMe: can migrate, to Ebdsv6",
+      "os": "Linux",
+      "sourceSize": "Standard_E4bds_v5",
+      "diskController": "NVMe",
+      "stage": "Extended",
+      "stored": null,
+      "scan": "ReadyAfterPrep",
+      "readAs": "ReadyAfterPrep",
+      "nvmePrep": [
+        "linux-nvme-prep"
+      ],
+      "group": "can",
+      "sourceDiskArch": "scsi-temp",
+      "targetDiskArch": "nvme-temp",
+      "openV6": true,
+      "openV7": true
+    },
+    {
+      "name": "Windows on Ebdsv5 with NVMe: can migrate, to Ebdsv6",
+      "os": "Windows",
+      "sourceSize": "Standard_E2bds_v5",
+      "diskController": "NVMe",
+      "stage": "Extended",
+      "stored": null,
+      "scan": "ReadyAfterPrep",
+      "readAs": "ReadyAfterPrep",
+      "nvmePrep": [
+        "stornvme"
+      ],
+      "group": "can",
+      "sourceDiskArch": "scsi-temp",
+      "targetDiskArch": "nvme-temp",
+      "openV6": true,
+      "openV7": true
+    },
+    {
+      "name": "Windows on Ebsv5 with SCSI: as before",
+      "os": "Windows",
+      "sourceSize": "Standard_E2bs_v5",
+      "diskController": "SCSI",
+      "stage": "Extended",
+      "stored": null,
+      "scan": "ReadyAfterPrep",
+      "readAs": "ReadyAfterPrep",
+      "nvmePrep": [
+        "stornvme"
+      ],
+      "group": "can",
+      "sourceDiskArch": "diskless",
+      "targetDiskArch": "diskless",
+      "openV6": true,
+      "openV7": true
+    },
+    {
+      "name": "Linux on Ebsv5 with SCSI: as before",
+      "os": "Linux",
+      "sourceSize": "Standard_E2bs_v5",
+      "diskController": "SCSI",
+      "stage": "Extended",
+      "stored": null,
+      "scan": "ReadyAfterPrep",
+      "readAs": "ReadyAfterPrep",
+      "nvmePrep": [
+        "linux-nvme-prep"
+      ],
+      "group": "can",
+      "sourceDiskArch": "diskless",
+      "targetDiskArch": "diskless",
+      "openV6": true,
+      "openV7": true
+    },
+    {
+      "name": "Windows on D2ds_v6 with NVMe: Current, and no move to v6 or v7",
+      "os": "Windows",
+      "sourceSize": "Standard_D2ds_v6",
+      "diskController": "NVMe",
+      "stage": "Current",
+      "stored": null,
+      "scan": "ReadyAfterPrep",
+      "readAs": "ReadyAfterPrep",
+      "nvmePrep": [
+        "stornvme"
+      ],
+      "group": "current",
+      "sourceDiskArch": "nvme-temp",
+      "targetDiskArch": "nvme-temp",
+      "openV6": false,
+      "openV7": false
+    },
+    {
+      "name": "a size the lifecycle data does not hold, on NVMe: no move to v6 or v7, as unknown is not a yes",
+      "os": "Linux",
+      "sourceSize": "Standard_DC2as_v5",
+      "diskController": "NVMe",
+      "stage": null,
+      "stored": "ReadyAfterPrep",
+      "engineless": true,
+      "readAs": "ReadyAfterPrep",
+      "group": "can",
+      "sourceDiskArch": "diskless",
+      "targetDiskArch": "diskless",
+      "openV6": false,
+      "openV7": false
+    }
+  ]
+}

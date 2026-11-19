@@ -1,0 +1,7 @@
+{
+  "schemaVersion": 1,
+  "version": "0.49.2",
+  "releases": "https://github.com/Azure/bicep/releases",
+  "pinnedUtc": "2026-11-07T13:36:43Z",
+  "why": "BICEP-PIN-1: the one Bicep CLI version that CI and the CI runners use. CI installs it when a runner has another version (tools/Sync-VmfBicepVersion.ps1). The runner set-up installs it on a new machine (infra/ci-runners.bicep and infra/ci-linux-runner.bicep read this file). The daily upstream-drift check reports a newer release (tools/Test-BicepPinDrift.ps1). Read the release notes, then change it with tools/Test-BicepPinDrift.ps1 -UpdateBaseline."
+}

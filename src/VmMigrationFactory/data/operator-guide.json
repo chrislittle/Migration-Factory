@@ -1,0 +1,103 @@
+{
+  "schemaVersion": 1,
+  "_comment": "DOC-3. The operator guide, in the app rather than on GitHub. ONE copy: this file is the source, and the deploy copies it to the dashboard - exactly like stop-reasons.json and assessment-reasons.json. Never add a second copy under src/dashboard; a guard test fails if you do. Plain language, and it goes through the same no-jargon guard as every other operator-facing string. MANUAL-REVIEW-1: each entry says what the page shows, what each control does, and where to go next. Every fact is read from the page and the engine, and a step or a button is named by its label on the page.",
+  "screens": {
+    "index.html": {
+      "title": "Overview",
+      "what": "The Overview shows what waits for a person, and what runs now. Nothing on this page changes a machine.",
+      "howToRead": [
+        "Four tiles count the migrations that wait for a person or for approval, the migrations that run now, and the assessments to review.",
+        "Select a tile to show its list. The list shows 10 rows on each page.",
+        "Use Project and Search to find a migration or an assessment. Select its name to open it."
+      ],
+      "nextStep": "Open a migration or an assessment that waits. If nothing waits, open the Projects page."
+    },
+    "projects.html": {
+      "title": "Projects",
+      "what": "A project holds one estate: its assessments, and the migrations planned from them.",
+      "howToRead": [
+        "Three tiles count all projects, the projects with a machine that waits for a person, and the projects with no change in 30 days.",
+        "Select a tile to show its list. The list shows 10 projects on each page. Use Sort and Search to find a project.",
+        "Each row shows how many assessments and migrations the project holds. Select a count to open them.",
+        "New project makes a project. New assessment starts an assessment in that project."
+      ],
+      "nextStep": "Create a project, then start an assessment in it. Nothing on this page changes a machine."
+    },
+    "assessments.html": {
+      "title": "Assessments",
+      "what": "An assessment reads your machines and changes nothing. It shows which machines can migrate, and what stops the other machines.",
+      "howToRead": [
+        "Four tiles count the assessments to review, the accepted assessments with no migration, the assessments with a migration, and all assessments.",
+        "Select a tile to show its list. The list shows 10 assessments on each page. Select the name of an assessment to open its report.",
+        "The report groups the machines by each finding. Each card says what to do.",
+        "Select I have reviewed this to accept the assessment. A migration can only be planned from an accepted assessment."
+      ],
+      "nextStep": "Accept the assessment, then select Plan a migration."
+    },
+    "migrations.html": {
+      "title": "Migrations",
+      "what": "A migration moves machines to their targets, one wave at a time. This page shows each wave, each machine, and the activity.",
+      "howToRead": [
+        "A wave starts when a person starts it, or at its scheduled time. A wave can need an approval before it starts.",
+        "After you sign off the plan, the product starts each next wave when the wave before it ends. It waits while a machine waits for a person, or while the run is paused.",
+        "The activity list shows each step, newest first. A step that failed and then passed on a retry shows as recovered.",
+        "The product takes a safety copy of each machine before it changes the machine. If a machine fails its checks after the move, the product rolls it back from that copy.",
+        "The Quota and on-demand capacity reservations card shows the quota and the on-demand capacity reservation of each wave. Select Release to release one."
+      ],
+      "nextStep": "Open a machine that waits for a person. Its panel shows the step it stopped at and what to do."
+    },
+    "wizard.html": {
+      "title": "Assess and migrate",
+      "what": "This page assesses an estate. Then it plans a migration from an accepted assessment.",
+      "howToRead": [
+        "The assessment reads your machines and changes nothing. A person reviews it and accepts it.",
+        "Planning has five steps: Choose the machines, Choose each target, How to group them, Arrange the waves and Run it.",
+        "Choose each target shows the options of each machine. A machine can take only the options shown for it.",
+        "In Arrange the waves, select Check the quota and Reserve capacity before the wave starts. Azure accepts or refuses each quota increase request. The answer can come after some days."
+      ],
+      "nextStep": "Of the planning steps, only Run it changes a machine. You can leave this page and open it again. The product keeps what each step saved."
+    },
+    "reports.html": {
+      "title": "Reports",
+      "what": "Reports shows the result of each migration: which machines moved, the waves, the sign-offs and the issues.",
+      "howToRead": [
+        "Five tiles count all migrations, the finished migrations, the migrations in progress, the migrations that need attention now, and the migrations with no plan.",
+        "Select a tile to show its list. The list shows 10 migrations on each page. Select the name of a migration to show its waves, sign-offs and issues.",
+        "A user with the Administrator role also sees Records to download, with the full record of each migration.",
+        "The Safety copies card shows the safety copies that the product keeps, and when the daily cleanup runs.",
+        "The engine builds the report when a wave ends and after a restore. The daily check builds it again when it is out of date."
+      ],
+      "nextStep": "Select Open the full report to read the report of a migration, or to download it."
+    },
+    "access.html": {
+      "title": "Admin",
+      "what": "The Admin page sets who can use the product, and where in Azure the product can work.",
+      "howToRead": [
+        "Give each user or group a role: Viewer, Operator, Approver or Administrator.",
+        "Where the product may work gives the product access to a management group, a subscription or a resource group. You give it with your own Azure permissions.",
+        "Assess gives the VMF Assessment role, which reads and changes nothing. Assess and migrate gives the VMF Migration role."
+      ],
+      "nextStep": "If a user cannot see a migration, check the role of the user here. Then check that the product has access to the subscription of the machines."
+    },
+    "waves.html": {
+      "title": "Waves",
+      "what": "A wave is a group of machines that move together. The wave editor sets the machines and the settings of each wave.",
+      "howToRead": [
+        "Move machines between waves, and set the settings of each wave.",
+        "Check the quota, on the card Request a quota increase, checks the quota of every wave of the plan. Reserve capacity makes an on-demand capacity reservation for the wave.",
+        "Save the plan saves your changes to the waves and their settings."
+      ],
+      "nextStep": "You can change a wave until it starts."
+    }
+  },
+  "general": {
+    "title": "How this works, in short",
+    "points": [
+      "Assess, accept, plan, run. An assessment changes nothing. A migration moves only the machines that an accepted assessment shows can migrate.",
+      "The product records each step of each machine, with its time and result.",
+      "A wave starts when a person starts it, or at its scheduled time. A wave can need an approval before it starts.",
+      "After you sign off the plan, the product starts each next wave when the wave before it ends. It waits while a machine waits for a person, or while the run is paused.",
+      "The product does not try to move a machine that cannot move. It shows the reason."
+    ]
+  }
+}

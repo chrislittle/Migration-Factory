@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 2,
+  "lastPassUtc": "2026-11-10T10:05:00.1234567Z",
+  "finishedUtc": "2026-11-10T10:05:09.0000000Z",
+  "runsInStore": 0,
+  "runsDue": 3,
+  "runsChecked": 3,
+  "runsNotChecked": 0,
+  "resumeAtRunId": null,
+  "checkingRunId": null,
+  "checkingStops": 0,
+  "passedOverRunId": null,
+  "sweepStartedUtc": null,
+  "lastSweepUtc": "2026-11-10T09:35:41.0000000Z",
+  "slowestRun": { "runId": "contoso-exit/wave-plan-1", "milliseconds": 4412 }
+}

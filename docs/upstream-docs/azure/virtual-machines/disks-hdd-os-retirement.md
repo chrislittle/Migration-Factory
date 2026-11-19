@@ -1,0 +1,37 @@
+# Migrate Standard HDD OS disks by September 08, 2028 - Azure Virtual Machines | Microsoft Learn
+
+**Applies to:** ✔️ Linux VMs ✔️ Windows VMs
+
+On September 8, 2028, the ability to use Standard HDDs as [OS disks](managed-disks-overview#os-disk) will be retired. After that date, all Standard HDDs being used as OS disks will be automatically converted to Standard SSDs of equivalent size. To avoid potential service disruptions during the conversion to Standard SSD after the retirement date, convert your Standard HDD OS disks to either Standard SSD or Premium SSDs before the retirement date.
+
+If you're using Standard HDD as OS disks, begin planning a migration now. Generally, Standard SSD provides the closest price to performance ratio as Standard HDDs. If you need higher performance, migrate to Premium SSD.
+
+## Impact of Standard HDD OS disk support retirement
+
+After September 8, 2028, any existing virtual machines using Standard HDD OS disks will have their OS disks automatically converted to a Standard SSD of equivalent size. Workloads on these disks may experience a service disruption if they're not migrated before September 8, 2028.
+
+## Scope of Standard HDD OS disk support retirement
+
+This retirement is only for the ability to use Standard HDDs as OS disks. None of the other managed disk types or ephemeral OS disks will be affected by this retirement.
+
+Azure disk snapshots, including snapshots of OS disks, can continue to be stored on Standard HDD and will not be affected by this retirement.
+
+Standard HDD OS disks created by Azure Site Recovery will continue to be supported.
+
+## Prepare for Standard HDD OS disk support retirement
+
+Stop creating new virtual machines with Standard HDD OS disks. Use Standard SSD or Premium SSD for new OS disks instead.
+
+To start planning a migration to either Standard SSD or Premium SSD OS disks, first, make a list of all affected OS disks and VMs.
+
+If you have multiple subscriptions, use the [Disk Storage Center](https://portal.azure.com/#view/Microsoft_Azure_StorageHub/StorageHub.MenuView/%7E/DisksBrowse) to create a list. Add two filters, one for **Storage type** which should be equal to **Standard HDD LRS** and one for **OS type** which should equal to **Linux and Windows**. This produces a list of all Standard HDD OS disks across all your subscriptions. The **Owner** column is the name of the virtual machine that uses the listed Standard HDD OS disks.
+
+The Disk Storage Center still works for individual subscriptions. But, if you prefer, you can use the Azure CLI or the Azure PowerShell module to get the same list for an individual subscription. For the Azure PowerShell module, use `Get-AzDisk | Where-Object { $_.Sku.Name -eq "Standard_LRS" -and $_.OsType }` and for the Azure CLI, use `az disk list --query "[?sku.name=='Standard_LRS' && osType!=null]" --output table`.
+
+Once you have a list of Standard HDD OS disks, [convert your Standard HDD OS disks](disks-convert-types#change-the-type-of-an-individual-managed-disk) to either Standard SSD or Premium SSDs. Review [Azure Disk Storage billing guidance](disks-understand-billing) to choose the most cost-effective disk type for your workloads.
+
+For technical questions and issues, contact support.
+
+## Get support for Standard HDD OS disk migration
+
+[Microsoft Q&A](/en-us/answers/topics/azure-virtual-machines-migration.html): Microsoft and community support for migration.

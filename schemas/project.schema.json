@@ -1,0 +1,42 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://vmf.local/schemas/project.schema.json",
+  "title": "VMF project",
+  "description": "PROJECT-1. The container that holds an assessment and the migrations planned from it. Owner: 'should it be a new project as you'd have an assessment with a migration in it. something larger as we now have assessment & migrations split.' This is Azure Migrate's shape, which matters because the owner has repeatedly pointed at that model as the one operators already know. A project owns the NAME of the piece of work - what a person actually thinks in - and the scope it covers, so a second scan of the same estate does not have to re-pick it or invent a different name.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "projectId", "name", "createdUtc"],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "projectId": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9-]{1,62}[a-z0-9]$",
+      "description": "The store prefix this project's runs live under. Lower-case and hyphenated because it is a blob path segment, not a display string - the NAME is what a person reads."
+    },
+    "name": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 200,
+      "description": "What a person calls this piece of work - 'Contoso datacentre exit'. Stored ONCE here rather than repeated on every run, because a name copied onto each member is a name that can disagree with itself."
+    },
+    "createdUtc": { "type": "string", "format": "date-time" },
+    "createdBy": {
+      "type": ["string", "null"],
+      "description": "The signed-in identity that created it, never a typed parameter."
+    },
+    "scope": {
+      "type": ["object", "null"],
+      "additionalProperties": false,
+      "description": "What this project covers, recorded once. An assessment inside it defaults to this instead of re-picking, which is what makes a re-scan a re-scan rather than a new decision. Null means the project has no default and every assessment states its own.",
+      "properties": {
+        "subscriptions": { "type": "array", "items": { "type": "string" } },
+        "managementGroup": { "type": ["string", "null"] },
+        "resourceGroups": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "note": {
+      "type": ["string", "null"],
+      "description": "Why this project exists, in the creator's own words."
+    }
+  }
+}

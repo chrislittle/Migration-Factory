@@ -1,0 +1,989 @@
+{
+  "schemaVersion": 2,
+  "updatedUtc": "2026-11-14",
+  "why": "SCOPE-DATA-1: the planner asked the region's catalogue whether a family had any v6 or v7 size, and swapped the version suffix. That answers what EXISTS, not what is APPROVED. Standard_D2ps_v5 and Standard_D2ps_v6 both exist, both are Ampere Arm64, and neither is in the migration guide's target-families table - so an Arm64 machine planned a migration. What that table can enforce is its PLATFORM column, because its middle column says Examples: Ddsv6 is absent from it and is this product's commonest target, so a list of names would refuse the primary path. Platforms and letters are stable; size names are not. Held as data with a date, the same shape as supported-images.json, so a change to Microsoft's guide arrives as a review rather than as a silent disagreement.",
+  "sources": [
+    {
+      "url": "https://learn.microsoft.com/azure/virtual-machines/sizes/lifecycle/retirements-and-capacity-restrictions",
+      "section": "general-purpose-vm-series-with-announced-retirements",
+      "says": "V3-RETIRE-1: planned retirement dates. D, Ds, Dv2 and Dsv2 on 05/01/28. Av2 and Amv2, and B v1, on 11/15/28. F, Fs and Fsv2 on 11/15/28. Dv3, Dsv3, Ev3 and Esv3 on 11/15/29, all 32 sizes: after that date you cannot create, resize into, run or purchase these sizes. The v3 retirement does not apply to Azure Government, Azure operated by 21Vianet or sovereign cloud regions. ROLLBACK-CAPACITY-1 (section impacted-vm-series, read 2026-11-14): the VM series affected by capacity growth restrictions are F, Fs, Fsv2, D, Ds, Dv2, Dsv2, Dv3, Dsv3, B, Bs, Av2, Amv2, Ev3, Esv3, G, Gs, Ls and Lsv2. Azure might not approve more quota, new deployments or capacity expansion for them. Quota is an approved limit, not a capacity reservation or guarantee: a deployment within approved quota might still fail when the region has no capacity.",
+      "readUtc": "2026-10-03"
+    },
+    {
+      "url": "https://learn.microsoft.com/azure/virtual-machines/sizes/lifecycle/sizes-v6-v7-modernization-overview",
+      "section": "target-vm-families",
+      "says": "The v6 and v7 target families are Intel with Azure Boost and AMD with Azure Boost. No Arm64 family is named as a source or as a target. Sources are given as v2 to v5, with no size-by-size mapping.",
+      "readUtc": "2026-09-22"
+    },
+    {
+      "url": "https://learn.microsoft.com/azure/virtual-machines/vm-naming-conventions",
+      "section": "additive-features",
+      "says": "A lower case letter in a size name is an additive feature: a is an AMD-based processor and p is an Arm64 processor, which that page writes as ARM-based. A name with neither letter is Intel. V5-SUCCESSOR-1 (read again 2026-10-23, unchanged): i is an isolated size. The subfamily letter C is confidential, which is why a confidential size reads as the DC or EC family. DRIFT-12 (read 2026-11-12): the page added a subfamily letter, H = High core density. A subfamily letter is upper case and comes before the vCPU count, so the subfamily letter H is high core density and part of the family: a DH or EH size reads as the DH or EH family, which no target series lists. It is not an additive feature letter, and it is not the H family (HPC).",
+      "readUtc": "2026-11-12"
+    },
+    {
+      "url": "https://learn.microsoft.com/azure/virtual-machines/sizes/lifecycle/sizes-v5-modernization-overview",
+      "section": "what-changes-when-the-vm-family-changes",
+      "says": "v5 is in the Extended lifecycle stage and v6 and v7 are Current. The D and E v5 series support Generation 1 and Generation 2. Accelerated Networking is required on the Intel D-family v5 series and supported on the AMD and E-family v5 series; enable it on the source VM before a resize to a series that requires it. Choose a d variant when the workload uses the temporary disk.",
+      "readUtc": "2026-09-26"
+    },
+    {
+      "url": "https://learn.microsoft.com/azure/virtual-machines/sizes/lifecycle/lifecycle-overview",
+      "section": "lifecycle-stages",
+      "says": "Four stages: Current, Extended, End of Life and Retired. For general purpose sizes, v6 and v7 are Current, v4 and v5 are Extended, and v1 to v3 with an announced retirement are End of Life. Current is the newest series in a family. A move to Current or to Extended is valid.",
+      "readUtc": "2026-09-26"
+    },
+    {
+      "url": "https://learn.microsoft.com/azure/virtual-machines/sizes/lifecycle/end-of-life-sizes-list",
+      "section": "general-purpose-end-of-life-sizes",
+      "says": "End of Life D and E series: Standard D-series, DS-series, Dv1 and Dsv1, Dv2 and Dsv2, Dv3 and Dsv3, Ev3 and Esv3. No v4 or v5 series is listed.",
+      "readUtc": "2026-09-26"
+    },
+    {
+      "url": "https://learn.microsoft.com/azure/virtual-machines/sizes/general-purpose/dsv5-series",
+      "section": "feature-support",
+      "says": "Accelerated Networking Required. Generation 1 and Generation 2 supported. Interfaces NetVSC, ConnectX and MANA. The same is true of the Dv5, Ddv5, Ddsv5, Dlsv5 and Dldsv5 pages. The Dasv5 and Dadsv5 pages say Supported, and the AMD pages list NetVSC and ConnectX only. SIZE-LISTING-D-1, read 2026-11-03 (sizes-in-series): the Dsv5 sizes are D2s_v5 to D96s_v5.",
+      "readUtc": "2026-09-26"
+    },
+    {
+      "url": "https://learn.microsoft.com/azure/virtual-machines/sizes/memory-optimized/ev5-series",
+      "section": "feature-support",
+      "says": "DRIFT-5: Accelerated Networking Required, changed from Supported by Microsoft commit 0ce3ea9 on 2026-10-01. The Esv5, Edv5 and Edsv5 pages changed the same way in the same commit. Generation 1 and Generation 2 supported. The Easv5 and Eadsv5 pages still say Supported. The v5 modernization overview still says the E-family v5 series is supported, and was not changed in that commit. V5-NAMES-1 (sizes-in-series): the Ev5 series runs on Intel Xeon processors. No size, E2_v5 to E96_v5, has a temporary disk: no local storage is present in this series. Premium Storage is not supported. The isolated E104i_v5 on the same page has the series name Eiv5, not Ev5. SIZE-LISTING-V5-1, read 2026-11-02 (sizes-in-series): the Ev5 sizes are E2_v5 to E96_v5 and the isolated E104i_v5. No 80-vCPU size. SIZE-LISTING-D-1, read 2026-11-03: the drift check found the page unchanged.",
+      "readUtc": "2026-10-17"
+    },
+    {
+      "url": "https://learn.microsoft.com/azure/virtual-machines/sizes/general-purpose/dsv6-series",
+      "section": "feature-support",
+      "says": "DRIFT-11: on the Dsv6 page, Accelerated Networking Required, changed from Supported by Microsoft commit 6c2b128 on 2026-10-27. The Ddsv6, Dlsv6, Dldsv6, Dasv6, Dadsv6, Dalsv6 and Daldsv6 pages, and the memory optimized Esv6, Edsv6, Easv6, Eadsv6, Ebsv6, Ebdsv6, Ensv6 and Endsv6 pages, changed the same way in the same commit, and nothing else on them changed. So every D and E v6 size, Intel and AMD, requires it. The v7 pages (for example Ddsv7, Dasv7, Edsv7 and Fasv7) still say Supported, and so do the Falsv6, Famsv6 and Fasv6 pages, which are not a target here. SIZE-LISTING-D-1, read 2026-11-03 (sizes-in-series): the Dsv6 sizes are D2s_v6 to D192s_v6.",
+      "readUtc": "2026-10-30"
+    },
+    {
+      "url": "https://learn.microsoft.com/azure/virtual-machines/sizes/lifecycle/sizes-v6-v7-modernization-plan",
+      "section": "retiring-v3-workloads",
+      "says": "V3-TEMPDISK-1: the replacement sizes for the v3 series. Dv3 and Dsv3 go to Dv5, Dsv5, Ddv5, Ddsv5, Dasv5 or Dadsv5 on v5, to Dsv6, Ddsv6, Dasv6 or Dadsv6 on v6, and to Dsv7, Ddsv7, Dasv7 or Dadsv7 on v7. Ev3 and Esv3 go to the E sizes with the same letters. Every v3 size includes a local temporary disk. If the workload uses it, choose a size with the d suffix.",
+      "readUtc": "2026-10-03"
+    },
+    {
+      "url": "https://learn.microsoft.com/azure/virtual-machines/sizes/general-purpose/dav4-series",
+      "section": "sizes-in-series",
+      "says": "DAV4-TEMPDISK-1: the Dav4 series runs on AMD EPYC processors. Every size, D2a_v4 to D96a_v4, has one temporary disk, 50 to 2,400 GiB. The name has no d.",
+      "readUtc": "2026-10-04"
+    },
+    {
+      "url": "https://learn.microsoft.com/azure/virtual-machines/sizes/general-purpose/dasv4-series",
+      "section": "sizes-in-series",
+      "says": "DAV4-TEMPDISK-1: the Dasv4 series runs on AMD EPYC processors and uses Premium SSD. Every size, D2as_v4 to D96as_v4, has temporary storage, 16 to 768 GiB. The name has no d.",
+      "readUtc": "2026-10-04"
+    },
+    {
+      "url": "https://learn.microsoft.com/azure/virtual-machines/sizes/memory-optimized/eav4-series",
+      "section": "sizes-in-series",
+      "says": "DAV4-TEMPDISK-1: the Eav4 series runs on AMD EPYC processors. Every size, E2a_v4 to E96a_v4, has temporary storage, 16 to 672 GiB. The name has no d.",
+      "readUtc": "2026-10-04"
+    },
+    {
+      "url": "https://learn.microsoft.com/azure/virtual-machines/sizes/memory-optimized/easv4-series",
+      "section": "sizes-in-series",
+      "says": "DAV4-TEMPDISK-1: the Easv4 series runs on AMD EPYC processors and uses Premium SSD. Every size, E2as_v4 to E96as_v4, has one temporary disk, 32 to 1,344 GiB. The name has no d.",
+      "readUtc": "2026-10-04"
+    },
+    {
+      "url": "https://learn.microsoft.com/azure/virtual-machines/sizes/lifecycle/retirement/av1-series-retirement",
+      "section": "",
+      "says": "OLD-FAM-4: Microsoft retired the Basic and Standard A-series sizes on August 31, 2024. The remaining machines on them are set to a deallocated state, stopped and removed from the host. The page sends them to Av2. The retirement list and the modernization guide no longer name A v1 at all.",
+      "readUtc": "2026-10-04"
+    },
+    {
+      "url": "https://learn.microsoft.com/azure/virtual-machines/sizes/lifecycle/retirement/retired-sizes-modernization-guide",
+      "section": "recommended-replacement-vm-series",
+      "says": "OLD-FAM-4: Bv1 goes to Bsv2 or Basv2, or to Dlsv5, Dldsv5, Dalsv5, Daldsv5, Dlsv6, Dldsv6, Dalsv6 or Daldsv6. F, Fs and Fsv2 go to Dlsv6, Dldsv6, Dalsv6, Daldsv6, Falsv6, Dldsv5, Dlsv5, Dsv5 or Ddsv5. Av2 and Amv2 go to Bsv2 or Basv2, or to the D and E v5 and v6 series. After retirement a machine is deallocated; to resume it, resize it to a supported size and restart it. BSV2-TARGET-1: the differences column of the Bv1 row (and of the Av2 and Amv2 row) says B/Bav2, D/Ev5 disk controller type: SCSI, and D/Ev6 disk controller type: NVMe. Bsv2, Bpsv2 and Basv2 are not available in the sovereign clouds.",
+      "readUtc": "2026-10-09"
+    },
+    {
+      "url": "https://learn.microsoft.com/azure/virtual-machines/sizes/general-purpose/b-family",
+      "section": "",
+      "says": "OLD-FAM-4: traditional Azure virtual machines provide fixed CPU performance, and B-series virtual machines are the only VM type that use credits for CPU performance. A B-series machine earns credits below its base CPU performance, uses them above it, and is throttled back to the base when they are gone. This is true of B v1, Bsv2, Basv2 and Bpsv2.",
+      "readUtc": "2026-10-04"
+    },
+    {
+      "url": "https://learn.microsoft.com/azure/virtual-machines/sizes/general-purpose/dv4-series",
+      "section": "sizes-in-series",
+      "says": "V4-NAMES-1: the Dv4 series runs on Intel Xeon processors. No size, D2_v4 to D64_v4, has a temporary disk: no local storage is present in this series. Premium Storage is not supported. The page names Dpdsv6 as a similar series with local storage; that is Arm64, so it is not a target here.",
+      "readUtc": "2026-10-04"
+    },
+    {
+      "url": "https://learn.microsoft.com/azure/virtual-machines/sizes/general-purpose/ddv4-series",
+      "section": "sizes-in-series",
+      "says": "V4-NAMES-1: the Ddv4 series runs on Intel Xeon processors. Every size, D2d_v4 to D64d_v4, has one temporary disk, 75 to 2,400 GiB. Premium Storage is not supported.",
+      "readUtc": "2026-10-04"
+    },
+    {
+      "url": "https://learn.microsoft.com/azure/virtual-machines/sizes/memory-optimized/ev4-series",
+      "section": "sizes-in-series",
+      "says": "V4-NAMES-1: the Ev4 series runs on Intel Xeon processors. No size, E2_v4 to E64_v4, has a temporary disk: no local storage is present in this series. Premium Storage is not supported.",
+      "readUtc": "2026-10-04"
+    },
+    {
+      "url": "https://learn.microsoft.com/azure/virtual-machines/sizes/memory-optimized/edv4-series",
+      "section": "sizes-in-series",
+      "says": "V4-NAMES-1: the Edv4 series runs on Intel Xeon processors. Every size, E2d_v4 to E64d_v4, has one temporary disk, 75 to 2,400 GiB. Premium Storage is not supported.",
+      "readUtc": "2026-10-04"
+    },
+    {
+      "url": "https://learn.microsoft.com/azure/virtual-machines/sizes/general-purpose/dv5-series",
+      "section": "sizes-in-series",
+      "says": "V5-NAMES-1: the Dv5 series runs on Intel Xeon processors. No size, D2_v5 to D96_v5, has a temporary disk: no local storage is present in this series. Premium Storage is not supported. The page names Dpdsv6 as a similar series with local storage; that is Arm64, so it is not a target here. SIZE-LISTING-D-1, read 2026-11-03 (sizes-in-series): the Dv5 sizes are D2_v5 to D96_v5.",
+      "readUtc": "2026-10-17"
+    },
+    {
+      "url": "https://learn.microsoft.com/azure/virtual-machines/sizes/general-purpose/ddv5-series",
+      "section": "sizes-in-series",
+      "says": "V5-NAMES-1: the Ddv5 series runs on Intel Xeon processors. Every size, D2d_v5 to D96d_v5, has one temporary disk, 75 to 3,600 GiB. Premium Storage is not supported. SIZE-LISTING-D-1, read 2026-11-03 (sizes-in-series): the Ddv5 sizes are D2d_v5 to D96d_v5.",
+      "readUtc": "2026-10-17"
+    },
+    {
+      "url": "https://learn.microsoft.com/azure/virtual-machines/sizes/memory-optimized/edv5-series",
+      "section": "sizes-in-series",
+      "says": "V5-NAMES-1: the Edv5 series runs on Intel Xeon processors. Every size, E2d_v5 to E96d_v5, has one temporary disk, 75 to 3,600 GiB. Premium Storage is not supported. The isolated E104id_v5 on the same page has 3,800 GiB, and its series name is Eidv5, not Edv5. SIZE-LISTING-V5-1, read 2026-11-02: the Edv5 sizes are E2d_v5 to E96d_v5 and the isolated E104id_v5. No 80-vCPU size. The page writes the isolated size as E104id_v52, with a footnote mark; the size is E104id_v5. SIZE-LISTING-D-1, read 2026-11-03: the drift check found the page unchanged.",
+      "readUtc": "2026-10-17"
+    },
+    {
+      "url": "https://learn.microsoft.com/azure/virtual-machines/sizes/general-purpose/bsv2-series",
+      "section": "sizes-in-series",
+      "says": "BSV2-TARGET-1: the Bsv2 series runs on Intel Xeon Platinum 8573C (Emerald Rapids), 8473C (Sapphire Rapids) or 8370C (Ice Lake) processors and uses a CPU credit model: the machine accumulates credits below its base CPU performance, uses them above it, and is throttled back to its base CPU performance when they are all consumed. Eleven sizes, with vCPUs and memory (GiB): B2ts_v2 2 and 1, B2ls_v2 2 and 4, B2s_v2 2 and 8, B4ls_v2 4 and 8, B4s_v2 4 and 16, B8ls_v2 8 and 16, B8s_v2 8 and 32, B16ls_v2 16 and 32, B16s_v2 16 and 64, B32ls_v2 32 and 64, B32s_v2 32 and 128. No local storage is present in this series. Feature support: Generation 2 VMs Supported, Generation 1 VMs Supported, Accelerated Networking Supported, Premium Storage Supported. Interfaces: NetVSC, ConnectX and MANA. The page names no disk controller; the retired sizes modernization guide gives SCSI.",
+      "readUtc": "2026-10-09"
+    },
+    {
+      "url": "https://learn.microsoft.com/azure/virtual-network/accelerated-networking-mana-existing-sizes",
+      "section": "applicable-vm-series",
+      "says": "BSV2-TARGET-1: Bsv2 is among the existing series eligible to land on MANA-capable hardware (the B-family row), and they run on both Mellanox and MANA hardware until the series retires. Its date of the earliest placement on MANA hardware is Timeline under review, where Intel v5 has May 26, 2026. So a Bsv2 target may use MANA (manaProcessors Intel), as an Intel v5 target may, and the MANA driver question applies to it.",
+      "readUtc": "2026-10-09"
+    },
+    {
+      "url": "https://learn.microsoft.com/azure/virtual-machines/sizes/memory-optimized/esv5-series",
+      "section": "sizes-in-series",
+      "says": "SIZE-LISTING-V5-1: the Esv5 sizes are E2s_v5 to E96s_v5 and the isolated E104is_v5. No 80-vCPU size.",
+      "readUtc": "2026-11-03"
+    },
+    {
+      "url": "https://learn.microsoft.com/azure/virtual-machines/sizes/memory-optimized/edsv5-series",
+      "section": "sizes-in-series",
+      "says": "SIZE-LISTING-V5-1: the Edsv5 sizes are E2ds_v5 to E96ds_v5 and the isolated E104ids_v5. No 80-vCPU size.",
+      "readUtc": "2026-11-03"
+    },
+    {
+      "url": "https://learn.microsoft.com/azure/virtual-machines/sizes/memory-optimized/easv5-series",
+      "section": "sizes-in-series",
+      "says": "SIZE-LISTING-V5-1: the Easv5 sizes are E2as_v5 to E96as_v5 and the isolated E112ias_v5, on AMD.",
+      "readUtc": "2026-11-03"
+    },
+    {
+      "url": "https://learn.microsoft.com/azure/virtual-machines/sizes/memory-optimized/eadsv5-series",
+      "section": "sizes-in-series",
+      "says": "SIZE-LISTING-V5-1: the Eadsv5 sizes are E2ads_v5 to E96ads_v5 and the isolated E112iads_v5, on AMD.",
+      "readUtc": "2026-11-03"
+    },
+    {
+      "url": "https://learn.microsoft.com/azure/virtual-machines/sizes/memory-optimized/ebdsv5-ebsv5-series",
+      "section": "ebdsv5-series",
+      "says": "SIZE-LISTING-V5-1: the Ebdsv5 sizes are E2bds_v5 to E96bds_v5 and the isolated E112ibds_v5, and the Ebsv5 sizes are E2bs_v5 to E96bs_v5 and the isolated E112ibs_v5, on Intel. No 80-vCPU size.",
+      "readUtc": "2026-11-03"
+    },
+    {
+      "url": "https://learn.microsoft.com/azure/virtual-machines/sizes/memory-optimized/esv6-series",
+      "section": "sizes-in-series",
+      "says": "V5-SUCCESSOR-1: the Esv6 sizes are E2s_v6 to E128s_v6 and the isolated E192is_v6. No 104-vCPU or 112-vCPU size.",
+      "readUtc": "2026-11-03"
+    },
+    {
+      "url": "https://learn.microsoft.com/azure/virtual-machines/sizes/memory-optimized/edsv6-series",
+      "section": "sizes-in-series",
+      "says": "V5-SUCCESSOR-1: the Edsv6 sizes are E2ds_v6 to E128ds_v6 and the isolated E192ids_v6. No 104-vCPU or 112-vCPU size.",
+      "readUtc": "2026-11-03"
+    },
+    {
+      "url": "https://learn.microsoft.com/azure/virtual-machines/sizes/memory-optimized/easv6-series",
+      "section": "sizes-in-series",
+      "says": "V5-SUCCESSOR-1: the Easv6 sizes are E2as_v6 to E96as_v6, with no isolated size.",
+      "readUtc": "2026-11-03"
+    },
+    {
+      "url": "https://learn.microsoft.com/azure/virtual-machines/sizes/memory-optimized/eadsv6-series",
+      "section": "sizes-in-series",
+      "says": "V5-SUCCESSOR-1: the Eadsv6 sizes are E2ads_v6 to E96ads_v6, with no isolated size.",
+      "readUtc": "2026-11-03"
+    },
+    {
+      "url": "https://learn.microsoft.com/azure/virtual-machines/sizes/memory-optimized/ebsv6-series",
+      "section": "sizes-in-series",
+      "says": "V5-SUCCESSOR-1: the Ebsv6 sizes are E2bs_v6 to E128bs_v6 and the isolated E192ibs_v6, on Intel, with higher remote storage performance compared to the previous generation. Every Ebsv5 size number, 2 to 96, has an Ebsv6 size. No 112-vCPU size. The page does not call Ebsv6 the replacement of Ebsv5.",
+      "readUtc": "2026-11-03"
+    },
+    {
+      "url": "https://learn.microsoft.com/azure/virtual-machines/sizes/memory-optimized/ebdsv6-series",
+      "section": "sizes-in-series",
+      "says": "V5-SUCCESSOR-1: the Ebdsv6 sizes are E2bds_v6 to E128bds_v6 and the isolated E192ibds_v6, on Intel. Every Ebdsv5 size number, 2 to 96, has an Ebdsv6 size. No 112-vCPU size. The page does not call Ebdsv6 the replacement of Ebdsv5.",
+      "readUtc": "2026-11-03"
+    },
+    {
+      "url": "https://learn.microsoft.com/azure/virtual-machines/sizes/memory-optimized/ensv6-series",
+      "section": "sizes-in-series",
+      "says": "V5-SUCCESSOR-1: the Ensv6 sizes are E2ns_v6 to E128ns_v6, with no isolated size.",
+      "readUtc": "2026-11-03"
+    },
+    {
+      "url": "https://learn.microsoft.com/azure/virtual-machines/sizes/memory-optimized/endsv6-series",
+      "section": "sizes-in-series",
+      "says": "V5-SUCCESSOR-1: the Endsv6 sizes are E2nds_v6 to E128nds_v6, with no isolated size.",
+      "readUtc": "2026-11-03"
+    },
+    {
+      "url": "https://learn.microsoft.com/azure/virtual-machines/sizes/memory-optimized/eb-family",
+      "section": "series-in-family",
+      "says": "V5-SUCCESSOR-1: the series in the Eb family are Ebsv6, Ebdsv6, Ebdsv5 and Ebsv5. No Eb series on v7. SIZE-LISTING-V5-1: the Ebdsv5 and Ebsv5 sizes are on one page, ebdsv5-ebsv5-series.",
+      "readUtc": "2026-11-03"
+    },    {
+      "url": "https://learn.microsoft.com/azure/virtual-machines/sizes/memory-optimized/esv7-series",
+      "section": "sizes-in-series",
+      "says": "V5-SUCCESSOR-1: the Esv7 sizes are E2s_v7 to E248s_v7 and the isolated E372is_v7. No Eb size on v7: no memory-optimized page of v7 lists one.",
+      "readUtc": "2026-11-03"
+    },
+    {
+      "url": "https://learn.microsoft.com/azure/virtual-machines/sizes/memory-optimized/edsv7-series",
+      "section": "sizes-in-series",
+      "says": "V5-SUCCESSOR-1: the Edsv7 sizes are E2ds_v7 to E248ds_v7 and the isolated E372ids_v7.",
+      "readUtc": "2026-11-03"
+    },
+    {
+      "url": "https://learn.microsoft.com/azure/virtual-machines/sizes/memory-optimized/easv7-series",
+      "section": "sizes-in-series",
+      "says": "V5-SUCCESSOR-1: the Easv7 sizes are E2as_v7 to E160as_v7, with no isolated size.",
+      "readUtc": "2026-11-03"
+    },
+    {
+      "url": "https://learn.microsoft.com/azure/virtual-machines/sizes/memory-optimized/eadsv7-series",
+      "section": "sizes-in-series",
+      "says": "V5-SUCCESSOR-1: the Eadsv7 sizes are E2ads_v7 to E160ads_v7, with no isolated size.",
+      "readUtc": "2026-11-03"
+    },
+    {
+      "url": "https://learn.microsoft.com/azure/virtual-machines/sizes/general-purpose/ddsv5-series",
+      "section": "sizes-in-series",
+      "says": "SIZE-LISTING-D-1: the Ddsv5 sizes are D2ds_v5 to D96ds_v5.",
+      "readUtc": "2026-11-03"
+    },
+    {
+      "url": "https://learn.microsoft.com/azure/virtual-machines/sizes/general-purpose/dasv5-series",
+      "section": "sizes-in-series",
+      "says": "SIZE-LISTING-D-1: the Dasv5 sizes are D2as_v5 to D96as_v5.",
+      "readUtc": "2026-11-03"
+    },
+    {
+      "url": "https://learn.microsoft.com/azure/virtual-machines/sizes/general-purpose/dadsv5-series",
+      "section": "sizes-in-series",
+      "says": "SIZE-LISTING-D-1: the Dadsv5 sizes are D2ads_v5 to D96ads_v5.",
+      "readUtc": "2026-11-03"
+    },
+    {
+      "url": "https://learn.microsoft.com/azure/virtual-machines/sizes/general-purpose/dlsv5-series",
+      "section": "sizes-in-series",
+      "says": "SIZE-LISTING-D-1: the Dlsv5 sizes are D2ls_v5 to D96ls_v5.",
+      "readUtc": "2026-11-03"
+    },
+    {
+      "url": "https://learn.microsoft.com/azure/virtual-machines/sizes/general-purpose/dldsv5-series",
+      "section": "sizes-in-series",
+      "says": "SIZE-LISTING-D-1: the Dldsv5 sizes are D2lds_v5 to D96lds_v5.",
+      "readUtc": "2026-11-03"
+    },
+    {
+      "url": "https://learn.microsoft.com/azure/virtual-machines/sizes/general-purpose/ddsv6-series",
+      "section": "sizes-in-series",
+      "says": "SIZE-LISTING-D-1: the Ddsv6 sizes are D2ds_v6 to D192ds_v6.",
+      "readUtc": "2026-11-03"
+    },
+    {
+      "url": "https://learn.microsoft.com/azure/virtual-machines/sizes/general-purpose/dasv6-series",
+      "section": "sizes-in-series",
+      "says": "SIZE-LISTING-D-1: the Dasv6 sizes are D2as_v6 to D96as_v6.",
+      "readUtc": "2026-11-03"
+    },
+    {
+      "url": "https://learn.microsoft.com/azure/virtual-machines/sizes/general-purpose/dadsv6-series",
+      "section": "sizes-in-series",
+      "says": "SIZE-LISTING-D-1: the Dadsv6 sizes are D2ads_v6 to D96ads_v6.",
+      "readUtc": "2026-11-03"
+    },
+    {
+      "url": "https://learn.microsoft.com/azure/virtual-machines/sizes/general-purpose/dlsv6-series",
+      "section": "sizes-in-series",
+      "says": "SIZE-LISTING-D-1: the Dlsv6 sizes are D2ls_v6 to D128ls_v6.",
+      "readUtc": "2026-11-03"
+    },
+    {
+      "url": "https://learn.microsoft.com/azure/virtual-machines/sizes/general-purpose/dldsv6-series",
+      "section": "sizes-in-series",
+      "says": "SIZE-LISTING-D-1: the Dldsv6 sizes are D2lds_v6 to D128lds_v6.",
+      "readUtc": "2026-11-03"
+    },
+    {
+      "url": "https://learn.microsoft.com/azure/virtual-machines/sizes/general-purpose/dalsv6-series",
+      "section": "sizes-in-series",
+      "says": "SIZE-LISTING-D-1: the Dalsv6 sizes are D2als_v6 to D96als_v6.",
+      "readUtc": "2026-11-03"
+    },
+    {
+      "url": "https://learn.microsoft.com/azure/virtual-machines/sizes/general-purpose/daldsv6-series",
+      "section": "sizes-in-series",
+      "says": "SIZE-LISTING-D-1: the Daldsv6 sizes are D2alds_v6 to D96alds_v6.",
+      "readUtc": "2026-11-03"
+    },
+    {
+      "url": "https://learn.microsoft.com/azure/virtual-machines/sizes/memory-optimized/dnsv6-series",
+      "section": "sizes-in-series",
+      "says": "SIZE-LISTING-D-1: the Dnsv6 sizes are D2ns_v6 to D128ns_v6. Microsoft keeps this D page in the memory optimized folder.",
+      "readUtc": "2026-11-03"
+    },
+    {
+      "url": "https://learn.microsoft.com/azure/virtual-machines/sizes/memory-optimized/dndsv6-series",
+      "section": "sizes-in-series",
+      "says": "SIZE-LISTING-D-1: the Dndsv6 sizes are D2nds_v6 to D128nds_v6. Microsoft keeps this D page in the memory optimized folder.",
+      "readUtc": "2026-11-03"
+    },
+    {
+      "url": "https://learn.microsoft.com/azure/virtual-machines/sizes/memory-optimized/dnlsv6-series",
+      "section": "sizes-in-series",
+      "says": "SIZE-LISTING-D-1: the Dnlsv6 sizes are D2nls_v6 to D128nls_v6. Microsoft keeps this D page in the memory optimized folder.",
+      "readUtc": "2026-11-03"
+    },
+    {
+      "url": "https://learn.microsoft.com/azure/virtual-machines/sizes/memory-optimized/dnldsv6-series",
+      "section": "sizes-in-series",
+      "says": "SIZE-LISTING-D-1: the Dnldsv6 sizes are D2nlds_v6 to D128nlds_v6. Microsoft keeps this D page in the memory optimized folder.",
+      "readUtc": "2026-11-03"
+    },
+    {
+      "url": "https://learn.microsoft.com/azure/virtual-machines/sizes/general-purpose/dsv7-series",
+      "section": "sizes-in-series",
+      "says": "SIZE-LISTING-D-1: the Dsv7 sizes are D2s_v7 to D372s_v7.",
+      "readUtc": "2026-11-03"
+    },
+    {
+      "url": "https://learn.microsoft.com/azure/virtual-machines/sizes/general-purpose/ddsv7-series",
+      "section": "sizes-in-series",
+      "says": "SIZE-LISTING-D-1: the Ddsv7 sizes are D2ds_v7 to D372ds_v7.",
+      "readUtc": "2026-11-03"
+    },
+    {
+      "url": "https://learn.microsoft.com/azure/virtual-machines/sizes/general-purpose/dasv7-series",
+      "section": "sizes-in-series",
+      "says": "SIZE-LISTING-D-1: the Dasv7 sizes are D2as_v7 to D160as_v7.",
+      "readUtc": "2026-11-03"
+    },
+    {
+      "url": "https://learn.microsoft.com/azure/virtual-machines/sizes/general-purpose/dadsv7-series",
+      "section": "sizes-in-series",
+      "says": "SIZE-LISTING-D-1: the Dadsv7 sizes are D2ads_v7 to D160ads_v7.",
+      "readUtc": "2026-11-03"
+    },
+    {
+      "url": "https://learn.microsoft.com/azure/virtual-machines/sizes/general-purpose/dlsv7-series",
+      "section": "sizes-in-series",
+      "says": "SIZE-LISTING-D-1: the Dlsv7 sizes are D2ls_v7 to D248ls_v7.",
+      "readUtc": "2026-11-03"
+    },
+    {
+      "url": "https://learn.microsoft.com/azure/virtual-machines/sizes/general-purpose/dldsv7-series",
+      "section": "sizes-in-series",
+      "says": "SIZE-LISTING-D-1: the Dldsv7 sizes are D2lds_v7 to D248lds_v7.",
+      "readUtc": "2026-11-03"
+    },
+    {
+      "url": "https://learn.microsoft.com/azure/virtual-machines/sizes/general-purpose/dalsv7-series",
+      "section": "sizes-in-series",
+      "says": "SIZE-LISTING-D-1: the Dalsv7 sizes are D2als_v7 to D160als_v7.",
+      "readUtc": "2026-11-03"
+    },
+    {
+      "url": "https://learn.microsoft.com/azure/virtual-machines/sizes/general-purpose/daldsv7-series",
+      "section": "sizes-in-series",
+      "says": "SIZE-LISTING-D-1: the Daldsv7 sizes are D2alds_v7 to D160alds_v7.",
+      "readUtc": "2026-11-03"
+    },
+    {
+      "url": "https://learn.microsoft.com/azure/virtual-machines/constrained-vcpu",
+      "section": "list-of-available-sizes-with-constrained-vcpus",
+      "says": "V5-SUCCESSOR-1: the constrained E sizes on v6 are Intel only (E4-2s_v6 to E128-64ds_v6), and on v7 AMD only (E4-2ads_v7 to E128-64as_v7). No Intel E size on v7 and no AMD E size on v6 is constrained. The page writes one name as E4-2ds_v6 4; the size is E4-2ds_v6. SIZE-LISTING-V5-1: on v5 the page lists constrained Esv5, Edsv5, Easv5 and Eadsv5 sizes, E4-2s_v5 to E96-24as_v5.",
+      "readUtc": "2026-11-03"
+    }
+  ],
+  "burstableWhy": "OLD-FAM-4: a B size runs on CPU credits, and every other size has fixed CPU performance. The target advice says so for each option and each size choice: burstableEnds when the machine is on a burstable size and the target is not - a change in how the machine uses its CPU, and in what it costs - and burstableKept (BSV2-TARGET-1) when both are burstable. BSV2-TARGET-1 made Bsv2 the default target of a B v1 machine (burstableTargets), so a B v1 machine keeps its CPU credits unless a person chooses a D or E size, or no Bsv2 size fits it.",
+  "burstableFamilies": ["B"],
+  "burstableTargets": {
+    "why": "BSV2-TARGET-1, 2026-10-05 (OWNER-QUESTIONS-1 row 19): Bsv2 - Intel, the processor of B v1 - is the DEFAULT target of a B v1 machine, with the D or E size by shape as the other choice. Basv2 is not offered: it is AMD, and a machine keeps its processor maker (AMD-SHAPE-1). Bpsv2 is Arm64, which is not an approved processor. Microsoft's retired sizes modernization guide names Bsv2 or Basv2 first for Bv1. A Bsv2 size is offered only to a machine on a B v1 size (sourceSizeSeries), and only on the option whose rules it follows (option): v5, because the guide gives the B disk controller type as SCSI, and the Bsv2 page says Generation 1 and Generation 2 Supported, accelerated networking Supported (not Required), and MANA among its interfaces - the Intel v5 facts, item for item. The sizes are read by their series (Get-VmfSizeSeriesReading: Standard_B2ls_v2 is Blsv2), never listed one by one. The size is the smallest with at least the vCPUs AND the memory of the machine (SIZE-FIT-1) that passes every gate; a B v1 machine with no such size in its region is told so, and starts on its D or E size.",
+    "series": [
+      {
+        "series": "Bsv2",
+        "sizeSeries": ["Btsv2", "Blsv2", "Bsv2"],
+        "sourceSizeSeries": ["Bls", "Bs", "Bms"],
+        "processor": "Intel",
+        "option": "v5",
+        "traits": {
+          "controller": "SCSI",
+          "hyperVGenerations": ["V1", "V2"],
+          "acceleratedNetworkingRequired": [],
+          "manaProcessors": ["Intel"]
+        },
+        "temporaryDisk": false,
+        "source": "bsv2-series",
+        "controllerSource": "retired-sizes-modernization-guide",
+        "controllerMeasured": "A second source for SCSI, from Azure: az vm list-skus -l centralus --resource-type virtualMachines --all, read 2026-10-09. No Bsv2 size reports a DiskControllerTypes capability, the same as the SCSI-only v5 sizes (Standard_D2s_v5 reports none), while Standard_D2s_v6 reports NVMe. tests/fixtures/bsv2-catalog-centralus.json holds the B sizes of that reading.",
+        "manaSource": "accelerated-networking-mana-existing-sizes"
+      }
+    ]
+  },
+  "replacements": {
+    "why": "V3-TEMPDISK-1: the planner kept a size's name and changed its version, so D4s_v3 became D4s_v6, which has no temporary disk, and D4_v3 became Standard_D4_v6, a size that does not exist. That was then reported as a size the region did not have. Microsoft's table names the v6 and v7 replacements of a v3 size, and every one has an s. The planner takes the d size first, because every v3 size has a temporary disk, and keeps the size without one as the other choice. Only the Intel sizes of a row are used: a move to AMD is a change of processor, and the planner keeps the processor of the machine. DAV4-TEMPDISK-1 (2026-10-04): the AMD v4 series Dav4, Dasv4, Eav4 and Easv4 have a temporary disk on every size and no d in the name, as v3 does, so they keep it the same way, on AMD. Microsoft gives no table for v4, so those rows are derived (basis), and each names the size page that shows the temporary disk. V4-NAMES-1: the Intel v4 series with no s in the name - Dv4, Ddv4, Ev4 and Edv4 - had the same defect: D4_v4 tried only Standard_D4_v6 and D4d_v4 only Standard_D4d_v6, which do not exist. Their rows add the s on v6 and v7 and keep the temporary disk as the size page shows it: Ddv4 and Edv4 have one on every size and go to the d size, Dv4 and Ev4 have none and go to the size without one. Neither is offered the other size, the same as Ddsv4 and Dsv4. V5-NAMES-1: the Intel v5 series with no s in the name - Dv5, Ddv5, Ev5 and Edv5 - had the same defect one version later: D4_v5 tried only Standard_D4_v6 and D4d_v5 only Standard_D4d_v6. Their rows are the v4 rows one version on, from their own size pages.",
+    "bySeries": [
+      {
+        "sourceSeries": ["Dv3", "Dsv3"],
+        "everySizeHasTemporaryDisk": true,
+        "targets": {
+          "v5": ["Dv5", "Dsv5", "Ddv5", "Ddsv5", "Dasv5", "Dadsv5"],
+          "v6": ["Dsv6", "Ddsv6", "Dasv6", "Dadsv6"],
+          "v7": ["Dsv7", "Ddsv7", "Dasv7", "Dadsv7"]
+        },
+        "source": "sizes-v6-v7-modernization-plan",
+        "basis": "stated"
+      },
+      {
+        "sourceSeries": ["Ev3", "Esv3"],
+        "everySizeHasTemporaryDisk": true,
+        "targets": {
+          "v5": ["Ev5", "Esv5", "Edv5", "Edsv5", "Easv5", "Eadsv5"],
+          "v6": ["Esv6", "Edsv6", "Easv6", "Eadsv6"],
+          "v7": ["Esv7", "Edsv7", "Easv7", "Eadsv7"]
+        },
+        "source": "sizes-v6-v7-modernization-plan",
+        "basis": "stated"
+      },
+      {
+        "sourceSeries": ["Dav4"],
+        "everySizeHasTemporaryDisk": true,
+        "targets": {
+          "v5": ["Dasv5", "Dadsv5"],
+          "v6": ["Dasv6", "Dadsv6"],
+          "v7": ["Dasv7", "Dadsv7"]
+        },
+        "source": "dav4-series",
+        "basis": "derived",
+        "how": "Microsoft gives no replacement table for v4. The size page shows a temporary disk on every size, and the plan page says to choose a d size when the workload uses local scratch storage. The targets are the AMD D series of each version, with and without a temporary disk, because the planner keeps the processor of the machine. There is no Dav5, Dav6 or Dav7, so a size without an s takes one."
+      },
+      {
+        "sourceSeries": ["Dasv4"],
+        "everySizeHasTemporaryDisk": true,
+        "targets": {
+          "v5": ["Dasv5", "Dadsv5"],
+          "v6": ["Dasv6", "Dadsv6"],
+          "v7": ["Dasv7", "Dadsv7"]
+        },
+        "source": "dasv4-series",
+        "basis": "derived",
+        "how": "Microsoft gives no replacement table for v4. The size page shows a temporary disk on every size, and the plan page says to choose a d size when the workload uses local scratch storage. The targets are the AMD D series of each version, with and without a temporary disk, because the planner keeps the processor of the machine."
+      },
+      {
+        "sourceSeries": ["Eav4"],
+        "everySizeHasTemporaryDisk": true,
+        "targets": {
+          "v5": ["Easv5", "Eadsv5"],
+          "v6": ["Easv6", "Eadsv6"],
+          "v7": ["Easv7", "Eadsv7"]
+        },
+        "source": "eav4-series",
+        "basis": "derived",
+        "how": "Microsoft gives no replacement table for v4. The size page shows a temporary disk on every size, and the plan page says to choose a d size when the workload uses local scratch storage. The targets are the AMD E series of each version, with and without a temporary disk, because the planner keeps the processor of the machine. There is no Eav5, Eav6 or Eav7, so a size without an s takes one."
+      },
+      {
+        "sourceSeries": ["Easv4"],
+        "everySizeHasTemporaryDisk": true,
+        "targets": {
+          "v5": ["Easv5", "Eadsv5"],
+          "v6": ["Easv6", "Eadsv6"],
+          "v7": ["Easv7", "Eadsv7"]
+        },
+        "source": "easv4-series",
+        "basis": "derived",
+        "how": "Microsoft gives no replacement table for v4. The size page shows a temporary disk on every size, and the plan page says to choose a d size when the workload uses local scratch storage. The targets are the AMD E series of each version, with and without a temporary disk, because the planner keeps the processor of the machine."
+      },
+      {
+        "sourceSeries": ["Dv4"],
+        "everySizeHasTemporaryDisk": false,
+        "targets": {
+          "v5": ["Dv5", "Ddv5"],
+          "v6": ["Dsv6", "Ddsv6"],
+          "v7": ["Dsv7", "Ddsv7"]
+        },
+        "source": "dv4-series",
+        "basis": "derived",
+        "how": "Microsoft gives no replacement table for v4. The size page says no size has local storage, so the planner takes the size without a temporary disk and offers no other. The targets are the Intel D series of each version, with and without a temporary disk, because the planner keeps the processor of the machine. There is no Dv6 or Dv7, so a size without an s takes one; v5 has Dv5, so it keeps the name."
+      },
+      {
+        "sourceSeries": ["Ddv4"],
+        "everySizeHasTemporaryDisk": true,
+        "targets": {
+          "v5": ["Dv5", "Ddv5"],
+          "v6": ["Dsv6", "Ddsv6"],
+          "v7": ["Dsv7", "Ddsv7"]
+        },
+        "source": "ddv4-series",
+        "basis": "derived",
+        "how": "Microsoft gives no replacement table for v4. The size page shows one temporary disk on every size, so the planner takes the d size, as it does for Ddsv4. The targets are the Intel D series of each version, with and without a temporary disk, because the planner keeps the processor of the machine. There is no Ddv6 or Ddv7, so a size without an s takes one; v5 has Ddv5, so it keeps the name."
+      },
+      {
+        "sourceSeries": ["Ev4"],
+        "everySizeHasTemporaryDisk": false,
+        "targets": {
+          "v5": ["Ev5", "Edv5"],
+          "v6": ["Esv6", "Edsv6"],
+          "v7": ["Esv7", "Edsv7"]
+        },
+        "source": "ev4-series",
+        "basis": "derived",
+        "how": "Microsoft gives no replacement table for v4. The size page says no size has local storage, so the planner takes the size without a temporary disk and offers no other. The targets are the Intel E series of each version, with and without a temporary disk, because the planner keeps the processor of the machine. There is no Ev6 or Ev7, so a size without an s takes one; v5 has Ev5, so it keeps the name."
+      },
+      {
+        "sourceSeries": ["Edv4"],
+        "everySizeHasTemporaryDisk": true,
+        "targets": {
+          "v5": ["Ev5", "Edv5"],
+          "v6": ["Esv6", "Edsv6"],
+          "v7": ["Esv7", "Edsv7"]
+        },
+        "source": "edv4-series",
+        "basis": "derived",
+        "how": "Microsoft gives no replacement table for v4. The size page shows one temporary disk on every size, so the planner takes the d size, as it does for Edsv4. The targets are the Intel E series of each version, with and without a temporary disk, because the planner keeps the processor of the machine. There is no Edv6 or Edv7, so a size without an s takes one; v5 has Edv5, so it keeps the name."
+      },
+      {
+        "sourceSeries": ["Dv5"],
+        "everySizeHasTemporaryDisk": false,
+        "targets": {
+          "v5": ["Dv5", "Ddv5"],
+          "v6": ["Dsv6", "Ddsv6"],
+          "v7": ["Dsv7", "Ddsv7"]
+        },
+        "source": "dv5-series",
+        "basis": "derived",
+        "how": "Microsoft gives no replacement table for v5. The size page says no size has local storage, so the planner takes the size without a temporary disk and offers no other, as it does for Dsv5. The targets are the Intel D series of each version, with and without a temporary disk, because the planner keeps the processor of the machine. There is no Dv6 or Dv7, so a size without an s takes one. On v5 the machine is already on its own series."
+      },
+      {
+        "sourceSeries": ["Ddv5"],
+        "everySizeHasTemporaryDisk": true,
+        "targets": {
+          "v5": ["Dv5", "Ddv5"],
+          "v6": ["Dsv6", "Ddsv6"],
+          "v7": ["Dsv7", "Ddsv7"]
+        },
+        "source": "ddv5-series",
+        "basis": "derived",
+        "how": "Microsoft gives no replacement table for v5. The size page shows one temporary disk on every size, so the planner takes the d size, as it does for Ddsv5. The targets are the Intel D series of each version, with and without a temporary disk, because the planner keeps the processor of the machine. There is no Ddv6 or Ddv7, so a size without an s takes one. On v5 the machine is already on its own series."
+      },
+      {
+        "sourceSeries": ["Ev5"],
+        "everySizeHasTemporaryDisk": false,
+        "targets": {
+          "v5": ["Ev5", "Edv5"],
+          "v6": ["Esv6", "Edsv6"],
+          "v7": ["Esv7", "Edsv7"]
+        },
+        "source": "ev5-series",
+        "basis": "derived",
+        "how": "Microsoft gives no replacement table for v5. The size page says no size has local storage, so the planner takes the size without a temporary disk and offers no other, as it does for Esv5. The targets are the Intel E series of each version, with and without a temporary disk, because the planner keeps the processor of the machine. There is no Ev6 or Ev7, so a size without an s takes one. On v5 the machine is already on its own series. The isolated E104i_v5 is not in this series."
+      },
+      {
+        "sourceSeries": ["Edv5"],
+        "everySizeHasTemporaryDisk": true,
+        "targets": {
+          "v5": ["Ev5", "Edv5"],
+          "v6": ["Esv6", "Edsv6"],
+          "v7": ["Esv7", "Edsv7"]
+        },
+        "source": "edv5-series",
+        "basis": "derived",
+        "how": "Microsoft gives no replacement table for v5. The size page shows one temporary disk on every size, so the planner takes the d size, as it does for Edsv5. The targets are the Intel E series of each version, with and without a temporary disk, because the planner keeps the processor of the machine. There is no Edv6 or Edv7, so a size without an s takes one. On v5 the machine is already on its own series. The isolated E104id_v5 is not in this series."
+      }
+    ]
+  },
+  "microsoftSizes": {
+    "why": "V5-SUCCESSOR-1: the planner keeps the letters of a size name and changes its version. When no size of that name is in the region's catalog, that is either a fact about the region or a fact about Microsoft: Microsoft has no size of that name. Every Intel v5 size it refused was told the first, also where the second was true (Ebsv5 and Ebdsv5 on v7, the isolated E104i and E112ib sizes on v6 and v7, the constrained Esv5 and Edsv5 sizes on v7). These are the size names Microsoft's pages list for the E family on v5, v6 and v7, Intel and AMD, so the planner can say which fact it is: every E size page of v6 and v7 that Microsoft's table of contents listed on 2026-10-23 (the confidential and Arm64 pages are outside covers), and the constrained vCPU page. SIZE-LISTING-V5-1 added the E size pages of v5 (Esv5, Edsv5, Ev5, Edv5, Easv5, Eadsv5, and the Ebdsv5 and Ebsv5 page), because an isolated E80is_v4 or E80ids_v4 machine was told its region has no v5 size, and Microsoft lists no E80is or E80ids v5 size. Every page was read again on 2026-11-02, when the drift check found each pinned page unchanged. SIZE-LISTING-D-1 added the D family: every D and Dl size page of v5, v6 and v7, Intel and AMD, in the general purpose folder, and the Dnsv6, Dndsv6, Dnlsv6 and Dnldsv6 pages, which Microsoft keeps in the memory optimized folder. A D machine was told only that its region has no size, also where Microsoft has no size of that name: a Dv2 size such as D11_v2 has no D11 size on v5, v6 or v7, and Microsoft has no Dv6, Ddv6, Dv7 or Ddv7 series. The constrained vCPU page lists no constrained D size on v5, v6 or v7. Every page was read again on 2026-11-03, when the drift check found each pinned page unchanged and pinned the four Dn v6 pages. The drift check watches each page, and reports a new D or E page of v5, v6 or v7 in the table of contents. A size the region's catalog lists is always planned: Azure is the authority on what exists, and this list answers only for a size the catalog does not hold. A size outside covers is not answered, and keeps the region fact.",
+    "readUtc": "2026-11-03",
+    "covers": [
+      { "family": "D", "generations": ["v5", "v6", "v7"], "processors": ["Intel", "AMD"] },
+      { "family": "E", "generations": ["v5", "v6", "v7"], "processors": ["Intel", "AMD"] }
+    ],
+    "isolatedLetter": "i",
+    "isolatedSource": "vm-naming-conventions",
+    "pages": [
+        { "page": "esv5-series", "sizes": ["E2s_v5", "E4s_v5", "E8s_v5", "E16s_v5", "E20s_v5", "E32s_v5", "E48s_v5", "E64s_v5", "E96s_v5", "E104is_v5"] },
+        { "page": "edsv5-series", "sizes": ["E2ds_v5", "E4ds_v5", "E8ds_v5", "E16ds_v5", "E20ds_v5", "E32ds_v5", "E48ds_v5", "E64ds_v5", "E96ds_v5", "E104ids_v5"] },
+        { "page": "ev5-series", "sizes": ["E2_v5", "E4_v5", "E8_v5", "E16_v5", "E20_v5", "E32_v5", "E48_v5", "E64_v5", "E96_v5", "E104i_v5"] },
+        { "page": "edv5-series", "sizes": ["E2d_v5", "E4d_v5", "E8d_v5", "E16d_v5", "E20d_v5", "E32d_v5", "E48d_v5", "E64d_v5", "E96d_v5", "E104id_v5"] },
+        { "page": "easv5-series", "sizes": ["E2as_v5", "E4as_v5", "E8as_v5", "E16as_v5", "E20as_v5", "E32as_v5", "E48as_v5", "E64as_v5", "E96as_v5", "E112ias_v5"] },
+        { "page": "eadsv5-series", "sizes": ["E2ads_v5", "E4ads_v5", "E8ads_v5", "E16ads_v5", "E20ads_v5", "E32ads_v5", "E48ads_v5", "E64ads_v5", "E96ads_v5", "E112iads_v5"] },
+        { "page": "ebdsv5-ebsv5-series", "sizes": ["E2bds_v5", "E4bds_v5", "E8bds_v5", "E16bds_v5", "E32bds_v5", "E48bds_v5", "E64bds_v5", "E96bds_v5", "E112ibds_v5", "E2bs_v5", "E4bs_v5", "E8bs_v5", "E16bs_v5", "E32bs_v5", "E48bs_v5", "E64bs_v5", "E96bs_v5", "E112ibs_v5"] },
+        { "page": "esv6-series", "sizes": ["E2s_v6", "E4s_v6", "E8s_v6", "E16s_v6", "E20s_v6", "E32s_v6", "E48s_v6", "E64s_v6", "E96s_v6", "E128s_v6", "E192is_v6"] },
+        { "page": "edsv6-series", "sizes": ["E2ds_v6", "E4ds_v6", "E8ds_v6", "E16ds_v6", "E20ds_v6", "E32ds_v6", "E48ds_v6", "E64ds_v6", "E96ds_v6", "E128ds_v6", "E192ids_v6"] },
+        { "page": "easv6-series", "sizes": ["E2as_v6", "E4as_v6", "E8as_v6", "E16as_v6", "E20as_v6", "E32as_v6", "E48as_v6", "E64as_v6", "E96as_v6"] },
+        { "page": "eadsv6-series", "sizes": ["E2ads_v6", "E4ads_v6", "E8ads_v6", "E16ads_v6", "E20ads_v6", "E32ads_v6", "E48ads_v6", "E64ads_v6", "E96ads_v6"] },
+        { "page": "ebsv6-series", "sizes": ["E2bs_v6", "E4bs_v6", "E8bs_v6", "E16bs_v6", "E32bs_v6", "E48bs_v6", "E64bs_v6", "E96bs_v6", "E128bs_v6", "E192ibs_v6"] },
+        { "page": "ebdsv6-series", "sizes": ["E2bds_v6", "E4bds_v6", "E8bds_v6", "E16bds_v6", "E32bds_v6", "E48bds_v6", "E64bds_v6", "E96bds_v6", "E128bds_v6", "E192ibds_v6"] },
+        { "page": "ensv6-series", "sizes": ["E2ns_v6", "E4ns_v6", "E8ns_v6", "E16ns_v6", "E32ns_v6", "E48ns_v6", "E64ns_v6", "E96ns_v6", "E128ns_v6"] },
+        { "page": "endsv6-series", "sizes": ["E2nds_v6", "E4nds_v6", "E8nds_v6", "E16nds_v6", "E32nds_v6", "E48nds_v6", "E64nds_v6", "E96nds_v6", "E128nds_v6"] },
+        { "page": "esv7-series", "sizes": ["E2s_v7", "E4s_v7", "E8s_v7", "E16s_v7", "E20s_v7", "E32s_v7", "E48s_v7", "E64s_v7", "E96s_v7", "E128s_v7", "E192s_v7", "E248s_v7", "E372is_v7"] },
+        { "page": "edsv7-series", "sizes": ["E2ds_v7", "E4ds_v7", "E8ds_v7", "E16ds_v7", "E20ds_v7", "E32ds_v7", "E48ds_v7", "E64ds_v7", "E96ds_v7", "E128ds_v7", "E192ds_v7", "E248ds_v7", "E372ids_v7"] },
+        { "page": "easv7-series", "sizes": ["E2as_v7", "E4as_v7", "E8as_v7", "E16as_v7", "E32as_v7", "E48as_v7", "E64as_v7", "E96as_v7", "E128as_v7", "E160as_v7"] },
+        { "page": "eadsv7-series", "sizes": ["E2ads_v7", "E4ads_v7", "E8ads_v7", "E16ads_v7", "E32ads_v7", "E48ads_v7", "E64ads_v7", "E96ads_v7", "E128ads_v7", "E160ads_v7"] },
+        { "page": "dv5-series", "sizes": ["D2_v5", "D4_v5", "D8_v5", "D16_v5", "D32_v5", "D48_v5", "D64_v5", "D96_v5"] },
+        { "page": "dsv5-series", "sizes": ["D2s_v5", "D4s_v5", "D8s_v5", "D16s_v5", "D32s_v5", "D48s_v5", "D64s_v5", "D96s_v5"] },
+        { "page": "ddv5-series", "sizes": ["D2d_v5", "D4d_v5", "D8d_v5", "D16d_v5", "D32d_v5", "D48d_v5", "D64d_v5", "D96d_v5"] },
+        { "page": "ddsv5-series", "sizes": ["D2ds_v5", "D4ds_v5", "D8ds_v5", "D16ds_v5", "D32ds_v5", "D48ds_v5", "D64ds_v5", "D96ds_v5"] },
+        { "page": "dasv5-series", "sizes": ["D2as_v5", "D4as_v5", "D8as_v5", "D16as_v5", "D32as_v5", "D48as_v5", "D64as_v5", "D96as_v5"] },
+        { "page": "dadsv5-series", "sizes": ["D2ads_v5", "D4ads_v5", "D8ads_v5", "D16ads_v5", "D32ads_v5", "D48ads_v5", "D64ads_v5", "D96ads_v5"] },
+        { "page": "dlsv5-series", "sizes": ["D2ls_v5", "D4ls_v5", "D8ls_v5", "D16ls_v5", "D32ls_v5", "D48ls_v5", "D64ls_v5", "D96ls_v5"] },
+        { "page": "dldsv5-series", "sizes": ["D2lds_v5", "D4lds_v5", "D8lds_v5", "D16lds_v5", "D32lds_v5", "D48lds_v5", "D64lds_v5", "D96lds_v5"] },
+        { "page": "dsv6-series", "sizes": ["D2s_v6", "D4s_v6", "D8s_v6", "D16s_v6", "D32s_v6", "D48s_v6", "D64s_v6", "D96s_v6", "D128s_v6", "D192s_v6"] },
+        { "page": "ddsv6-series", "sizes": ["D2ds_v6", "D4ds_v6", "D8ds_v6", "D16ds_v6", "D32ds_v6", "D48ds_v6", "D64ds_v6", "D96ds_v6", "D128ds_v6", "D192ds_v6"] },
+        { "page": "dasv6-series", "sizes": ["D2as_v6", "D4as_v6", "D8as_v6", "D16as_v6", "D32as_v6", "D48as_v6", "D64as_v6", "D96as_v6"] },
+        { "page": "dadsv6-series", "sizes": ["D2ads_v6", "D4ads_v6", "D8ads_v6", "D16ads_v6", "D32ads_v6", "D48ads_v6", "D64ads_v6", "D96ads_v6"] },
+        { "page": "dlsv6-series", "sizes": ["D2ls_v6", "D4ls_v6", "D8ls_v6", "D16ls_v6", "D32ls_v6", "D48ls_v6", "D64ls_v6", "D96ls_v6", "D128ls_v6"] },
+        { "page": "dldsv6-series", "sizes": ["D2lds_v6", "D4lds_v6", "D8lds_v6", "D16lds_v6", "D32lds_v6", "D48lds_v6", "D64lds_v6", "D96lds_v6", "D128lds_v6"] },
+        { "page": "dalsv6-series", "sizes": ["D2als_v6", "D4als_v6", "D8als_v6", "D16als_v6", "D32als_v6", "D48als_v6", "D64als_v6", "D96als_v6"] },
+        { "page": "daldsv6-series", "sizes": ["D2alds_v6", "D4alds_v6", "D8alds_v6", "D16alds_v6", "D32alds_v6", "D48alds_v6", "D64alds_v6", "D96alds_v6"] },
+        { "page": "dnsv6-series", "sizes": ["D2ns_v6", "D4ns_v6", "D8ns_v6", "D16ns_v6", "D32ns_v6", "D48ns_v6", "D64ns_v6", "D96ns_v6", "D128ns_v6"] },
+        { "page": "dndsv6-series", "sizes": ["D2nds_v6", "D4nds_v6", "D8nds_v6", "D16nds_v6", "D32nds_v6", "D48nds_v6", "D64nds_v6", "D96nds_v6", "D128nds_v6"] },
+        { "page": "dnlsv6-series", "sizes": ["D2nls_v6", "D4nls_v6", "D8nls_v6", "D16nls_v6", "D32nls_v6", "D48nls_v6", "D64nls_v6", "D96nls_v6", "D128nls_v6"] },
+        { "page": "dnldsv6-series", "sizes": ["D2nlds_v6", "D4nlds_v6", "D8nlds_v6", "D16nlds_v6", "D32nlds_v6", "D48nlds_v6", "D64nlds_v6", "D96nlds_v6", "D128nlds_v6"] },
+        { "page": "dsv7-series", "sizes": ["D2s_v7", "D4s_v7", "D8s_v7", "D16s_v7", "D32s_v7", "D48s_v7", "D64s_v7", "D96s_v7", "D128s_v7", "D192s_v7", "D248s_v7", "D372s_v7"] },
+        { "page": "ddsv7-series", "sizes": ["D2ds_v7", "D4ds_v7", "D8ds_v7", "D16ds_v7", "D32ds_v7", "D48ds_v7", "D64ds_v7", "D96ds_v7", "D128ds_v7", "D192ds_v7", "D248ds_v7", "D372ds_v7"] },
+        { "page": "dasv7-series", "sizes": ["D2as_v7", "D4as_v7", "D8as_v7", "D16as_v7", "D32as_v7", "D48as_v7", "D64as_v7", "D96as_v7", "D128as_v7", "D160as_v7"] },
+        { "page": "dadsv7-series", "sizes": ["D2ads_v7", "D4ads_v7", "D8ads_v7", "D16ads_v7", "D32ads_v7", "D48ads_v7", "D64ads_v7", "D96ads_v7", "D128ads_v7", "D160ads_v7"] },
+        { "page": "dlsv7-series", "sizes": ["D2ls_v7", "D4ls_v7", "D8ls_v7", "D16ls_v7", "D32ls_v7", "D48ls_v7", "D64ls_v7", "D96ls_v7", "D128ls_v7", "D192ls_v7", "D248ls_v7"] },
+        { "page": "dldsv7-series", "sizes": ["D2lds_v7", "D4lds_v7", "D8lds_v7", "D16lds_v7", "D32lds_v7", "D48lds_v7", "D64lds_v7", "D96lds_v7", "D128lds_v7", "D192lds_v7", "D248lds_v7"] },
+        { "page": "dalsv7-series", "sizes": ["D2als_v7", "D4als_v7", "D8als_v7", "D16als_v7", "D32als_v7", "D48als_v7", "D64als_v7", "D96als_v7", "D128als_v7", "D160als_v7"] },
+        { "page": "daldsv7-series", "sizes": ["D2alds_v7", "D4alds_v7", "D8alds_v7", "D16alds_v7", "D32alds_v7", "D48alds_v7", "D64alds_v7", "D96alds_v7", "D128alds_v7", "D160alds_v7"] },
+        { "page": "constrained-vcpu", "sizes": ["E4-2s_v5", "E8-4s_v5", "E8-2s_v5", "E16-8s_v5", "E16-4s_v5", "E32-16s_v5", "E32-8s_v5", "E64-32s_v5", "E64-16s_v5", "E96-48s_v5", "E96-24s_v5", "E4-2ds_v5", "E8-4ds_v5", "E8-2ds_v5", "E16-8ds_v5", "E16-4ds_v5", "E32-16ds_v5", "E32-8ds_v5", "E64-32ds_v5", "E64-16ds_v5", "E96-48ds_v5", "E96-24ds_v5", "E4-2ads_v5", "E8-4ads_v5", "E8-2ads_v5", "E16-8ads_v5", "E16-4ads_v5", "E32-16ads_v5", "E32-8ads_v5", "E64-32ads_v5", "E64-16ads_v5", "E96-48ads_v5", "E96-24ads_v5", "E4-2as_v5", "E8-4as_v5", "E8-2as_v5", "E16-8as_v5", "E16-4as_v5", "E32-16as_v5", "E32-8as_v5", "E64-32as_v5", "E64-16as_v5", "E96-48as_v5", "E96-24as_v5", "E4-2s_v6", "E8-2s_v6", "E8-4s_v6", "E16-4s_v6", "E16-8s_v6", "E32-8s_v6", "E32-16s_v6", "E64-16s_v6", "E64-32s_v6", "E96-24s_v6", "E96-48s_v6", "E128-32s_v6", "E128-64s_v6", "E4-2ds_v6", "E8-2ds_v6", "E8-4ds_v6", "E16-4ds_v6", "E16-8ds_v6", "E32-8ds_v6", "E32-16ds_v6", "E64-16ds_v6", "E64-32ds_v6", "E96-24ds_v6", "E96-48ds_v6", "E128-32ds_v6", "E128-64ds_v6", "E4-2ads_v7", "E8-2ads_v7", "E8-4ads_v7", "E16-4ads_v7", "E16-8ads_v7", "E32-8ads_v7", "E32-16ads_v7", "E64-16ads_v7", "E64-32ads_v7", "E96-24ads_v7", "E96-48ads_v7", "E128-32ads_v7", "E128-64ads_v7", "E4-2as_v7", "E8-2as_v7", "E8-4as_v7", "E16-4as_v7", "E16-8as_v7", "E32-8as_v7", "E32-16as_v7", "E64-16as_v7", "E64-32as_v7", "E96-24as_v7", "E96-48as_v7", "E128-32as_v7", "E128-64as_v7"] }
+    ]
+  },
+  "processorLetters": {
+    "a": "AMD",
+    "p": "Arm64"
+  },
+  "defaultProcessor": "Intel",
+  "approvedProcessors": [
+    "Intel",
+    "AMD"
+  ],
+  "excludedProcessorNote": "Arm64 is excluded: it appears in no row of the target-families table. The name is written Arm64 rather than ARM because ARM means Azure Resource Manager everywhere else in this product, and an operator reads this string.",
+  "seriesByGeneration": {
+    "v5": [
+      "D",
+      "E"
+    ],
+    "v6": [
+      "D",
+      "E"
+    ],
+    "v7": [
+      "D",
+      "E",
+      "F"
+    ]
+  },
+  "seriesByGenerationNote": "F-V7-SCOPE-WORDS-1 (2026-11-14): F is on the v7 list because Microsoft lists F among its v7 target families (targetFamilyExamples, Fasv7). That list approves a series; it does not offer one. Every F v7 series (Fasv7, Falsv7, Famsv7, Fadsv7, Faldsv7, Famdsv7) is AMD, a machine keeps its processor maker, and every F, Fs and Fsv2 machine is Intel. The planner chooses only Dl, D and E sizes by shape (Get-VmfShapeSizeChoices), so no route offers an F size. Never write 'F on v7' as a target the product chooses.",
+  "targetFamilyExamples": [
+    {
+      "generation": "v6",
+      "platform": "Intel",
+      "examples": [
+        "Dlsv6",
+        "Dsv6",
+        "Esv6"
+      ],
+      "hardware": "Intel Emerald Rapids with Azure Boost"
+    },
+    {
+      "generation": "v6",
+      "platform": "AMD",
+      "examples": [
+        "Dalsv6",
+        "Dasv6",
+        "Easv6"
+      ],
+      "hardware": "AMD Genoa with Azure Boost"
+    },
+    {
+      "generation": "v7",
+      "platform": "Intel",
+      "examples": [
+        "Dlsv7",
+        "Dsv7",
+        "Esv7"
+      ],
+      "hardware": "Intel Xeon 6 with Azure Boost"
+    },
+    {
+      "generation": "v7",
+      "platform": "AMD",
+      "examples": [
+        "Dasv7",
+        "Easv7",
+        "Fasv7"
+      ],
+      "hardware": "AMD Turin with Azure Boost"
+    }
+  ],
+  "examplesAreEvidence": "The examples above are recorded because they are what Microsoft printed. Nothing gates on them: the table calls them examples, and Ddsv6 - the size most of this product's machines land on - is not among them.",
+  "generations": {
+    "v5": {
+      "controller": "SCSI",
+      "hyperVGenerations": [
+        "V1",
+        "V2"
+      ],
+      "acceleratedNetworkingRequired": [
+        {
+          "series": "D",
+          "processor": "Intel"
+        },
+        {
+          "series": "E",
+          "processor": "Intel"
+        }
+      ],
+      "manaProcessors": [
+        "Intel"
+      ],
+      "note": "MANA reaches Intel v5 hosts from 2026-05-26 (the MANA overview). An AMD v5 size never gives MANA. A machine whose operating system has no MANA driver gets its network through the virtual switch."
+    },
+    "v6": {
+      "controller": "NVMe",
+      "hyperVGenerations": [
+        "V2"
+      ],
+      "acceleratedNetworkingRequired": [
+        {
+          "series": "D",
+          "processor": "Intel"
+        },
+        {
+          "series": "D",
+          "processor": "AMD"
+        },
+        {
+          "series": "E",
+          "processor": "Intel"
+        },
+        {
+          "series": "E",
+          "processor": "AMD"
+        }
+      ],
+      "manaProcessors": [
+        "Intel",
+        "AMD"
+      ]
+    },
+    "v7": {
+      "controller": "NVMe",
+      "hyperVGenerations": [
+        "V2"
+      ],
+      "acceleratedNetworkingRequired": [],
+      "manaProcessors": [
+        "Intel",
+        "AMD"
+      ]
+    }
+  },
+  "lifecycle": {
+    "stages": [
+      "Current",
+      "Extended",
+      "End of Life",
+      "Retired"
+    ],
+    "why": "The advisor shows the stage of the source size and of the target size for every move, so an operator sees what a move gains. A v4 machine moved to v5 stays Extended. Microsoft says the stage differs by family, so each row names its family and its basis.",
+    "bySeries": [
+      {
+        "family": "D",
+        "generations": [
+          "v6",
+          "v7"
+        ],
+        "stage": "Current",
+        "basis": "stated",
+        "source": "lifecycle-overview"
+      },
+      {
+        "family": "D",
+        "generations": [
+          "v4",
+          "v5"
+        ],
+        "stage": "Extended",
+        "basis": "stated",
+        "source": "lifecycle-overview"
+      },
+      {
+        "family": "D",
+        "generations": [
+          "v1",
+          "v2",
+          "v3"
+        ],
+        "stage": "End of Life",
+        "basis": "stated",
+        "source": "end-of-life-sizes-list"
+      },
+      {
+        "family": "DS",
+        "generations": [
+          "v1",
+          "v2"
+        ],
+        "stage": "End of Life",
+        "basis": "stated",
+        "source": "end-of-life-sizes-list"
+      },
+      {
+        "family": "E",
+        "generations": [
+          "v6",
+          "v7"
+        ],
+        "stage": "Current",
+        "basis": "stated",
+        "source": "sizes-v5-modernization-overview"
+      },
+      {
+        "family": "E",
+        "generations": [
+          "v5"
+        ],
+        "stage": "Extended",
+        "basis": "stated",
+        "source": "sizes-v5-modernization-overview"
+      },
+      {
+        "family": "E",
+        "generations": [
+          "v4"
+        ],
+        "stage": "Extended",
+        "basis": "derived",
+        "source": "lifecycle-overview",
+        "how": "Microsoft does not name this stage. Ev4 is not in the End of Life list and is not the newest E series, and the four stages cover every series, so by Microsoft's own definitions it is Extended."
+      },
+      {
+        "family": "E",
+        "generations": [
+          "v3"
+        ],
+        "stage": "End of Life",
+        "basis": "stated",
+        "source": "end-of-life-sizes-list"
+      },
+      {
+        "family": "F",
+        "generations": [
+          "v7"
+        ],
+        "stage": "Current",
+        "basis": "derived",
+        "source": "lifecycle-overview",
+        "how": "Microsoft does not name this stage. Fasv7 is the newest F series, which is how Microsoft defines Current."
+      },
+      {
+        "family": "B",
+        "generations": ["v1"],
+        "stage": "End of Life",
+        "basis": "stated",
+        "source": "end-of-life-sizes-list"
+      },
+      {
+        "family": "B",
+        "generations": ["v2"],
+        "stage": "Current",
+        "basis": "derived",
+        "source": "lifecycle-overview",
+        "how": "BSV2-TARGET-1: Microsoft does not name this stage. The lifecycle overview gives the general purpose stages by version - v6 and v7 Current, v4 and v5 Extended, v1 to v3 with an announced retirement End of Life - and says that Current is the newest series in its family. Bsv2 is a v2 series with no announced retirement, so it is not End of Life. The B family page lists Bsv2, Basv2 and Bpsv2 as its series and sends B v1 to the End of Life list, so the v2 series are the newest B series, which is Current. Only Bsv2 is a target."
+      },
+      {
+        "family": "F",
+        "generations": ["v1", "v2"],
+        "stage": "End of Life",
+        "basis": "stated",
+        "source": "end-of-life-sizes-list"
+      },
+      {
+        "family": "A",
+        "generations": ["v2"],
+        "stage": "End of Life",
+        "basis": "stated",
+        "source": "end-of-life-sizes-list"
+      },
+      {
+        "family": "A",
+        "generations": ["v1"],
+        "stage": "Retired",
+        "basis": "stated",
+        "source": "av1-series-retirement"
+      }
+    ],
+    "retirementsWhy": "V3-RETIRE-1: a rollback, and a restore from the first copy, return a machine to its source size. Microsoft says that after a retirement date a size cannot be created, resized into or run, so a return to it would be refused - and a rollback that cannot finish leaves the machine half changed. RETIRE-SCOPE-1 (2026-10-04): so from one day before the date a machine on a size in a row is outside the scope of this tool - the scan, the target options, the plan, the check before the move, a restore from the first copy and a rebuild as it was all refuse it, untouched. sizeSeries is how this product reads the series from a size name (family, the letters after the number, the version): E64i_v3 reads as Eiv3, B2ms as Bms, Standard_D4 as D. A move whose rollback returns to a size in a row is warned from 12 months before the date. The excluded clouds are not told apart: this product reads none of them.",
+    "retirements": [
+      {
+        "series": [
+          "Dv3",
+          "Dsv3",
+          "Ev3",
+          "Esv3"
+        ],
+        "sizeSeries": ["Dv3", "Dsv3", "Ev3", "Esv3", "Eiv3", "Eisv3"],
+        "retiresUtc": "2029-11-15",
+        "source": "end-of-life-sizes-list"
+      },
+      {
+        "series": ["D", "Ds", "Dv2", "Dsv2"],
+        "sizeSeries": ["D", "DS", "Dv2", "DSv2"],
+        "retiresUtc": "2028-05-01",
+        "source": "retirements-and-capacity-restrictions"
+      },
+      {
+        "series": ["Av2", "Amv2", "B v1"],
+        "sizeSeries": ["Av2", "Amv2", "Bs", "Bms", "Bls"],
+        "retiresUtc": "2028-11-15",
+        "source": "retirements-and-capacity-restrictions"
+      },
+      {
+        "series": ["F", "Fs", "Fsv2"],
+        "sizeSeries": ["F", "Fs", "Fsv2"],
+        "retiresUtc": "2028-11-15",
+        "source": "retirements-and-capacity-restrictions"
+      },
+      {
+        "series": ["Basic and Standard A-series (A v1)"],
+        "sizeSeries": ["A"],
+        "retiresUtc": "2024-08-31",
+        "source": "av1-series-retirement"
+      }
+    ],
+    "capacityRestrictionsWhy": "ROLLBACK-CAPACITY-1 (2026-11-14): Microsoft restricts capacity growth for these series. Azure might not approve more quota, new deployments or capacity expansion for them, and a deployment within approved quota can still fail when the region has no capacity. A rollback returns a machine to its original size, so a rollback of a machine on a size in this list can find no capacity for that size. The product gives no guarantee of capacity, and the sign-off of a wave that holds such a machine says so (plan-entry assessment.sourceCapacityRestricted). series is Microsoft's table; sizeSeries is how this product reads the series from a size name (Get-VmfSizeSeriesReading), as in retirements. Eiv3 and Eisv3 are sizes of the Ev3 and Esv3 series. G, GS, Ls and Lsv2 are outside the scope of this tool and are listed as Microsoft lists them.",
+    "capacityRestrictions": {
+      "series": ["F", "Fs", "Fsv2", "D", "Ds", "Dv2", "Dsv2", "Dv3", "Dsv3", "B", "Bs", "Av2", "Amv2", "Ev3", "Esv3", "G", "Gs", "Ls", "Lsv2"],
+      "sizeSeries": ["F", "Fs", "Fsv2", "D", "DS", "Dv2", "DSv2", "Dv3", "Dsv3", "Bs", "Bms", "Bls", "Av2", "Amv2", "Ev3", "Esv3", "Eiv3", "Eisv3", "G", "GS", "Ls", "Lsv2"],
+      "source": "retirements-and-capacity-restrictions",
+      "section": "impacted-vm-series",
+      "readUtc": "2026-11-14"
+    }
+  }
+}

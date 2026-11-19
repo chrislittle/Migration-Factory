@@ -1,0 +1,57 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://vmf.local/schemas/schedule-status.schema.json",
+  "title": "VMF schedule pass record",
+  "description": "TIMER-PASS-LIMIT-1, SCHEDULE-PASS-DUE-1. The record the service's five-minute schedule pass (ScheduleRunner) keeps at the top of the run store. The pass checks runs for a scheduled wave that is due, a wave or a restore that stopped, a hold a stopped worker left, and the next wave of a signed-off plan. It checks the runs of schedule-due.json first, and once an hour every run in the store (the sweep), in ordinal order of run id. It stops starting runs at its time budget, so it ends inside the 5-minute limit of an Azure Functions call, and an open sweep goes on from resumeAtRunId in the next pass. Only the service reads it. MIGRATION NOTE: schema 2 (SCHEDULE-PASS-DUE-1) adds runsDue, checkingRunId, checkingStops, sweepStartedUtc and lastSweepUtc, and removes resumeStops; a record of schema 1 is read as no record, so the first pass of schema 2 checks every run.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "lastPassUtc", "finishedUtc", "runsInStore", "runsDue", "runsChecked", "runsNotChecked",
+               "resumeAtRunId", "checkingRunId", "checkingStops", "passedOverRunId", "sweepStartedUtc", "lastSweepUtc", "slowestRun"],
+  "properties": {
+    "schemaVersion": { "const": 2 },
+    "lastPassUtc": { "type": "string", "format": "date-time", "description": "When the pass that wrote this record started." },
+    "finishedUtc": {
+      "type": ["string", "null"],
+      "format": "date-time",
+      "description": "When that pass ended. NULL WHILE A PASS WORKS: the record is written at the start of a pass and before every run, so a record with no finish is a pass that works now, or one the host stopped."
+    },
+    "runsInStore": { "type": "integer", "minimum": 0, "description": "The runs the pass listed in the store. Zero when the pass did not check every run." },
+    "runsDue": { "type": "integer", "minimum": 0, "description": "The runs of schedule-due.json that this pass checks now." },
+    "runsChecked": { "type": "integer", "minimum": 0, "description": "The runs this pass checked: the due runs and the runs of the sweep." },
+    "runsNotChecked": { "type": "integer", "minimum": 0, "description": "The runs this pass left for the next pass when its time was spent. Zero when it checked every run it had." },
+    "resumeAtRunId": {
+      "type": ["string", "null"],
+      "description": "The run an open sweep checks next. Null when no sweep is open, or when the sweep reached the end of the list."
+    },
+    "checkingRunId": {
+      "type": ["string", "null"],
+      "description": "The run the pass checks now. Written before each run and cleared after it: a record with no finish that names a run is a pass the host stopped on that run."
+    },
+    "checkingStops": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "How many passes the host stopped while on checkingRunId, the pass that wrote it excluded. At two, the next pass passes the run over for one pass, and names it in the service log and in the run's activity. A due run with a stop is checked last of the due runs."
+    },
+    "passedOverRunId": { "type": ["string", "null"], "description": "The run this pass passed over because the host stopped two passes on it. The next pass checks it again." },
+    "sweepStartedUtc": {
+      "type": ["string", "null"],
+      "format": "date-time",
+      "description": "When the open sweep started. Null when no sweep is open. A sweep is open from its first pass until the pass that reaches the end of the list writes what it found into schedule-due.json."
+    },
+    "lastSweepUtc": {
+      "type": ["string", "null"],
+      "format": "date-time",
+      "description": "When the last sweep ended. Null before the first sweep, and after a pass that could not write schedule-due.json: the next pass then starts a sweep. A pass starts a sweep when this is an hour old."
+    },
+    "slowestRun": {
+      "type": ["object", "null"],
+      "additionalProperties": false,
+      "required": ["runId", "milliseconds"],
+      "description": "The run of this pass that took the longest.",
+      "properties": {
+        "runId": { "type": "string" },
+        "milliseconds": { "type": "integer", "minimum": 0 }
+      }
+    }
+  }
+}

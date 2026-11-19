@@ -1,0 +1,31 @@
+{
+  "about": "RHEL-EUS-TARGET-NOTE-1: which machine the targets step marks as made from a RHEL image on the EUS repositories. Microsoft, Red Hat Update Infrastructure (https://learn.microsoft.com/en-us/azure/virtual-machines/workloads/redhat/redhat-rhui): images connected to EUS repositories contain a minor version number in the SKU; images connected to non-EUS repositories do not (X-LVM, X-RAW); RHUI is for pay-as-you-go images only. The engine (tests/unit/RhelEusTargetNote.Tests.ps1) is held to each expect, and the page (tests/js/rhel-eus-target-note.test.js) to the words. Names are examples only.",
+  "cases": [
+    { "name": "the lab image, no agent reading", "vm": { "publisher": "RedHat", "offer": "RHEL", "sku": "94_gen2", "runningName": "", "runningVersion": "", "licenseType": null },
+      "expect": { "image": "RedHat:RHEL:94_gen2", "release": "9.4", "listedFrom": "9.6" } },
+    { "name": "the agent reports the release of the image", "vm": { "publisher": "RedHat", "offer": "RHEL", "sku": "9_4", "runningName": "redhat", "runningVersion": "9.4", "licenseType": "" },
+      "expect": { "image": "RedHat:RHEL:9_4", "release": "9.4", "listedFrom": "9.6" } },
+    { "name": "Microsoft's own EUS example, 9_0", "vm": { "publisher": "RedHat", "offer": "RHEL", "sku": "9_0", "runningName": "", "runningVersion": "", "licenseType": "None" },
+      "expect": { "image": "RedHat:RHEL:9_0", "release": "9.0", "listedFrom": "9.6" } },
+    { "name": "the agent reports a later minor release: the machine left the minor release of the image", "vm": { "publisher": "RedHat", "offer": "RHEL", "sku": "94_gen2", "runningName": "redhat", "runningVersion": "9.6", "licenseType": null },
+      "expect": null },
+    { "name": "a minor release Microsoft lists for MANA: its own repositories can hold the kernel", "vm": { "publisher": "RedHat", "offer": "RHEL", "sku": "9_6", "runningName": "", "runningVersion": "", "licenseType": null },
+      "expect": null },
+    { "name": "no minor version in the SKU: Microsoft's non-EUS image", "vm": { "publisher": "RedHat", "offer": "RHEL", "sku": "9-lvm-gen2", "runningName": "", "runningVersion": "", "licenseType": null },
+      "expect": null },
+    { "name": "Red Hat 8: Microsoft lists no RHEL 8 release for MANA, so no later minor release helps", "vm": { "publisher": "RedHat", "offer": "RHEL", "sku": "8_10", "runningName": "", "runningVersion": "", "licenseType": null },
+      "expect": null },
+    { "name": "Azure Hybrid Benefit: a RHEL_BYOS licence type takes its updates from Red Hat, not RHUI", "vm": { "publisher": "RedHat", "offer": "RHEL", "sku": "94_gen2", "runningName": "", "runningVersion": "", "licenseType": "RHEL_BYOS" },
+      "expect": null },
+    { "name": "an SAP offer: dedicated RHUI channels, not the EUS rule of the RHEL offer", "vm": { "publisher": "RedHat", "offer": "RHEL-SAP-HA", "sku": "9_4", "runningName": "", "runningVersion": "", "licenseType": null },
+      "expect": null },
+    { "name": "a bring-your-own-subscription image", "vm": { "publisher": "RedHat", "offer": "rhel-byos", "sku": "rhel-lvm94-gen2", "runningName": "", "runningVersion": "", "licenseType": null },
+      "expect": null },
+    { "name": "a custom image: no publisher", "vm": { "publisher": "", "offer": "", "sku": "", "runningName": "redhat", "runningVersion": "9.4", "licenseType": null },
+      "expect": null },
+    { "name": "the agent reports another distribution: the machine was converted", "vm": { "publisher": "RedHat", "offer": "RHEL", "sku": "9_4", "runningName": "rocky", "runningVersion": "9.4", "licenseType": null },
+      "expect": null },
+    { "name": "the agent reports another major release: the machine was upgraded in place", "vm": { "publisher": "RedHat", "offer": "RHEL", "sku": "8_4", "runningName": "redhat", "runningVersion": "9.4", "licenseType": null },
+      "expect": null }
+  ]
+}

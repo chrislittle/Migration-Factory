@@ -1,0 +1,52 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://vmf.local/schemas/run-acknowledgement.schema.json",
+  "title": "Run acknowledgement",
+  "description": "IAC-2: what the customer was told before a run could start, and who accepted it. The tool used to GUESS which machines were managed by infrastructure-as-code, from a handful of tags, and stop those machines. It cannot tell Terraform from Bicep, Pulumi, ARM or Ansible, so it now tells the customer once, plainly, and records that a named person accepted it. Held as a run artifact rather than a wizard checkbox so the ENGINE can require it - an acknowledgement only the UI enforces is bypassed by anyone using the API.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "runId",
+    "topic",
+    "acknowledgedBy",
+    "acknowledgedUtc",
+    "statement"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": 1
+    },
+    "runId": {
+      "type": "string",
+      "minLength": 1
+    },
+    "topic": {
+      "type": "string",
+      "enum": [
+        "infrastructure-as-code"
+      ],
+      "description": "What was acknowledged. An enum so a future acknowledgement cannot be silently satisfied by an unrelated one."
+    },
+    "acknowledgedBy": {
+      "type": "string",
+      "minLength": 1,
+      "description": "The signed-in identity that accepted it. Not a free-text name - this is the audit trail."
+    },
+    "acknowledgedUtc": {
+      "type": "string",
+      "minLength": 1
+    },
+    "statement": {
+      "type": "string",
+      "minLength": 1,
+      "description": "The exact words the person was shown, stored with the acceptance. If the wording changes later, the record still says what THIS person agreed to."
+    },
+    "note": {
+      "type": [
+        "string",
+        "null"
+      ]
+    }
+  }
+}

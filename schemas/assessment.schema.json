@@ -1,0 +1,254 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://vmf.local/schemas/assessment.schema.json",
+  "title": "VMF assessment document",
+  "description": "CONTRACT-1. What one assessment found: the scope it looked at, a tally per verdict, what it could not read, and one record per machine. Written by Invoke-VmfAssessment and read by New-VmfPlan, five dashboard pages and the support bundle - the most-read document in the product, and the last significant one without a schema. Written FROM the writer, not designed: every field here was read out of Invoke-VmfAssessment and Get-VmfAssessmentRecord, and a real generated record is the sample.",
+  "type": "object",
+  "required": [
+    "schemaVersion",
+    "runId",
+    "generatedUtc",
+    "scope",
+    "summary",
+    "vms"
+  ],
+  "additionalProperties": false,
+  "allOf": [
+    {
+      "description": "SCAN-PARTIAL-SUBS-1 (v14): a notRead entry with subject sizes names the subscription and the region whose size list was not read, and the kind of failure.",
+      "properties": {
+        "notRead": {
+          "items": {
+            "if": { "properties": { "subject": { "const": "sizes" } }, "required": ["subject"] },
+            "then": { "required": ["subscriptionId", "location", "reason", "machineCount"] }
+          }
+        }
+      }
+    }
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": 17,
+      "description": "17, and only 17 (OLD-VERSION-READERS-REMOVE-1, 2026-11-11: nothing is public before 1.0, so no store holds an assessment of an earlier version, and Assert-VmfSupportedAssessment takes only the version this build writes). Since TARGET-CAPABILITY-PRECHECK-1 (17) a machine has encryptionAtHost and ultraSsdEnabled. Since REBUILD-REMOVE-SCAN-EXT-1 (15) a machine has no rebuildLinks and notRead has no subject rebuildLinks. Since DRIFT-12 (16) the scope has no acceptedImages: the image override is removed. What each earlier version changed is in docs/schema-migrations.md. The version is held in one place, Get-VmfAssessmentSchemaVersion, and read through Assert-VmfSupportedAssessment."
+    },
+    "runId": { "type": "string", "minLength": 1 },
+    "generatedUtc": { "type": "string", "minLength": 1 },
+    "scope": {
+      "type": "object",
+      "description": "Where the assessment was allowed to look. A management group expands to every readable subscription beneath it.",
+      "additionalProperties": false,
+      "properties": {
+        "subscriptions": { "type": "array", "items": { "type": "string" } },
+        "managementGroup": { "type": ["string", "null"] },
+        "tagFilter": {
+          "type": ["object", "null"],
+          "additionalProperties": false,
+          "properties": {
+            "key": { "type": "string" },
+            "value": { "type": "string" }
+          }
+        },
+        "resourceGroups": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "summary": {
+      "type": "object",
+      "description": "One count per verdict. The keys are exactly the classifications a record may carry - another would be a classification nothing else in the product knows about.",
+      "additionalProperties": false,
+      "properties": {
+        "ReadyAfterPrep": { "type": "integer", "minimum": 0 },
+        "Blocked": { "type": "integer", "minimum": 0 },
+        "Excluded": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "notRead": {
+      "type": "array",
+      "description": "REPORT-GAP-1. Subjects this scan could not read, so the report can say the estate was assessed WITHOUT them rather than quietly leaving them out. Added after schemaVersion 1, so optional.",
+      "items": {
+        "type": "object",
+        "required": ["subject"],
+        "additionalProperties": false,
+        "properties": {
+          "subject": { "type": "string" },
+          "detail": { "type": ["string", "null"] },
+          "subscriptionId": { "type": "string", "description": "SCAN-PARTIAL-SUBS-1 (v14), subject sizes: the subscription whose size list was not read." },
+          "location": { "type": "string", "description": "SCAN-PARTIAL-SUBS-1 (v14), subject sizes: the region of that read." },
+          "reason": {
+            "enum": ["permission", "subscriptionNotFound", "other"],
+            "description": "SCAN-PARTIAL-SUBS-1 (v14), subject sizes: the kind of failure, from Azure's answer (Get-VmfReadFailureReason). permission: HTTP 403 or AuthorizationFailed. subscriptionNotFound: SubscriptionNotFound. other: anything else, after the product tried a temporary failure again - never guessed to be a permission."
+          },
+          "statusCode": { "type": ["integer", "null"], "description": "SCAN-PARTIAL-SUBS-1 (v14): the HTTP status Azure sent, null when none was given." },
+          "errorCode": { "type": ["string", "null"], "description": "SCAN-PARTIAL-SUBS-1 (v14): Azure's error code, null when none was given." },
+          "machineCount": { "type": "integer", "minimum": 0, "description": "SCAN-PARTIAL-SUBS-1 (v14): the machines of that subscription and region, each held with the blocker sizes-not-read." },
+          "requiredRole": { "type": ["string", "null"], "description": "SCAN-PARTIAL-SUBS-1 (v14): the role that holds the read, from the permission map (data/rbac-actions.json)." },
+          "requiredAction": { "type": ["string", "null"], "description": "SCAN-PARTIAL-SUBS-1 (v14): the action the read needs, from the permission map." },
+          "scope": { "type": ["string", "null"], "description": "SCAN-PARTIAL-SUBS-1 (v14): where the read is made - the subscription." }
+        }
+      }
+    },
+    "vms": {
+      "type": "array",
+      "description": "One record per machine found. Only the fields that have existed since the beginning are required: an assessment written before NIC-1, IMAGE-1 or IDENTITY-UX-1 has no count, no image support and no identity, and the store keeps that history.",
+      "items": {
+        "type": "object",
+        "required": [
+          "vmId",
+          "name",
+          "resourceGroup",
+          "location",
+          "classification",
+          "sourceSize"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "vmId": { "type": "string", "minLength": 1 },
+          "name": { "type": "string" },
+          "resourceGroup": { "type": "string" },
+          "location": { "type": "string" },
+          "zones": { "type": "array", "items": { "type": "string" } },
+          "classification": {
+            "type": "string",
+            "enum": ["ReadyAfterPrep", "Blocked", "Excluded"],
+            "description": "READY-NOW-REMOVE-1 (v11), OLD-VERSION-READERS-REMOVE-2: the three classifications the scan gives; no reader takes another."
+          },
+          "gen": {
+            "type": ["string", "null"],
+            "description": "null when the catalog could not say - a deallocated machine during discovery. Never read as a generation."
+          },
+          "os": { "type": "string" },
+          "osVersion": { "type": "string", "description": "The image SKU the machine was made from, not the release it runs. Kept under this name for every reader." },
+          "runningOsName": {
+            "type": "string",
+            "description": "ADVISE-AN-1 (v3). The operating system the VM agent reports as running (Resource Graph instanceView.osName): for Linux its distribution, for Windows its product name. Empty when the machine was deallocated or has no agent, which is not a statement either way."
+          },
+          "runningOsVersion": {
+            "type": "string",
+            "description": "ADVISE-AN-1 (v3). The version the VM agent reports beside it (instanceView.osVersion): for Linux the release that runs, which an in-place upgrade changes and the image does not. Empty when not reported."
+          },
+          "imagePublisher": { "type": "string" },
+          "imageOffer": { "type": "string" },
+          "imageId": { "type": "string" },
+          "planPublisher": {
+            "type": "string",
+            "description": "DETECT-PATTERNS-1 (v4). The machine's Marketplace purchase plan publisher (plan.publisher). Azure keeps the plan when the image came from a gallery or a managed application. Empty when Azure records none."
+          },
+          "planProduct": {
+            "type": "string",
+            "description": "DETECT-PATTERNS-1 (v4). The purchase plan product (plan.product). Empty when Azure records none."
+          },
+          "galleryImageId": {
+            "type": "string",
+            "description": "DETECT-PATTERNS-1 (v4). The community or shared gallery image id the machine was made from (imageReference.communityGalleryImageId, else sharedGalleryImageId). Empty for any other image."
+          },
+          "imageSupport": { "type": "string" },
+          "sourceSize": { "type": "string", "minLength": 1 },
+          "sourceLifecycle": {
+            "type": ["object", "null"],
+            "description": "ALREADY-CURRENT-1 (v10). Microsoft's lifecycle stage of the size the machine is on now (sourceSize), from the lifecycle data in target-families.json (Get-VmfSizeLifecycleStage): basis stated when Microsoft names the stage, derived when it follows from Microsoft's own definitions. A machine on a Current size shows as Current on the pages, not as one that cannot move. null when the data holds no stage for the size - never read as Current.",
+            "additionalProperties": false,
+            "required": ["stage", "basis"],
+            "properties": {
+              "stage": { "enum": ["Current", "Extended", "End of Life", "Retired"] },
+              "basis": { "enum": ["stated", "derived"] }
+            }
+          },
+          "sourceDiskArch": { "type": "string" },
+          "sourceTempDisks": {
+            "type": ["integer", "null"],
+            "description": "null means the catalog could not say - never read it as none."
+          },
+          "diskController": { "type": "string" },
+          "securityType": { "type": "string" },
+          "osDiskDiffOption": {
+            "type": ["string", "null"],
+            "description": "EPHEMERAL-1. 'Local' means the OS disk is ephemeral - it lives on the host, so there is no disk resource to snapshot or re-attach. Anything else, including empty, is an ordinary OS disk. Added after schemaVersion 1, so optional."
+          },
+          "licenseType": {
+            "type": ["string", "null"],
+            "description": "SAP-1. The machine's Azure licence type, as Azure Resource Graph reports it. An SAP value (RHEL_SAPAPPS, RHEL_SAPHA, RHEL_BASESAPAPPS, RHEL_BASESAPHA, SLES_SAP) puts the machine on SAP repositories. Empty is not a statement either way. Added after schemaVersion 1, so optional."
+          },
+          "adeOsDiskEnabled": {
+            "type": ["string", "null"],
+            "description": "ADE-2. Azure Disk Encryption on the OS DISK only, as Azure Resource Graph reports it. 'true' is an answer; anything else is not - the data disks are not covered here, and the engine's extension check before the wave is what covers them. Added after schemaVersion 1, so optional."
+          },
+          "dataDiskCount": { "type": "integer", "minimum": 0 },
+          "nicCount": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "NIC-1. An assessment written before NIC-1 has no count; the reader takes 1, which gates nothing."
+          },
+          "acceleratedNicCount": { "type": ["integer", "null"], "minimum": 0 },
+          "primaryNicAccelerated": {
+            "type": ["boolean", "null"],
+            "description": "AN-PRIMARY-1. Whether the primary network interface has accelerated networking - the interface Azure flags primary, else the first, the engine's own rule. Null when it could not be read. Absent in a version-1 assessment."
+          },
+          "hasManagedOsDisk": { "type": "boolean" },
+          "osDiskType": {
+            "type": ["string", "null"],
+            "description": "HDD-OS-1 (v5). The type of the OS disk, as Azure names it on the disk resource (sku.name): Standard_LRS is Standard HDD, StandardSSD_LRS and StandardSSD_ZRS are Standard SSD, Premium_LRS and Premium_ZRS are Premium SSD. Microsoft retires Standard HDD as the type of an OS disk on 8 September 2028. Null when the scan could not read the disk, which is not a statement either way."
+          },
+          "availabilitySetId": { "type": "string" },
+          "capacityReservationGroupId": {
+            "type": ["string", "null"],
+            "description": "CRG-MOVE-DEMAND-1 (v13). The resource id of the capacity reservation group the machine is in, as Azure Resource Graph reports it (properties.capacityReservation.capacityReservationGroup.id); null when the machine is in no group. A machine in a group this migration did not make stays in it through the move (CRG-MOVE-1), so the wave reserves no place for it."
+          },
+          "appGroup": { "type": ["string", "null"] },
+          "platformManaged": { "type": "boolean" },
+          "hibernationEnabled": { "type": "boolean" },
+          "encryptionAtHost": {
+            "type": "boolean",
+            "description": "TARGET-CAPABILITY-PRECHECK-1 (v17). The machine uses encryption at host (Resource Graph properties.securityProfile.encryptionAtHost; Azure leaves the property out when it is not set, which is false). The target advice offers no size whose catalog entry does not say EncryptionAtHostSupported True. Absent when the discovery row has no such column, which is unknown, never false."
+          },
+          "ultraSsdEnabled": {
+            "type": "boolean",
+            "description": "TARGET-CAPABILITY-PRECHECK-1 (v17). The machine has Ultra Disk compatibility enabled (Resource Graph properties.additionalCapabilities.ultraSSDEnabled). The target advice offers no size that the catalog does not say supports Ultra Disks in the machine's zone (ZoneDetails), or in its region for a machine with no zone (UltraSSDAvailable). Absent when the discovery row has no such column."
+          },
+          "identityType": {
+            "type": "string",
+            "description": "IDENTITY-UX-1. Azure's own words - 'None', 'SystemAssigned', 'UserAssigned', 'SystemAssigned, UserAssigned' - and '' when the discovery row predates this field."
+          },
+          "identityPrincipalId": { "type": "string" },
+          "tags": {
+            "type": "object",
+            "description": "The machine's own tags, so a person composing waves can group by any tag they actually use. Customer data: the keys and values are theirs, and are not constrained here."
+          },
+          "blockers": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "Short reason codes, one per rule that holds the machine back."
+          },
+          "workload": {
+            "type": "object",
+            "description": "DETECT-PATTERNS-1 (v4). The workload type - Microsoft's v6/v7 workload patterns, as named by assessment-reasons.json workloadTypes - and the Azure fields that decided it. A value of null is a signal the scan could not read. may-be-cluster-node since v6 (CLUSTER-DETECT-1): a cluster hint fired, and no fact Azure records did.",
+            "required": ["type", "evidence"],
+            "additionalProperties": false,
+            "properties": {
+              "type": {
+                "enum": ["node-pool-or-scale-set", "pooled-avd-host", "managed-by-a-service", "standalone-vm", "cluster-or-database", "vendor-appliance", "may-be-cluster-node", "not-checked"]
+              },
+              "evidence": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "required": ["field", "value"],
+                  "additionalProperties": false,
+                  "properties": {
+                    "field": { "type": "string", "minLength": 1 },
+                    "value": { "type": ["string", "null"] }
+                  }
+                }
+              }
+            }
+          },
+          "warnings": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "DETECT-PATTERNS-1 (v4). What a person checks before the move, while the machine may still move: codes explained in assessment-reasons.json warnings."
+          },
+          "prepNeeded": { "type": "array", "items": { "type": "string" } },
+          "notes": { "type": "array", "items": { "type": "string" } }
+        }
+      }
+    }
+  }
+}

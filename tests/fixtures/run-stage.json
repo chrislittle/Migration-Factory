@@ -1,0 +1,36 @@
+{
+  "_comment": [
+    "DELETE-UNSTARTED-WAVE-1. Where is a migration in its life: setup, planned,",
+    "running or finished? ONE answer, decided in two languages: the engine and",
+    "the service (Get-VmfRunStage, PowerShell) and the Migrations page",
+    "(VmfHelp.runStage in src/dashboard/help.js, JavaScript).",
+    "The service refuses Delete this migration while the stage is running, and",
+    "the page shows Stop this migration in place of Delete then. They asked two",
+    "questions: between two waves the service said running (a machine of the",
+    "next wave has no state document, so it has not settled), and the page",
+    "showed Delete, which the service refused. Seen on the lab install,",
+    "2026-11-16: wave s1 finished, wave s2 not started.",
+    "Only path A machines count. A machine in no wave that never ran is not",
+    "part of the migration (entry-outside-run.json). running: at least one",
+    "machine started (a state that is not PLANNED, settled ones included) and",
+    "not every machine settled. A vmId is matched in any letter case.",
+    "Held by tests/unit/DeleteUnstartedWave.Tests.ps1 and tests/js/delete-unstarted-wave.test.js."
+  ],
+  "cases": [
+    { "name": "no plan",                                            "entries": null, "docs": [], "stage": "setup", "machines": 0, "settled": 0 },
+    { "name": "a plan with no machine to move",                     "entries": [ { "vmId": "vm1", "wave": "w1", "path": "MANUAL" } ], "docs": [], "stage": "setup", "machines": 0, "settled": 0 },
+    { "name": "a plan, nothing started",                            "entries": [ { "vmId": "vm1", "wave": "w1", "path": "A" }, { "vmId": "vm2", "wave": "w2", "path": "A" } ], "docs": [], "stage": "planned", "machines": 2, "settled": 0 },
+    { "name": "a state document at PLANNED is not started",         "entries": [ { "vmId": "vm1", "wave": "w1", "path": "A" } ], "docs": [ { "vmId": "vm1", "state": "PLANNED" } ], "stage": "planned", "machines": 1, "settled": 0 },
+    { "name": "wave w1 finished, wave w2 not started",              "entries": [ { "vmId": "vm1", "wave": "w1", "path": "A" }, { "vmId": "vm2", "wave": "w2", "path": "A" } ], "docs": [ { "vmId": "vm1", "state": "MIGRATED" } ], "stage": "running", "machines": 2, "settled": 1 },
+    { "name": "wave w2 took its machine, at PLANNED",               "entries": [ { "vmId": "vm1", "wave": "w1", "path": "A" }, { "vmId": "vm2", "wave": "w2", "path": "A" } ], "docs": [ { "vmId": "vm1", "state": "MIGRATED" }, { "vmId": "vm2", "state": "PLANNED" } ], "stage": "running", "machines": 2, "settled": 1 },
+    { "name": "a machine part-way through its move",                "entries": [ { "vmId": "vm1", "wave": "w1", "path": "A" }, { "vmId": "vm2", "wave": "w1", "path": "A" } ], "docs": [ { "vmId": "vm1", "state": "CONVERTING" } ], "stage": "running", "machines": 2, "settled": 0 },
+    { "name": "every machine settled",                              "entries": [ { "vmId": "vm1", "wave": "w1", "path": "A" }, { "vmId": "vm2", "wave": "w2", "path": "A" } ], "docs": [ { "vmId": "vm1", "state": "MIGRATED" }, { "vmId": "vm2", "state": "SKIPPED" } ], "stage": "finished", "machines": 2, "settled": 2 },
+    { "name": "a machine that waits for a person has settled",      "entries": [ { "vmId": "vm1", "wave": "w1", "path": "A" }, { "vmId": "vm2", "wave": "w1", "path": "A" } ], "docs": [ { "vmId": "vm1", "state": "NEEDS_DECISION" }, { "vmId": "vm2", "state": "FAILED_ROLLED_BACK" } ], "stage": "finished", "machines": 2, "settled": 2 },
+    { "name": "every wave finished, a machine in no wave never ran","entries": [ { "vmId": "vm1", "wave": "w1", "path": "A" }, { "vmId": "vm2", "wave": "unscheduled", "path": "A" }, { "vmId": "vm3", "path": "A" } ], "docs": [ { "vmId": "vm1", "state": "MIGRATED" } ], "stage": "finished", "machines": 1, "settled": 1 },
+    { "name": "every machine in no wave, none ran",                 "entries": [ { "vmId": "vm1", "wave": "unscheduled", "path": "A" }, { "vmId": "vm2", "wave": "", "path": "A" } ], "docs": [], "stage": "planned", "machines": 2, "settled": 0 },
+    { "name": "a machine in no wave WITH history still counts",     "entries": [ { "vmId": "vm1", "wave": "w1", "path": "A" }, { "vmId": "vm2", "wave": "unscheduled", "path": "A" } ], "docs": [ { "vmId": "vm1", "state": "MIGRATED" }, { "vmId": "vm2", "state": "STOPPED" } ], "stage": "running", "machines": 2, "settled": 1 },
+    { "name": "a machine the plan does not move is not counted",    "entries": [ { "vmId": "vm1", "wave": "w1", "path": "A" }, { "vmId": "vm2", "wave": "w2", "path": "MANUAL" }, { "vmId": "vm3", "wave": "w2", "path": "EXCLUDED" } ], "docs": [ { "vmId": "vm1", "state": "MIGRATED" } ], "stage": "finished", "machines": 1, "settled": 1 },
+    { "name": "a state document in another letter case is the same machine", "entries": [ { "vmId": "VM1", "wave": "w1", "path": "A" }, { "vmId": "vm2", "wave": "w2", "path": "A" } ], "docs": [ { "vmId": "vm1", "state": "MIGRATED" }, { "vmId": "VM2", "state": "SKIPPED" } ], "stage": "finished", "machines": 2, "settled": 2 },
+    { "name": "a state document the plan does not name is not counted", "entries": [ { "vmId": "vm1", "wave": "w1", "path": "A" } ], "docs": [ { "vmId": "vm1", "state": "MIGRATED" }, { "vmId": "vm9", "state": "CONVERTING" } ], "stage": "finished", "machines": 1, "settled": 1 }
+  ]
+}

@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://vmf.local/schemas/run-stop.schema.json",
+  "title": "Run stop",
+  "description": "STOP-STATE-SHOWN-1: the record of Stop this migration, written by Stop-VmfRun to stopped.json at the top of the run, once the stop goes ahead and before it closes out any machine. The Migrations page reads it to say Stopped, by whom, when and why, and to tell a wave the stop ended before it started from a wave that completed. Before it, a stop left only a pause (halt.flag), which the page read as the wave safety brake after repeated failures. The pause can be removed by Resume; this record stays, because the machines the stop closed out stay closed out. It is created once: a second stop of the same run, or a stop run again after it ended part way through its closing, keeps the first record, because the later one would read machines the first already closed out.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "runId", "stoppedUtc", "stoppedBy", "note", "wavesNotStarted", "machines", "schedulesRemoved"],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "runId": { "type": "string", "minLength": 1 },
+    "stoppedUtc": { "type": "string", "minLength": 1, "description": "When the stop went ahead, ISO 8601 UTC." },
+    "stoppedBy": { "type": "string", "minLength": 1, "description": "The signed-in identity that selected Stop this migration. The audit trail, not a free-text name." },
+    "note": { "type": "string", "description": "The note the person wrote with the stop." },
+    "wavesNotStarted": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 },
+      "description": "The waves in which no machine had started when the stop went ahead: every machine of the wave had no state document, or one at PLANNED. The page shows such a wave as stopped before it started, not as complete."
+    },
+    "machines": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 },
+      "description": "The resource IDs of the machines the stop closed out (it recorded SKIPPED, or FAILED_NEEDS_ATTENTION for a rollback a worker did not finish). A machine that had already finished is not here."
+    },
+    "schedulesRemoved": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 },
+      "description": "The waves whose scheduled start the stop removed (schedules/<wave>.json), so no scheduled start begins a wave of a stopped migration."
+    }
+  }
+}

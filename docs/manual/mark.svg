@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" role="img" aria-label="Migration Factory" fill="currentColor">
+  <title>Migration Factory</title>
+  <!--
+    BRAND-1, redrawn by LOGO-SERVERS-1 (design "2b"). The
+    mark says what the product does: an estate of machines, and one WAVE of
+    them moving. A migration moves one wave at a time, never the whole estate
+    at once, which is the most important thing about how this tool works.
+
+    Each bar is a server unit - three drive bays and a status light - because
+    three plain bars did not read as servers. The two units that stay put are
+    dimmed because they are waiting, not finished. The middle unit has left
+    the rack, and the arrow head ahead of it pushes it out.
+
+    Two shapes were tried and thrown away before BRAND-1. Chevrons pointing at
+    a bar read as the "skip to end" button of a media player - BYPASS, the
+    opposite of what this does. A rising staircase read as a sales chart.
+
+    WHERE IT IS USED. help.js draws these same elements inline in the header
+    (MARK_DRAWING - Brand.Tests.ps1 holds the two equal), so app.css can move
+    the parts once when a page opens. The sign-in card and the manual banner
+    use this file as a still CSS mask. The browser tab does NOT use it: at 16
+    pixels the bays turn to noise, so logo.svg is a simpler drawing of the
+    same arrangement.
+
+    RULES THE USES NEED, each one tested:
+    - One colour, currentColor. A mask reads only the ALPHA channel, so the
+      waiting units are dimmed with opacity, not with a paler colour.
+    - The bays and the lights are HOLES (even-odd sub-paths of each unit), not
+      a painted colour, so the mark shows the background through them on any
+      header and through any mask.
+    - Nothing here hides a part. The motion (dash, zero opacity, offset) is
+      in app.css only, so with reduced motion this file is the finished mark.
+    - pathLength="100" on the arrow head: the dash that draws it is exactly
+      as long as the line. Without it, a round cap draws a stray dot.
+  -->
+  <g class="vmf-mark-wait" opacity=".55">
+    <path fill-rule="evenodd" d="M4.1 4.4H16.1A1.5 1.5 0 0 1 17.6 5.9V9.5A1.5 1.5 0 0 1 16.1 11H4.1A1.5 1.5 0 0 1 2.6 9.5V5.9A1.5 1.5 0 0 1 4.1 4.4ZM4.9 6H5.5A0.5 0.5 0 0 1 6 6.5V8.9A0.5 0.5 0 0 1 5.5 9.4H4.9A0.5 0.5 0 0 1 4.4 8.9V6.5A0.5 0.5 0 0 1 4.9 6ZM7.5 6H8.1A0.5 0.5 0 0 1 8.6 6.5V8.9A0.5 0.5 0 0 1 8.1 9.4H7.5A0.5 0.5 0 0 1 7 8.9V6.5A0.5 0.5 0 0 1 7.5 6ZM10.1 6H10.7A0.5 0.5 0 0 1 11.2 6.5V8.9A0.5 0.5 0 0 1 10.7 9.4H10.1A0.5 0.5 0 0 1 9.6 8.9V6.5A0.5 0.5 0 0 1 10.1 6ZM13.75 7.7A1.25 1.25 0 1 0 16.25 7.7A1.25 1.25 0 1 0 13.75 7.7Z"/>
+    <path fill-rule="evenodd" d="M4.1 21H16.1A1.5 1.5 0 0 1 17.6 22.5V26.1A1.5 1.5 0 0 1 16.1 27.6H4.1A1.5 1.5 0 0 1 2.6 26.1V22.5A1.5 1.5 0 0 1 4.1 21ZM4.9 22.6H5.5A0.5 0.5 0 0 1 6 23.1V25.5A0.5 0.5 0 0 1 5.5 26H4.9A0.5 0.5 0 0 1 4.4 25.5V23.1A0.5 0.5 0 0 1 4.9 22.6ZM7.5 22.6H8.1A0.5 0.5 0 0 1 8.6 23.1V25.5A0.5 0.5 0 0 1 8.1 26H7.5A0.5 0.5 0 0 1 7 25.5V23.1A0.5 0.5 0 0 1 7.5 22.6ZM10.1 22.6H10.7A0.5 0.5 0 0 1 11.2 23.1V25.5A0.5 0.5 0 0 1 10.7 26H10.1A0.5 0.5 0 0 1 9.6 25.5V23.1A0.5 0.5 0 0 1 10.1 22.6ZM13.75 24.3A1.25 1.25 0 1 0 16.25 24.3A1.25 1.25 0 1 0 13.75 24.3Z"/>
+  </g>
+  <path class="vmf-mark-move" fill-rule="evenodd" d="M7.9 12.7H19.9A1.5 1.5 0 0 1 21.4 14.2V17.8A1.5 1.5 0 0 1 19.9 19.3H7.9A1.5 1.5 0 0 1 6.4 17.8V14.2A1.5 1.5 0 0 1 7.9 12.7ZM8.7 14.3H9.3A0.5 0.5 0 0 1 9.8 14.8V17.2A0.5 0.5 0 0 1 9.3 17.7H8.7A0.5 0.5 0 0 1 8.2 17.2V14.8A0.5 0.5 0 0 1 8.7 14.3ZM11.3 14.3H11.9A0.5 0.5 0 0 1 12.4 14.8V17.2A0.5 0.5 0 0 1 11.9 17.7H11.3A0.5 0.5 0 0 1 10.8 17.2V14.8A0.5 0.5 0 0 1 11.3 14.3ZM13.9 14.3H14.5A0.5 0.5 0 0 1 15 14.8V17.2A0.5 0.5 0 0 1 14.5 17.7H13.9A0.5 0.5 0 0 1 13.4 17.2V14.8A0.5 0.5 0 0 1 13.9 14.3ZM17.55 16A1.25 1.25 0 1 0 20.05 16A1.25 1.25 0 1 0 17.55 16Z"/>
+  <path class="vmf-mark-head" d="M23.6 11.2 L28.4 16 L23.6 20.8" pathLength="100" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

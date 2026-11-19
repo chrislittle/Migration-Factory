@@ -1,0 +1,133 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://vmf/schemas/run-manifest.schema.json",
+  "title": "Store object manifest",
+  "description": "ASSESS-PAGE-1: what a top-level object in the run store IS. Until now everything in the store was a 'run', so scanning an estate created a run that then sat in the run list looking like an abandoned migration - an assessment does not belong in the run list. An assessment is not a failed run. It answers a question on its own, it gets re-run and compared, it is the thing that gets reviewed and signed off, and it is READ-ONLY and deliberately broad where a migration writes and should be as narrow as the estate allows. This manifest is what tells the two apart, so it is a contract rather than an informal file.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "kind",
+    "runId",
+    "createdUtc"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": 9
+    },
+    "kind": {
+      "enum": [
+        "assessment",
+        "migration"
+      ],
+      "description": "Which of the two things this object is. The Assessments page lists assessments; the Runs page lists migrations. An object with no kind cannot be placed on either, which is why this is required rather than defaulted - a default would silently put every old object on one of the pages."
+    },
+    "runId": {
+      "type": "string",
+      "minLength": 1,
+      "description": "This object's own id, and its prefix in the store. Named runId rather than id because it is what every existing document already calls it; renaming it would touch every reader for no gain."
+    },
+    "createdUtc": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "createdBy": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "The signed-in person who started it, when the app did. Null when a command line did, which is a fact rather than a gap."
+    },
+    "fromAssessment": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "MIGRATIONS ONLY: the id of the assessment this migration was planned from. This is the traceability the product did not have - a migration could not say what it was based on, or whether that assessment had been reviewed. Null is allowed for a migration planned before assessments were separable."
+    },
+    "scope": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "description": "ASSESSMENTS ONLY: what was scanned, so the page can say so without opening the assessment itself.",
+      "additionalProperties": false,
+      "properties": {
+        "subscriptions": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": "string"
+          }
+        },
+        "managementGroup": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "resourceGroups": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "project": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "pattern": "^[a-z0-9][a-z0-9-]{1,62}[a-z0-9]$",
+      "description": "PROJECT-1: the project this run belongs to - the prefix it lives under. Null for a run outside any project (LOOSE-RUNS-WORDS-1: the command line can make one). The project's NAME is not repeated here: it lives once in project.json, because a name copied onto every member is a name that can disagree with itself."
+    }
+  },
+  "allOf": [
+    {
+      "description": "An assessment cannot have been planned from an assessment.",
+      "if": {
+        "properties": {
+          "kind": {
+            "const": "assessment"
+          }
+        },
+        "required": [
+          "kind"
+        ]
+      },
+      "then": {
+        "properties": {
+          "fromAssessment": {
+            "type": "null"
+          }
+        }
+      }
+    },
+    {
+      "description": "A migration has no scan scope of its own - it inherits the assessment's.",
+      "if": {
+        "properties": {
+          "kind": {
+            "const": "migration"
+          }
+        },
+        "required": [
+          "kind"
+        ]
+      },
+      "then": {
+        "properties": {
+          "scope": {
+            "type": "null"
+          }
+        }
+      }
+    }
+  ]
+}

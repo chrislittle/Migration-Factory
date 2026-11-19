@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://vmf.local/schemas/plan-run.schema.json",
+  "title": "VMF plan run status",
+  "description": "PLANRUN-1: what a signed-off plan is doing next, written by the facade's timer at plan-run.json in the run's top level. The timer decides every five minutes whether the next wave starts; this records the latest answer so the run page can say it, and so the run log gains a line only when the answer CHANGES rather than every pass.",
+  "type": "object",
+  "required": ["schemaVersion", "reason", "detail", "updatedUtc"],
+  "additionalProperties": false,
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "reason": {
+      "enum": ["start", "halted", "running", "held", "notStarted", "scheduled", "gate", "done"],
+      "description": "start: the timer started the next wave. The others say why it did not: the run is paused; a wave is running; a machine waits for a person; the first wave has not been started; the next wave has a start time; the next wave fails an engine gate; every wave has run."
+    },
+    "detail": { "type": "string", "minLength": 1, "description": "The sentence the run page shows" },
+    "wave": { "type": ["string", "null"], "description": "The wave started, when reason is start" },
+    "execution": { "type": ["string", "null"], "description": "The engine execution started, when reason is start" },
+    "updatedUtc": { "type": "string", "format": "date-time" }
+  }
+}
