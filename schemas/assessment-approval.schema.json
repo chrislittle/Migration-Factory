@@ -1,0 +1,65 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://vmf.local/schemas/assessment-approval.schema.json",
+  "title": "VMF assessment approval",
+  "description": "ASSESS-PAGE-1: a person's recorded decision that an assessment has been reviewed and a migration may be planned from it. Owner: 'just like azure migrate its a requirement for an assessment (report) prior to any migrate... after the report is reviewed, approved & everything is validated its a run.' Written by Approve-VmfAssessment at approval.json in the assessment; New-VmfPlan refuses an assessment without one. Same shape and the same discipline as wave-approval: the identity comes from the approver's own sign-in and is never typed, and assessmentHash binds the decision to the exact thing that was read.",
+  "type": "object",
+  "required": [
+    "schemaVersion",
+    "assessmentId",
+    "approvedBy",
+    "approvedUtc",
+    "assessmentHash"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schemaVersion": {
+      "const": 1
+    },
+    "assessmentId": {
+      "type": "string",
+      "minLength": 1
+    },
+    "approvedBy": {
+      "type": "object",
+      "required": [
+        "identity"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "identity": {
+          "type": "string",
+          "minLength": 1,
+          "description": "The approver's signed-in Entra identity, captured from their login and never typed. An approval somebody can put a name into is not an approval."
+        },
+        "tenantId": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "approvedUtc": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "assessmentHash": {
+      "type": "string",
+      "minLength": 16,
+      "description": "SHA-256 of the assessment document as it was approved. The point is evidence rather than change detection - an assessment cannot be overwritten - so this is what proves WHICH findings a person actually signed off, months later when somebody asks."
+    },
+    "note": {
+      "type": "string",
+      "description": "Why, when the approver chose to say. Optional at this gate: approving unlocks planning and changes nothing. The WAVE approval, which authorises a machine being rebuilt, still requires one."
+    },
+    "blockedAtApproval": {
+      "type": [
+        "integer",
+        "null"
+      ],
+      "minimum": 0,
+      "description": "How many machines could not migrate when this was approved. Recorded because approving an assessment with blocked machines is a legitimate decision - migrate what can move now - and the record should say that was known rather than leaving it to be inferred."
+    }
+  }
+}

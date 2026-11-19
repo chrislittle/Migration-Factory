@@ -1,0 +1,378 @@
+{
+  "schemaVersion": 51,
+  "runId": "run1-prod2-20261102",
+  "vmId": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-app01/providers/Microsoft.Compute/virtualMachines/app01-web-03",
+  "wave": "prod-2",
+  "state": "NEEDS_DECISION",
+  "pathCheckpoint": "A:diskPatched",
+  "lease": {
+    "workerId": "worker-04",
+    "acquiredUtc": "2026-11-02T02:10:11Z",
+    "heartbeatUtc": "2026-11-02T02:14:41Z"
+  },
+  "attempts": {
+    "GUEST_PREP": 2
+  },
+  "captured": {
+    "vmConfig": {
+      "size": "Standard_E8bds_v5",
+      "controller": "SCSI",
+      "zones": [
+        "2"
+      ],
+      "capacityReservationGroupId": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-capacity/providers/Microsoft.Compute/capacityReservationGroups/contoso-crg-e8bdsv5",
+      "patchSettings": {
+        "os": "Windows",
+        "patchMode": "AutomaticByPlatform",
+        "assessmentMode": "AutomaticByPlatform",
+        "enableHotpatching": false,
+        "rebootSetting": "IfRequired",
+        "bypassPlatformSafetyChecksOnUserSchedule": true
+      },
+      "userDataPresent": false,
+      "evictionPolicy": null,
+      "maxPrice": null,
+      "osDisk": {
+        "name": "app01-web-03-osdisk",
+        "managedDiskId": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-app01/providers/Microsoft.Compute/disks/app01-web-03-osdisk",
+        "skuName": "Premium_LRS",
+        "caching": "ReadWrite",
+        "writeAcceleratorEnabled": false,
+        "encryptionType": "EncryptionAtRestWithCustomerKey",
+        "diskEncryptionSetId": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-keys/providers/Microsoft.Compute/diskEncryptionSets/des-contoso"
+      },
+      "dataDisks": [
+        {
+          "name": "app01-web-03-data0",
+          "lun": 0,
+          "managedDiskId": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-app01/providers/Microsoft.Compute/disks/app01-web-03-data0",
+          "caching": "ReadOnly",
+          "sizeGB": 512,
+          "skuName": "Premium_LRS",
+          "encryptionType": "EncryptionAtRestWithPlatformAndCustomerKeys",
+          "diskEncryptionSetId": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-keys/providers/Microsoft.Compute/diskEncryptionSets/des-contoso-double"
+        },
+        {
+          "name": "app01-web-03-data1",
+          "lun": 1,
+          "managedDiskId": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-app01/providers/Microsoft.Compute/disks/app01-web-03-data1",
+          "caching": "None",
+          "sizeGB": 256,
+          "skuName": "PremiumV2_LRS",
+          "diskIOPSReadWrite": 5000,
+          "diskMBpsReadWrite": 200,
+          "logicalSectorSize": 512,
+          "diskZones": [
+            "2"
+          ],
+          "maxShares": 1,
+          "completionPercent": 100,
+          "encryptionType": "EncryptionAtRestWithPlatformKey",
+          "diskEncryptionSetId": null
+        }
+      ]
+    },
+    "guestDisks": [
+      {
+        "lun": 0,
+        "sizeGB": 512
+      }
+    ],
+    "extensions": [
+      "MicrosoftMonitoringAgent"
+    ],
+    "original": {
+      "vmConfig": {
+        "size": "Standard_E8bds_v5",
+        "controller": "SCSI",
+        "zones": [
+          "2"
+        ],
+        "capacityReservationGroupId": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-capacity/providers/Microsoft.Compute/capacityReservationGroups/contoso-crg-e8bdsv5",
+        "patchSettings": {
+          "os": "Windows",
+          "patchMode": "AutomaticByPlatform",
+          "assessmentMode": "AutomaticByPlatform",
+          "enableHotpatching": false,
+          "rebootSetting": "IfRequired",
+          "bypassPlatformSafetyChecksOnUserSchedule": true
+        }
+      },
+      "extensions": [
+        "MicrosoftMonitoringAgent"
+      ],
+      "sourceAcceleratedNetworking": null,
+      "capturedUtc": "2026-11-02T02:08:00Z"
+    },
+    "kernelUpdate": {
+      "result": "failed",
+      "kernelBefore": "5.15.0-1031-azure",
+      "kernelInstalled": "5.15.0-1102-azure",
+      "kernelAfter": "5.15.0-1031-azure",
+      "package": "linux-azure",
+      "packageManager": "apt-get",
+      "scriptResult": "FIXED",
+      "error": "The machine started on kernel 5.15.0-1031-azure, not the kernel that was installed.",
+      "startedUtc": "2026-11-02T02:20:00Z",
+      "finishedUtc": "2026-11-02T02:31:00Z",
+      "putBackUtc": null
+    }
+  },
+  "safety": {
+    "snapshotId": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-app01/providers/Microsoft.Compute/snapshots/app01-web-03-snap-20261102",
+    "cloneVmId": null,
+    "pristineSnapshotId": null,
+    "snapshotLocked": true,
+    "pristineSnapshotLocked": null,
+    "locksAllowed": true,
+    "pristineDataCopies": [
+      {
+        "lun": 1,
+        "diskId": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-app01/providers/Microsoft.Compute/disks/app01-web-03-data1",
+        "snapshotId": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-app01/providers/Microsoft.Compute/snapshots/app01-web-03-vmf-run-pristine-d1",
+        "locked": true,
+        "instantAccessMinutes": 300,
+        "takenUtc": "2026-11-02T02:09:12Z"
+      }
+    ],
+    "dataCopies": [
+      {
+        "lun": 0,
+        "diskId": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-app01/providers/Microsoft.Compute/disks/app01-web-03-data0",
+        "snapshotId": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-app01/providers/Microsoft.Compute/snapshots/app01-web-03-vmf-run-d0",
+        "locked": true
+      }
+    ],
+    "rollbackDisksBeforeMove": {
+      "stamp": "202611020212",
+      "pristineSnapshotId": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-app01/providers/Microsoft.Compute/snapshots/app01-web-03-vmf-run-pristine",
+      "zone": "2",
+      "complete": true,
+      "disks": [
+        {
+          "lun": null,
+          "name": "app01-web-03-osdisk",
+          "diskId": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-app01/providers/Microsoft.Compute/disks/app01-web-03-osdisk-asitwas-202611020212",
+          "diskName": "app01-web-03-osdisk-asitwas-202611020212",
+          "snapshotId": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-app01/providers/Microsoft.Compute/snapshots/app01-web-03-vmf-run-pristine",
+          "skuName": "Premium_LRS",
+          "instantAccess": false,
+          "madeUtc": "2026-11-02T02:12:30Z",
+          "usedUtc": null,
+          "deletedUtc": null
+        },
+        {
+          "lun": 1,
+          "name": "app01-web-03-data1",
+          "diskId": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-app01/providers/Microsoft.Compute/disks/app01-web-03-data1-d1-asitwas-202611020212",
+          "diskName": "app01-web-03-data1-d1-asitwas-202611020212",
+          "snapshotId": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-app01/providers/Microsoft.Compute/snapshots/app01-web-03-vmf-run-pristine-d1",
+          "skuName": "PremiumV2_LRS",
+          "instantAccess": true,
+          "madeUtc": "2026-11-02T02:13:05Z",
+          "usedUtc": null,
+          "deletedUtc": null
+        }
+      ],
+      "kept": []
+    }
+  },
+  "guestExecutions": [
+    {
+      "script": "Set-NvmeReady.ps1",
+      "version": "1.0.0",
+      "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+      "tsUtc": "2026-11-02T02:11:04Z",
+      "result": "FIXED",
+      "evidenceRef": "evidence/runcmd-8f2a.json"
+    }
+  ],
+  "history": [
+    {
+      "tsUtc": "2026-11-02T01:50:00Z",
+      "state": "FAILED_NEEDS_ATTENTION",
+      "outcome": "ok",
+      "detail": "The move stopped before it changed the machine. The machine was deallocated before the move, and the product could not deallocate it again (OperationNotAllowed), after 3 tries. Try this machine again to return the machine to the power state Stopped (deallocated) first.",
+      "reasonCode": "rollbackDisksBeforeMoveNotMade",
+      "machineState": "changed",
+      "powerNotPutBack": "PowerState/deallocated"
+    },
+    {
+      "tsUtc": "2026-11-02T02:07:00Z",
+      "state": "PRECHECK",
+      "outcome": "ok",
+      "detail": "The product deallocated the machine again, as it was before the move. The product now tries the move again.",
+      "machineState": "untouched"
+    },
+    {
+      "tsUtc": "2026-11-02T02:08:00Z",
+      "state": "PRECHECK",
+      "outcome": "ok",
+      "durationSec": 22
+    },
+    {
+      "tsUtc": "2026-11-02T02:11:04Z",
+      "state": "GUEST_PREP",
+      "outcome": "ok",
+      "durationSec": 141,
+      "evidenceRef": "evidence/runcmd-8f2a.json"
+    },
+    {
+      "tsUtc": "2026-11-02T02:14:31Z",
+      "state": "NEEDS_DECISION",
+      "outcome": "fail",
+      "durationSec": 7,
+      "detail": "This machine has 3 network interfaces; the target size D2ds_v6 holds 2.",
+      "reasonCode": "targetTooFewNics",
+      "machineState": "untouched"
+    }
+  ],
+  "evidence": {
+    "takenUtc": "2026-10-14T20:31:10Z",
+    "before": {
+      "azure.size": "Standard_D2s_v4",
+      "azure.controller": "SCSI",
+      "imds.answered": "Yes",
+      "imds.size": "Standard_D2s_v4",
+      "guest.bootBus": "SCSI",
+      "guest.acceleratedNetworkingDriver": "mlx5"
+    },
+    "after": {
+      "azure.size": "Standard_D2s_v6",
+      "azure.controller": "NVMe",
+      "imds.answered": "Yes",
+      "imds.size": "Standard_D2s_v6",
+      "guest.bootBus": "NVMe",
+      "guest.acceleratedNetworkingDriver": "mana"
+    }
+  },
+  "diskTypeChanges": [
+    {
+      "diskId": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-app/providers/Microsoft.Compute/disks/app-01-osdisk",
+      "from": "StandardSSD_LRS",
+      "to": "Premium_LRS",
+      "by": "move",
+      "utc": "2026-09-29T18:00:00Z"
+    }
+  ],
+  "rollback": {
+    "rolledBackUtc": "2026-09-29T18:30:00.0000000Z",
+    "path": "A",
+    "osDisk": {
+      "id": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-app/providers/Microsoft.Compute/disks/app-01-osdisk-asitwas-202609291830",
+      "name": "app-01-osdisk-asitwas-202609291830"
+    },
+    "dataDisks": [],
+    "keptDataDisks": [
+      { "lun": 2, "name": "app-01-shared2", "why": "It is a shared disk (maxShares 2), and other machines can use it." }
+    ],
+    "reservationGroupNotBack": {
+      "groupId": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-capacity/providers/Microsoft.Compute/capacityReservationGroups/contoso-crg-e8bdsv5",
+      "why": "Capacity Reservation with VM size Standard_E8bds_v5 does not exist in the Capacity Reservation Group 'contoso-crg-e8bdsv5'."
+    }
+  },
+  "rollbackOriginals": [
+    { "diskId": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-app/providers/Microsoft.Compute/disks/app-01-osdisk", "diskName": "app-01-osdisk", "lun": null, "detachedUtc": "2026-09-29T18:29:00.0000000Z", "deletedUtc": "2026-10-02T09:00:00.0000000Z", "deletedBy": "operator@example.com", "gone": false }
+  ],
+  "rollbackDisksDuringRollback": [
+    {
+      "diskId": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-app/providers/Microsoft.Compute/disks/app-01-osdisk-asitwas-202609291830",
+      "diskName": "app-01-osdisk-asitwas-202609291830",
+      "lun": null,
+      "madeUtc": "2026-09-29T18:24:00.0000000Z",
+      "usedUtc": "2026-09-29T18:31:00.0000000Z"
+    }
+  ],
+  "restoreDisks": [
+    { "diskId": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-app/providers/Microsoft.Compute/disks/app-01-osdisk-restored-202609300800", "diskName": "app-01-osdisk-restored-202609300800", "lun": null, "madeUtc": "2026-09-30T08:01:00.0000000Z", "deletedUtc": "2026-10-01T06:00:00.0000000Z" },
+    { "diskId": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-app/providers/Microsoft.Compute/disks/app-01-osdisk-restored-202609300900", "diskName": "app-01-osdisk-restored-202609300900", "lun": null, "madeUtc": "2026-09-30T09:01:00.0000000Z", "usedUtc": "2026-09-30T09:06:00.0000000Z" },
+    { "diskId": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-app/providers/Microsoft.Compute/disks/app-01-data0-d0-restored-202609300900", "diskName": "app-01-data0-d0-restored-202609300900", "lun": 0, "madeUtc": "2026-09-30T09:02:00.0000000Z", "usedUtc": "2026-09-30T09:08:00.0000000Z" },
+    { "diskId": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-app/providers/Microsoft.Compute/disks/app-01-data2-d2-restored-202609300900", "diskName": "app-01-data2-d2-restored-202609300900", "lun": 2, "madeUtc": "2026-09-30T09:03:00.0000000Z" }
+  ],
+  "putBackJob": {
+    "kind": "restore",
+    "operationId": "0b7c2d4e-5f60-4a71-8b92-c3d4e5f60718",
+    "startedUtc": "2026-10-24T09:00:00.0000000Z",
+    "startedBy": "operator@example.com",
+    "note": "the application does not start",
+    "options": { "from": "pristine", "diskNaming": "new", "acceptPreserveRisk": false, "snapshotId": null },
+    "stamp": "202610240900",
+    "phase": "osSwapped",
+    "phaseUtc": "2026-10-24T09:06:00.0000000Z",
+    "resumes": 1,
+    "resumedUtc": "2026-10-24T09:25:00.0000000Z",
+    "before": {
+      "osDisk": { "id": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-app/providers/Microsoft.Compute/disks/app-01-osdisk", "name": "app-01-osdisk", "resourceGroup": "rg-app", "location": "centralus", "skuName": "Premium_LRS", "controller": "NVMe" },
+      "dataDisks": [],
+      "sizeNow": "Standard_D2s_v6"
+    },
+    "made": { "finalName": "app-01-osdisk-restored-202610240900", "newId": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-app/providers/Microsoft.Compute/disks/app-01-osdisk-restored-202610240900" },
+    "os": { "newId": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-app/providers/Microsoft.Compute/disks/app-01-osdisk-restored-202610240900", "finalName": "app-01-osdisk-restored-202610240900" },
+    "ended": null
+  },
+  "restore": {
+    "operationId": "5e6f7a8b-9c0d-4e1f-a2b3-c4d5e6f70819",
+    "writtenByFinish": { "by": "lead@example.com", "utc": "2026-09-30T09:00:00.0000000Z" },
+    "restoredUtc": "2026-09-30T09:00:00.0000000Z",
+    "restoredBy": "operator@example.com",
+    "note": "the application did not start",
+    "fromSnapshotId": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-app/providers/Microsoft.Compute/snapshots/app-01-pristine",
+    "fromCopy": "pristine",
+    "sizeAfter": "Standard_D2s_v4",
+    "diskNaming": "new",
+    "previousDiskId": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-app/providers/Microsoft.Compute/disks/app-01-osdisk-asitwas-202609291830",
+    "previousDiskName": "app-01-osdisk-asitwas-202609291830",
+    "newDiskId": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-app/providers/Microsoft.Compute/disks/app-01-osdisk-restored-202609300900",
+    "newDiskName": "app-01-osdisk-restored-202609300900",
+    "diskIdChanged": true,
+    "retainedDiskId": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-app/providers/Microsoft.Compute/disks/app-01-osdisk-asitwas-202609291830",
+    "dataDisks": [
+      {
+        "lun": 0,
+        "previousDiskId": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-app/providers/Microsoft.Compute/disks/app-01-data0",
+        "previousDiskName": "app-01-data0",
+        "newDiskId": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-app/providers/Microsoft.Compute/disks/app-01-data0-d0-restored-202609300900",
+        "newDiskName": "app-01-data0-d0-restored-202609300900"
+      }
+    ],
+    "dataDisksKept": [
+      { "lun": 1, "name": "app-01-ultra1", "why": "Azure cannot make a disk from its copy '/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-app/providers/Microsoft.Compute/snapshots/app-01-pristine-d1' now: the access state is Pending." }
+    ],
+    "earlierDisksDeleted": [
+      { "diskId": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-app/providers/Microsoft.Compute/disks/app-01-data0", "deletedUtc": "2026-10-01T08:00:00.0000000Z", "deletedBy": "operator@example.com", "gone": false }
+    ]
+  },
+  "swapPending": {
+    "kind": "restore",
+    "operationId": "5e6f7a8b-9c0d-4e1f-a2b3-c4d5e6f70819",
+    "leftUtc": "2026-09-30T09:12:00Z",
+    "error": "OperationNotAllowed: the disk is in use",
+    "usedBy": null,
+    "swaps": [
+      {
+        "lun": 2,
+        "name": "app-01-data2",
+        "oldDiskId": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-app/providers/Microsoft.Compute/disks/app-01-data2",
+        "diskId": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-app/providers/Microsoft.Compute/disks/app-01-data2-d2-restored-202609300900",
+        "diskName": "app-01-data2-d2-restored-202609300900",
+        "snapshotId": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-app/providers/Microsoft.Compute/snapshots/app-01-vmf-run-pristine-d2",
+        "caching": null,
+        "instantAccess": false,
+        "temporary": false,
+        "oldTemporary": false,
+        "lunHolds": "had",
+        "why": "OperationNotAllowed: the disk is in use"
+      }
+    ],
+    "swapped": [
+      {
+        "lun": 0,
+        "diskId": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-app/providers/Microsoft.Compute/disks/app-01-data0-d0-restored-202609300900",
+        "diskName": "app-01-data0-d0-restored-202609300900"
+      }
+    ],
+    "kept": [
+      { "lun": 1, "name": "app-01-ultra1", "why": "Azure cannot make a disk from its copy '/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-app/providers/Microsoft.Compute/snapshots/app-01-pristine-d1' now: the access state is Pending." }
+    ]
+  }
+}

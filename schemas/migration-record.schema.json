@@ -1,0 +1,153 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://vmf.local/schemas/migration-record.schema.json",
+  "title": "VMF migration record",
+  "description": "ATTEST-1: the full record of one migration - every decision a named person made, and for every machine its configuration before and after, every step with its time and result, every guest script with its hash, its safety copies and any restore, and its whole activity. For the Administrator role - engineering and change management - to keep as the record of the change. Kept at vmf-records/<project>--<run>.json, beside the runs, so deleting a migration does not delete it; written when a wave closes out, when a machine is restored (REPORT-AUTO-1, with the report, from the same record), when an administrator downloads it, and just before the migration is deleted, each write keeping it for another 90 days. Since v3 it also holds every fact the report's old engineering appendix held: the assessment of each machine, its size alternates, plan notes and checkpoint, and the quota records. Built from the store only: it asks Azure for nothing, and where a figure is derived it says how (machines[].now.basis).",
+  "type": "object",
+  "required": ["schemaVersion", "runId", "createdUtc", "generatedUtc", "generatedBy", "reason", "keepUntilUtc", "summary", "decisions", "machines", "runActivity", "assessment", "quotaRecords"],
+  "additionalProperties": false,
+  "properties": {
+    "schemaVersion": { "const": 5, "description": "5 (OLD-REBUILD-RESTORE-READERS-1): no reason rebuilt and no machines[].rebuilt - no flow of this version rebuilds a machine. Every earlier version is in docs/schema-migrations.md." },
+    "runId": { "type": "string", "minLength": 1 },
+    "project": { "type": ["string", "null"] },
+    "fromAssessment": { "type": ["string", "null"] },
+    "createdUtc": { "type": "string" },
+    "createdBy": { "type": ["string", "null"] },
+    "generatedUtc": { "type": "string", "format": "date-time" },
+    "generatedBy": { "type": "string", "minLength": 1, "description": "The signed-in administrator who downloaded it, or the engine" },
+    "reason": { "enum": ["waveClosed", "putBack", "stopped", "dailyCheck", "downloaded", "deleted"], "description": "Why this copy was written. v3 (REPORT-AUTO-1): putBack - a machine of the migration was restored; stopped - somebody stopped the migration; dailyCheck - the daily check found the report missing, failed or out of date." },
+    "keepUntilUtc": { "type": "string", "format": "date-time", "description": "generatedUtc plus 90 days. The daily cleanup deletes it after this." },
+    "summary": {
+      "type": "object",
+      "description": "How many machines have each outcome, by the one definition the pages and the service use (Get-VmfMachineOutcome). v4 (RECORD-UNMOVED-1): notMoved counts the machines the plan does not move (a MANUAL or EXCLUDED entry that has not started), which v3 counted as notStarted.",
+      "required": ["migrated", "putBack", "rolledBack", "attention", "leftOut", "working", "notStarted", "notMoved", "unknown"],
+      "additionalProperties": false,
+      "properties": {
+        "migrated": { "type": "integer", "minimum": 0 }, "putBack": { "type": "integer", "minimum": 0 },
+        "rolledBack": { "type": "integer", "minimum": 0 }, "attention": { "type": "integer", "minimum": 0 },
+        "leftOut": { "type": "integer", "minimum": 0 }, "working": { "type": "integer", "minimum": 0 },
+        "notStarted": { "type": "integer", "minimum": 0 }, "notMoved": { "type": "integer", "minimum": 0 },
+        "unknown": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "decisions": {
+      "type": "array",
+      "description": "Every decision a named person made, oldest first: the plan sign-off, wave approvals, accepted wave settings, and the acknowledgement about machines defined in code.",
+      "items": {
+        "type": "object",
+        "required": ["what", "by", "atUtc"],
+        "additionalProperties": false,
+        "properties": {
+          "what": { "type": "string" },
+          "wave": { "type": ["string", "null"] },
+          "by": { "type": "string" },
+          "atUtc": { "type": "string" },
+          "note": { "type": ["string", "null"] },
+          "version": { "type": ["string", "null"], "description": "The plan version (sign-off), the version of the wave (a wave approval since WAVE-APPROVE-1; the plan version before), or the settings version (acceptance) it was given for" }
+        }
+      }
+    },
+    "machines": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["vmId", "name", "state", "outcome", "before", "now", "steps", "guestScripts", "activity", "assessment", "sizeAlternates", "planNotes", "pathCheckpoint"],
+        "additionalProperties": false,
+        "properties": {
+          "vmId": { "type": "string" },
+          "name": { "type": "string" },
+          "wave": { "type": ["string", "null"] },
+          "path": { "type": ["string", "null"] },
+          "state": { "type": "string" },
+          "outcome": { "enum": ["migrated", "putBack", "rolledBack", "attention", "leftOut", "working", "notStarted", "notMoved", "unknown"], "description": "Get-VmfMachineOutcome, except notMoved (v4): the plan entry is MANUAL or EXCLUDED and the machine has not started - the run page says Not moved (Get-VmfRecordOutcome)." },
+          "before": { "type": "object" },
+          "target": { "type": "object" },
+          "now": {
+            "type": "object",
+            "required": ["basis"],
+            "properties": { "basis": { "type": "string", "description": "Where the figure comes from: read from Azure after the move (v2, when the machine has an evidence record), the plan target, the restore record, or not changed." } }
+          },
+          "steps": { "type": "array", "items": { "type": "object" } },
+          "guestScripts": { "type": "array", "items": { "type": "object" } },
+          "safetyCopies": { "type": ["object", "null"] },
+          "putBack": { "type": ["object", "null"] },
+          "retention": { "type": ["object", "null"] },
+          "evidence": {
+            "type": ["object", "null"],
+            "description": "VERIFY-FP-1 part 3 (v2): each reading before and after the move. Never a pass or a fail. Null for a machine with no evidence record.",
+            "additionalProperties": false,
+            "required": ["takenUtc", "rows"],
+            "properties": {
+              "takenUtc": { "type": "string" },
+              "rows": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": ["key", "group", "label", "before", "after", "result"],
+                  "properties": {
+                    "key": { "type": "string" },
+                    "group": { "enum": ["azure", "imds", "guest"] },
+                    "label": { "type": "string" },
+                    "before": { "type": ["string", "null"] },
+                    "after": { "type": ["string", "null"] },
+                    "result": { "enum": ["same", "planned", "changed", "notRead"] }
+                  }
+                }
+              }
+            }
+          },
+          "activity": { "type": "array", "items": { "type": "object" }, "description": "Every activity-log event for this machine, Azure calls included, in time order" },
+          "assessment": {
+            "type": ["object", "null"],
+            "description": "v3 (REPORT-AUTO-1): the scan of this machine, judged for the series its plan entry moves to (Resolve-VmfEntryClassification); a machine the plan does not move although the series would is Blocked with the plan's reason. Null when the assessment does not name the machine.",
+            "additionalProperties": false,
+            "required": ["classification", "generation", "diskArchitecture", "issues"],
+            "properties": {
+              "classification": { "type": "string" },
+              "generation": { "type": "string" },
+              "diskArchitecture": { "type": "string" },
+              "issues": { "type": "array", "items": { "type": "string" }, "description": "The blockers and preparation that apply, as codes, or the plan's reason" }
+            }
+          },
+          "sizeAlternates": { "type": "array", "items": { "type": "string" }, "description": "v3: the other sizes the plan named for this machine" },
+          "planNotes": { "type": "array", "items": { "type": "string" }, "description": "v3: the plan's notes for this machine" },
+          "pathCheckpoint": { "type": ["string", "null"], "description": "v3: the last checkpoint the move reached, from the state document" }
+        }
+      }
+    },
+    "runActivity": { "type": "array", "items": { "type": "object" }, "description": "Activity-log events not about one machine, in time order" },
+    "assessment": {
+      "type": ["object", "null"],
+      "description": "v3 (REPORT-AUTO-1): the fleet assessment the migration was planned from - how many machines it scanned, and how many it put in each classification. Null when the run holds no assessment.",
+      "additionalProperties": false,
+      "required": ["machines", "byClassification", "notInMigration"],
+      "properties": {
+        "machines": { "type": "integer", "minimum": 0 },
+        "byClassification": { "type": "object", "additionalProperties": { "type": "integer", "minimum": 0 } },
+        "notInMigration": { "type": "integer", "minimum": 0, "description": "MACHINE-PICK-1: scanned machines the plan holds no entry for - not Excluded, not platform-managed - counted only once the plan holds machines. Shown as 'Not in this migration'." }
+      }
+    },
+    "quotaRecords": {
+      "type": "array",
+      "description": "v3 (REPORT-AUTO-1): the run's live quota records, one per wave, region, zone and size.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["wave", "region", "zone", "size", "family", "vcpus", "quotaUsed", "quotaLimit", "state", "notes"],
+        "properties": {
+          "wave": { "type": "string" },
+          "region": { "type": "string" },
+          "zone": { "type": ["string", "null"] },
+          "size": { "type": "string" },
+          "family": { "type": ["string", "null"], "description": "The quota family as observed, never inferred from the size name" },
+          "vcpus": { "type": ["integer", "null"], "description": "The vCPUs the wave needs in this cell" },
+          "quotaUsed": { "type": ["integer", "null"] },
+          "quotaLimit": { "type": ["integer", "null"] },
+          "state": { "type": "string" },
+          "notes": { "type": "array", "items": { "type": "string" } }
+        }
+      }
+    }
+  }
+}

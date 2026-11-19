@@ -1,0 +1,42 @@
+{
+  "_comment": [
+    "ALREADY-CURRENT-1. Which group each machine of an assessment is in, and the line",
+    "its row shows. Since 2026-11-06, a machine whose CURRENT size Microsoft puts in",
+    "the Current lifecycle stage (today v6 and v7) is in the group Current, with the",
+    "line '<size> is in the Current lifecycle stage.' - not red, not in the Cannot yet",
+    "count, and never selectable to migrate. The stage is read by the scan from the",
+    "lifecycle data (Get-VmfSizeLifecycleStage, target-families.json lifecycle) into",
+    "sourceLifecycle (assessment v10); no page reads it from the size name.",
+    "engine: the stage the scan must record for sourceSize (null: the data has none).",
+    "group: current, can, some, cannot or excluded. why: the line the row shows",
+    "(for cannot, the titles of its findings from assessment-reasons.json).",
+    "A case with engineless: true is a page-only case (an assessment older than v10).",
+    "Held by tests/unit/AlreadyCurrent.Tests.ps1 and tests/js/already-current.test.js."
+  ],
+  "cases": [
+    { "name": "on a v6 size, NVMe", "sourceSize": "Standard_D2ds_v6", "engine": "Current", "classification": "ReadyAfterPrep", "blockers": [],
+      "group": "current", "why": "Standard_D2ds_v6 is in the Current lifecycle stage." },
+    { "name": "on a v7 size", "sourceSize": "Standard_D4s_v7", "engine": "Current", "classification": "ReadyAfterPrep", "blockers": [],
+      "group": "current", "why": "Standard_D4s_v7 is in the Current lifecycle stage." },
+    { "name": "on an E v6 size", "sourceSize": "Standard_E2s_v6", "engine": "Current", "classification": "ReadyAfterPrep", "blockers": [],
+      "group": "current", "why": "Standard_E2s_v6 is in the Current lifecycle stage." },
+    { "name": "on Bsv2, which Microsoft's definitions put in Current", "sourceSize": "Standard_B2s_v2", "engine": "Current", "classification": "ReadyAfterPrep", "blockers": [],
+      "group": "current", "why": "Standard_B2s_v2 is in the Current lifecycle stage." },
+    { "name": "rebuilt onto v6 by a move, so Azure keeps no image record: Current, not Cannot yet", "sourceSize": "Standard_D2ds_v6", "engine": "Current", "classification": "Blocked", "blockers": ["image-not-supported"],
+      "group": "current", "why": "Standard_D2ds_v6 is in the Current lifecycle stage." },
+    { "name": "on v6 and managed by a platform service: not eligible first", "sourceSize": "Standard_D2ds_v6", "engine": "Current", "classification": "Excluded", "blockers": [], "platformManaged": true,
+      "group": "excluded", "why": "" },
+    { "name": "on v5, Extended: it can migrate", "sourceSize": "Standard_D2ds_v5", "engine": "Extended", "classification": "ReadyAfterPrep", "blockers": [],
+      "group": "can", "why": "" },
+    { "name": "on v5, rebuilt by a restore, so Azure keeps no image record: Cannot yet, with the reason", "sourceSize": "Standard_D2ds_v5", "engine": "Extended", "classification": "Blocked", "blockers": ["image-not-supported"],
+      "group": "cannot", "why": "Image is not on the supported list" },
+    { "name": "on v4 with Site Recovery, rolled back by a rebuild: Cannot yet, with the reason", "sourceSize": "Standard_D2ds_v4", "engine": "Extended", "classification": "Blocked", "blockers": ["image-not-supported"],
+      "group": "cannot", "why": "Image is not on the supported list" },
+    { "name": "on v3, Generation 1: some targets only", "sourceSize": "Standard_D2s_v3", "engine": "End of Life", "classification": "Blocked", "blockers": ["gen1-requires-redeploy"],
+      "group": "some", "why": "" },
+    { "name": "a size the lifecycle data does not hold: judged by its findings", "sourceSize": "Standard_DC2as_v5", "engine": null, "classification": "Blocked", "blockers": ["confidential-vm-requires-manual"],
+      "group": "cannot", "why": "Confidential machine" },
+    { "name": "an assessment older than v10 has no stage: never read from the name", "sourceSize": "Standard_D2ds_v6", "engineless": true, "classification": "ReadyAfterPrep", "blockers": [],
+      "group": "can", "why": "" }
+  ]
+}

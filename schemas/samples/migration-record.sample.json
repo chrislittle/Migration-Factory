@@ -1,0 +1,170 @@
+{
+  "schemaVersion": 5,
+  "runId": "estate-scan-2026-08-migration-20260923-140000",
+  "project": "contoso-estate",
+  "fromAssessment": "estate-scan-2026-08",
+  "createdUtc": "2026-09-23T14:00:00Z",
+  "createdBy": "operator@contoso.com",
+  "generatedUtc": "2026-09-24T20:00:00Z",
+  "generatedBy": "admin@contoso.com",
+  "reason": "downloaded",
+  "keepUntilUtc": "2026-12-23T20:00:00Z",
+  "summary": {
+    "migrated": 1,
+    "putBack": 0,
+    "rolledBack": 0,
+    "attention": 0,
+    "leftOut": 0,
+    "working": 0,
+    "notStarted": 0,
+    "notMoved": 0,
+    "unknown": 0
+  },
+  "decisions": [
+    {
+      "what": "accepted the wave's settings",
+      "wave": "wave-1",
+      "by": "operator@contoso.com",
+      "atUtc": "2026-09-23T15:00:00Z",
+      "note": null,
+      "version": "5b1e0c7a"
+    },
+    {
+      "what": "signed off the plan",
+      "wave": null,
+      "by": "approver@contoso.com",
+      "atUtc": "2026-09-23T15:10:00Z",
+      "note": "Reviewed with the application owners.",
+      "version": "3f79bb7b435b05321651daefd374cdc681dc06faa65e374e38337b88ca046dea"
+    }
+  ],
+  "machines": [
+    {
+      "vmId": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-app/providers/Microsoft.Compute/virtualMachines/web-a",
+      "name": "web-a",
+      "wave": "wave-1",
+      "path": "A",
+      "state": "MIGRATED",
+      "outcome": "migrated",
+      "before": {
+        "size": "Standard_D2s_v4",
+        "controller": "SCSI",
+        "os": "Windows Server 2022"
+      },
+      "target": {
+        "size": "Standard_D2s_v6",
+        "controller": "NVMe"
+      },
+      "now": {
+        "size": "Standard_D2s_v6",
+        "controller": "NVMe",
+        "basis": "read from Azure after the move"
+      },
+      "steps": [
+        {
+          "tsUtc": "2026-09-23T22:00:00Z",
+          "state": "PRECHECK",
+          "outcome": "ok",
+          "durationSec": 12,
+          "detail": "",
+          "reasonCode": null
+        }
+      ],
+      "guestScripts": [
+        {
+          "tsUtc": "2026-09-23T22:03:00Z",
+          "script": "Test-GuestValidation.ps1",
+          "version": "1.0.0",
+          "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+          "result": "PASS"
+        }
+      ],
+      "safetyCopies": {
+        "pristineSnapshotId": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-app/providers/Microsoft.Compute/snapshots/web-a-pristine"
+      },
+      "putBack": null,
+      "retention": null,
+      "activity": [
+        {
+          "tsUtc": "2026-09-23T22:01:00Z",
+          "step": "azureops:deallocate",
+          "outcome": "ok",
+          "vmId": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-app/providers/Microsoft.Compute/virtualMachines/web-a"
+        }
+      ],
+      "evidence": {
+        "takenUtc": "2026-10-14T20:31:10.0000000Z",
+        "rows": [
+          {
+            "key": "azure.size",
+            "group": "azure",
+            "label": "Size",
+            "before": "Standard_D2s_v4",
+            "after": "Standard_D2s_v6",
+            "result": "planned"
+          },
+          {
+            "key": "azure.osDisk",
+            "group": "azure",
+            "label": "OS disk",
+            "before": "web_OsDisk_1",
+            "after": "web_OsDisk_1",
+            "result": "same"
+          },
+          {
+            "key": "imds.answered",
+            "group": "imds",
+            "label": "Answered",
+            "before": "Yes",
+            "after": "Yes",
+            "result": "same"
+          },
+          {
+            "key": "guest.bootBus",
+            "group": "guest",
+            "label": "Boot disk bus",
+            "before": "SCSI",
+            "after": "NVMe",
+            "result": "planned"
+          }
+        ]
+      },
+      "assessment": {
+        "classification": "ReadyAfterPrep",
+        "generation": "V2",
+        "diskArchitecture": "diskless",
+        "issues": ["stornvme", "pagefile"]
+      },
+      "sizeAlternates": ["Standard_D2as_v6"],
+      "planNotes": [],
+      "pathCheckpoint": "A:resized"
+    }
+  ],
+  "runActivity": [
+    {
+      "tsUtc": "2026-09-23T15:10:00Z",
+      "step": "approval",
+      "outcome": "ok",
+      "detail": "the plan (1 wave(s)) was signed off by approver@contoso.com"
+    }
+  ],
+  "assessment": {
+    "machines": 1,
+    "byClassification": { "ReadyAfterPrep": 1 },
+    "notInMigration": 0
+  },
+  "quotaRecords": [
+    {
+      "wave": "wave-1",
+      "region": "centralus",
+      "zone": null,
+      "size": "Standard_D2s_v6",
+      "family": "standardDSv6Family",
+      "vcpus": 2,
+      "quotaUsed": 12,
+      "quotaLimit": 100,
+      "state": "QUOTA_VERIFIED",
+      "notes": []
+    }
+  ]
+}

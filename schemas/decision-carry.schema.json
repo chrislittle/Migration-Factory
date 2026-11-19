@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://vmf.local/schemas/decision-carry.schema.json",
+  "title": "VMF decision carry note",
+  "description": "DECIDE-CARRY-KILL-1: the note of the carry a decision is about to do, at decision-carry/<machine key>.json in the run store. Resolve-VmfDecision writes it BEFORE it writes the decision into the plan, and removes it after it carries the wave's accepted settings, its approval and the plan sign-off onto the plan it wrote (Invoke-VmfDecisionCarryForward). A process that stopped between the two leaves it, and the next decision call for the machine finishes the carry - only while the stored plan's version is still afterPlanVersion. Written and read by the engine only.",
+  "type": "object",
+  "required": ["schemaVersion", "vmId", "wave", "decidedBy", "decidedUtc", "change", "carryWaveApproval", "before", "afterPlanVersion"],
+  "additionalProperties": false,
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "vmId": { "type": "string", "minLength": 1, "description": "The machine the decision is for, as the run's record spells it." },
+    "wave": { "type": "string", "minLength": 1, "description": "The machine's wave: the wave whose acceptance and approval the carry moves." },
+    "decidedBy": { "type": "string", "minLength": 1, "description": "Who made the decision. The carry's amendments name this person, not whoever finishes the carry." },
+    "decidedUtc": { "type": "string", "format": "date-time", "description": "When the decision was made. The carry's amendments carry this time." },
+    "change": { "type": "string", "minLength": 1, "description": "The settings the decision changed, as setting=value, comma separated." },
+    "carryWaveApproval": { "type": "boolean", "description": "WAVE-APPROVE-1: true only for an approver's acceptance of the one decision the machine waited for. Only then does the carry move the wave's approval." },
+    "before": {
+      "type": "object",
+      "description": "What the wave's records had to sign immediately before the decision (Get-VmfDecisionSnapshot of the plan text the decision read). A record that signs anything else is not moved.",
+      "required": ["optionsHash", "planVersion", "waveVersion"],
+      "additionalProperties": false,
+      "properties": {
+        "optionsHash": { "type": "string", "pattern": "^[0-9a-f]{64}$", "description": "The wave's options hash (Get-VmfWaveOptionsHash)." },
+        "planVersion": { "type": "string", "pattern": "^[0-9a-f]{64}$", "description": "The plan's document version (PLANVER-2, Get-VmfDocumentVersion)." },
+        "waveVersion": { "type": "string", "pattern": "^[0-9a-f]{64}$", "description": "The wave's version (Get-VmfWaveVersion)." }
+      }
+    },
+    "afterPlanVersion": { "type": "string", "pattern": "^[0-9a-f]{64}$", "description": "The document version of the plan text the decision wrote. The carry is finished only while the stored plan has this version." }
+  }
+}

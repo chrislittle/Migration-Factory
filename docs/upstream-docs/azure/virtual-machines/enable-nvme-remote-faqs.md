@@ -1,0 +1,178 @@
+# NVMe - Remote NVMe Disks FAQ - Azure Virtual Machines | Microsoft Learn
+
+This article addresses some common questions about support for remote NVM Express (NVMe) disks on virtual machines (VMs) created in Azure.
+
+## What are the prerequisites to enable the remote NVMe interface on my VM?
+
+The `DiskControllerTypes` is defined during VM configuration and is determined by the selected VM size as either NVMe or Small Computer System Interface (SCSI). If you don't specify a `DiskControllerTypes` value, the platform automatically chooses the default controller based on the VM size configuration.
+
+To enable the remote NVMe interface on your VM, you must meet the following prerequisites:
+
+- Most modern Azure VM sizes support the NVMe disk controller type for remote storage. Support begins with Ebsv5 VM sizes and later generations (v6, v7).
+- [Select the operating system image](/en-us/azure/virtual-machines/enable-nvme-interface) that's tagged with NVMe support. For VM sizes that support the NVMe interface, Azure automatically configures the NVMe disk controller type during VM creation. The NVMe setting in the Advanced tab is selected by default and cannot be changed.
+
+    ![Screenshot of a prompt to select a disk controller type.](media/enable-nvme/nvme-faq-1.png)
+- Opt in to NVMe by selecting the NVMe disk controller type in the Azure portal or in the Azure Resource Manager, Azure CLI, or Azure PowerShell template. For step-by-step instructions, refer to the [general NVMe FAQ](/en-us/azure/virtual-machines/enable-nvme-faqs).
+
+## How can I resize a SCSI-based VM to a remote NVMe-enabled VM of a different size?
+
+You can use the following process to either:
+
+- Resize a SCSI-based VM created using an untagged image to an NVMe-enabled VM of a different size without re-creating the VM configurations and without tagging the image.
+- Resize a SCSI-based VM to an NVMe-enabled VM of a different size without re-creating the VM configurations.
+
+The source VM can be either:
+
+- An untagged OS image that supports remote NVMe.
+- An NVMe-tagged OS image.
+
+To resize the VM, use the following command to run an [Azure PowerShell script](https://github.com/Azure/SAP-on-Azure-Scripts-and-Utilities/tree/main/NVMe-Preflight-Check) that sets the destination `discontrollertype` value of the VM as NVMe:
+
+```PowerShell
+azure-nvme-VM-update.ps1 [-subscription_id] <String> [-resource_group_name] <String> [-vm_name] <String> [[-disk_controller_change_to] <String>] [-vm_size_change_to] <String> [[-start_vm_after_update] <Boolean>] [[-write_logfile] <Boolean>]
+```
+
+For more details, refer to [SCSI to NVMe for Linux VMs](/en-us/azure/virtual-machines/nvme-linux)
+
+## How can I check if an image is tagged as NVMe?
+
+To check if an image is tagged as NVMe, use the following command:
+
+```
+az vm image show --urn URN_OF_IMAGE
+```
+
+## How do I create an image definition that supports NVMe for remote disks?
+
+To create an image definition that supports NVMe for remote disks, complete the following steps:
+
+1. Upload an NVMe-supported virtual hard disk (VHD) to your storage account. [AzCopy](/en-us/azure/storage/common/storage-use-azcopy-v10) is a fast way, but you can also use the portal to upload.
+
+    ```
+    azcopy copy <local path to your VHD> <container in your storage account>
+    ```
+2. [Create an image gallery](/en-us/azure/virtual-machines/create-gallery) by using Azure PowerShell, the portal, or the Azure CLI.
+3. [Create an image definition](/en-us/azure/virtual-machines/image-version). Be sure to include `--feature DiskControllerTypes=SCSI,NVMe`.
+
+    Here's an Azure CLI example:
+
+    ```
+    az sig image-definition create --resource-group <resourceGroupName> --gallery-name <galleryName> --gallery-image-definition <imageName> --publisher <publisher> --offer <offerName> --sku <skuName> --os-type <osType> --os-state <osState> --feature DiskControllerTypes=SCSI,NVMe
+    ```
+4. [Create the image version](/en-us/azure/virtual-machines/image-version) with the NVMe-supported VHD.
+
+    Here's an Azure CLI example:
+
+    ```
+    az sig image-version create --resource-group <resourceGroupName> --gallery-name <galleryName> --gallery-image-definition <imageName> --gallery-image-version <version> --target-regions <region1> <region2> --replica-count <replicaCount> --os-vhd-uri <NVMe-supported vhd uri> --os-vhd-storage-account <storageAccount>
+    ```
+
+## Which Azure disk storage options are compatible with remote NVMe disks?
+
+NVMe sizes can be combined with Azure Standard HDD, Standard SSD, Premium SSD v1, Premium SSD v2, and Ultra Disk Storage. For more information on Azure disk offerings, see [Azure managed disk types](/en-us/azure/virtual-machines/disks-types).
+
+## Does Azure support live resizing on disks with NVMe VM sizes?
+
+Live resizing of NVMe is supported on Azure Premium SSD v1 disks, Premium SSD v2 disks, Standard SSDs, and Standard HDDs. You can also add remote NVMe disks without restarting the VM.
+
+## How can I identify remote NVMe disks on a Linux VM?
+
+1. Get the `nvme-cli` package:
+
+    ```
+    sudo apt install nvme-cli
+    ```
+2. Run the NVMe `list` command to fetch NVMe disk details:
+
+    ```
+    sudo nvme list
+    ```
+
+    ![Screenshot of instructions to identify NVMe disks on a Linux virtual machine.](media/enable-nvme/nvme-faq-4.png)
+
+    ![Screenshot of instructions to choose a namespace ID in the Linux portal.](media/enable-nvme/nvme-faq-5.png)
+
+    Here's how the data appears in response to Azure PowerShell commands:
+
+    ![Screenshot of an example response to an Azure PowerShell command.](media/enable-nvme/nvme-faq-6.png)
+
+## How can I identify NVMe disks on a Windows VM?
+
+Open Azure PowerShell and use the following command:
+
+```
+wmic diskdrive get model,scsilogicalunit
+```
+
+![Screenshot of an example PowerShell command to use NVMe on Windows.](media/enable-nvme/nvme-faq-7.png)
+
+The ASAP attached disks are presented in the guest with the model string `Virtual_Disk NVMe Premium`. The SCSI logical unit has the value for the portal-visible LUN ID incremented by 1.
+
+Here's a snapshot of how NVMe disks appear in an NVMe-enabled Windows VM:
+
+![Screenshot that shows an example of an Azure PowerShell command to identify the NVMe disk on a Windows VM.](media/enable-nvme/nvme-faq-8.png)
+
+The following snapshot shows guest output for data disks attached at LUN 0 and LUN 4 (CRP). The LUN ID is equivalent to the namespace ID.
+
+![Screenshot that shows an example of how NVMe disks appear in an NVMe-enabled Windows VM.](media/enable-nvme/nvme-faq-9.png)
+
+## Are shared disks in remote disks supported with NVMe-enabled VMs?
+
+The shared disk feature is supported for Premium SSD, Premium SSD v2, and Ultra Disk Storage disks. Shared Disks using NVMe isn't supported with the OS Windows Server 2019.
+
+## Can a data disk be detached from a SCSI-based VM and then attached to an NVMe-based VM?
+
+Yes. A data disk can be detached from a SCSI-based VM and attached to an NVMe-based VM. Once attached, the disk type will automatically convert to NVMe.
+
+## Will all my VM’s disks be attached to one NVMe controller, or are they distributed across multiple controllers?
+
+Older Azure VM types (such as Ebsv6) attach all disks to a single NVMe controller. Select newer VM sizes (V7 and above, running on Intel and ARM hardware) automatically distribute disks across multiple controllers and separate cached disks (including the OS disk) and uncached data disks for improved performance and reliability.
+
+## How are disks assigned to controllers, and what should I know about disk management?
+
+Boot and cached data disks are assigned to the cached controller and uncached data disks go to the uncached controller. Controller assignment is automatic based on disk caching policy selected in the VM settings.
+
+If you need to change the caching policy of a disk, it is recommended to stop the VM, change the caching policy, and then start the VM again for stable operation. This helps avoid inconsistent states or remapping issues. OS disk caching changes are non-functional and will be disabled in future updates.
+
+## How can I identify and manage disks across controllers in Linux and Windows?
+
+Note
+
+Using UUIDs (Linux) or GUIDs (Windows) ensures disks are correctly identified and remounted after VM events, upgrades, or controller changes. If device names change after reboots or disk operations, rely on UUIDs/GUIDs or persistent naming for automation and scripting.
+
+# [Linux](#tab/linux)
+- To view NVMe controllers and attached disks, run:
+
+```bash
+lsblk -o NAME,MODEL,SIZE,TYPE,MOUNTPOINT
+```
+
+This lists all block devices, showing which disks (e.g., nvme0n1, nvme1n1) are attached to which controllers. Cached disks (including the OS disk) typically appear under `nvme0`, while uncached data disks show up under `nvme1`.
+
+- For detailed NVMe info, run:
+
+```bash
+nvme list
+```
+
+This displays all NVMe devices, their controller IDs, namespaces, and serial numbers.
+
+- For persistent disk identification, use:
+
+```bash
+blkid
+```
+
+This shows the UUID for each disk, which can be used for reliable remounting after VM events.
+
+# [Windows](#tab/windows)
+- Open Disk Management (`diskmgmt.msc`) to see all disks and their controller assignments.
+- Or use PowerShell for more details:
+
+```PowerShell
+Get-PhysicalDisk | Select-Object DeviceID, FriendlyName, SerialNumber, BusType
+```
+
+This lists all physical disks, including NVMe devices and their properties.
+
+---

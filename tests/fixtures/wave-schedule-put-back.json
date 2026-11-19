@@ -1,0 +1,10 @@
+{
+  "schemaVersion": 1,
+  "wave": "w1",
+  "runAtUtc": "2026-11-07T02:00:00.0000000Z",
+  "scheduledUtc": "2026-11-06T20:00:00.0000000Z",
+  "scheduledBy": "operator@example.com",
+  "note": "change window",
+  "windowMinutes": 45,
+  "state": "pending"
+}

@@ -1,0 +1,45 @@
+{
+  "schemaVersion": 1,
+  "clearedUtc": "2026-11-03T08:00:00Z",
+  "because": "changed",
+  "claim": {
+    "schemaVersion": 9,
+    "runId": "run1-prod2-20261102",
+    "wave": "prod-2",
+    "subscriptionId": "00000000-0000-0000-0000-000000000000",
+    "resourceGroup": "rg-app-prod",
+    "region": "eastus2",
+    "zone": "2",
+    "size": "Standard_E8ads_v7",
+    "vmFamily": "standardEADSv7Family",
+    "state": "RELEASED",
+    "blockReason": null,
+    "demand": {
+      "instances": 40,
+      "reservableInstances": 38,
+      "vcpus": 320
+    },
+    "estimatedHourly": {
+      "perInstance": 0.192,
+      "total": 0.768,
+      "currency": "USD",
+      "basis": "retail-list-price"
+    },
+    "quota": {
+      "limit": 400,
+      "used": 64,
+      "checkedUtc": "2026-11-01T13:58:00Z",
+      "requestId": null,
+      "requestedUtc": null
+    },
+    "notes": [],
+    "reservation": {
+      "groupId": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-vmf-capacity/providers/Microsoft.Compute/capacityReservationGroups/vmf-run1-prod-2-eastus2-az2",
+      "reservationId": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-vmf-capacity/providers/Microsoft.Compute/capacityReservationGroups/vmf-run1-prod-2-eastus2-az2/capacityReservations/e8adsv7",
+      "createdUtc": "2026-11-01T14:00:00Z",
+      "releasedUtc": "2026-11-02T03:00:00Z",
+      "consumedInstances": 2
+    },
+    "fallback": []
+  }
+}

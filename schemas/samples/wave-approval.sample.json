@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 5,
+  "runId": "run1-prod2-20261102",
+  "wave": "prod-2",
+  "approvedBy": {
+    "identity": "approver@example.com",
+    "tenantId": "00000000-0000-0000-0000-000000000000"
+  },
+  "approvedUtc": "2026-11-02T14:00:00Z",
+  "planHash": "0f7e35d68f83f24d92a48fc604a41a1e3f4f7e35d68f83f24d92a48fc604a41a",
+  "waveVersion": "7c1d2e5a9b0f4c3d8e6a1b2c3d4e5f60718293a4b5c6d7e8f9a0b1c2d3e4f5a6",
+  "note": "prod-1 wave report reviewed with app owners; validation evidence clean; approved to proceed",
+  "amendments": [
+    { "by": "approver@example.com", "utc": "2026-11-02T15:10:00Z", "vmId": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-app/providers/Microsoft.Compute/virtualMachines/app-01", "change": "acceleratedNetworking=ensureOn", "reason": "decision" }
+  ]
+}

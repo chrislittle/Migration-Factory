@@ -1,0 +1,41 @@
+{
+  "schemaVersion": 8,
+  "runId": "run1-prod2-20261102",
+  "wave": "prod-2",
+  "updatedUtc": "2026-11-02T02:15:00Z",
+  "stateCounts": {
+    "PLANNED": 12,
+    "GUEST_PREP": 3,
+    "CONVERTING": 4,
+    "VALIDATING": 2,
+    "MIGRATED": 19,
+    "FAILED_ROLLED_BACK": 1
+  },
+  "running": [
+    { "vmId": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-app01/providers/Microsoft.Compute/virtualMachines/app01-web-03", "state": "CONVERTING", "sinceUtc": "2026-11-02T02:12:31Z", "workerId": "worker-04" }
+  ],
+  "breaker": { "halted": false, "consecutiveFailures": 0, "recentFailureRate": 0.05 },
+  "throttle": { "limit": 40, "containers": 3, "recent429s": 0 },
+  "etaUtc": "2026-11-02T04:40:00Z",
+  "summary": {
+    "writtenUtc": "2026-11-02T02:15:00Z",
+    "reason": "waveRunning",
+    "halted": false,
+    "machines": 61,
+    "stateCounts": {
+      "MIGRATED": 39,
+      "PLANNED": 12,
+      "GUEST_PREP": 3,
+      "CONVERTING": 4,
+      "VALIDATING": 2,
+      "FAILED_ROLLED_BACK": 1
+    },
+    "restoredStops": 0,
+    "waitsOnPerson": 2,
+    "waves": [
+      { "wave": "prod-1", "machines": 20, "restoredStops": 0, "waitsOnPerson": 1, "stateCounts": { "MIGRATED": 20 } },
+      { "wave": "prod-2", "machines": 41, "restoredStops": 0, "waitsOnPerson": 1, "stateCounts": { "PLANNED": 12, "GUEST_PREP": 3, "CONVERTING": 4, "VALIDATING": 2, "MIGRATED": 19, "FAILED_ROLLED_BACK": 1 } }
+    ],
+    "next": { "wave": "prod-2", "waitsFor": "running" }
+  }
+}

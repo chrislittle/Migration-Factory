@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://vmf.local/schemas/schedule-due.schema.json",
+  "title": "VMF runs the schedule pass checks",
+  "description": "SCHEDULE-PASS-DUE-1. The record at the top of the run store of the runs the service's five-minute schedule pass checks. The product adds a run (Add-VmfRunScheduleDue, from the cmdlet that writes the fact, or the service) after an engine start of a wave, a restore or a finish, after a schedule is saved, after a plan sign-off, after a decision or a retry of a machine, and after Resume. The pass keeps a run while one of its checks acts on it, and removes it when none does - only while the entry holds the mark id the pass read, with one version-checked write. Once an hour the pass checks every run in the store and adds any run a check acts on. The schedule pass reads it. MIGRATION NOTE: new in schema 1; with no record, the pass checks every run and writes it.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "runs"],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "runs": {
+      "type": "array",
+      "description": "One entry for each run, in ordinal order of run id.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["runId", "markId", "reason", "markedUtc", "holdUntilUtc", "nextUtc"],
+        "properties": {
+          "runId": { "type": "string", "minLength": 1, "maxLength": 512, "pattern": "^[^/]+(/[^/]+)?$", "description": "The run, as 'run' or 'project/run'." },
+          "markId": { "type": "string", "minLength": 1, "description": "A new value at each mark. The pass removes the entry only while it holds the value the pass read, so a mark written while the pass checks the run is never lost." },
+          "reason": { "enum": ["engine", "schedule", "planSignOff", "decision", "resume", "sweep"], "description": "What added the run: an engine start, a schedule saved, a plan sign-off, a decision or a retry of a machine, Resume, or the hourly check of every run." },
+          "markedUtc": { "type": "string", "format": "date-time", "description": "When the entry was marked." },
+          "holdUntilUtc": { "type": ["string", "null"], "format": "date-time", "description": "Until this time the pass keeps the run whatever it finds: 15 minutes after an engine start, because Azure can list a new execution late." },
+          "nextUtc": { "type": ["string", "null"], "format": "date-time", "description": "The pass checks the run again at this time. Null: at the next pass. A time only when the run has nothing but a scheduled wave whose time has not come." }
+        }
+      }
+    }
+  }
+}

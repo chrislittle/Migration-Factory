@@ -1,0 +1,223 @@
+{
+  "about": "TERMS-AUDIT-1. Read by tools/Test-SimplifiedEnglish.ps1. bannedPhrases: a word this product invented where Azure or the product already has one (CLAUDE.md rule 10). phrasalVerbs: a verb and a particle that together mean something neither word says; ASD-STE100 uses one approved verb with one meaning instead. Each entry has a pattern (a .NET regular expression, matched without case), the words to write instead, the source of the rule, sentences it must catch (examples) and sentences it must leave alone (allowed). SimplifiedEnglish.Tests.ps1 runs every example and every allowed sentence through the tool.",
+  "notBanned": [
+        { "phrase": "roll back", "why": "Azure's and the product's word: Rolled back is a state on the Migrations page." },
+    { "phrase": "leave out", "why": "The button Leave this machine out." },
+    { "phrase": "sign in", "why": "Microsoft Entra ID's own words." },
+    { "phrase": "shut down", "why": "Windows' and Linux's own words for the operating system stop." },
+    { "phrase": "turn on, turn off", "why": "The product's words for accelerated networking on the targets step and in the sign-off." },
+    { "phrase": "make sure", "why": "ASD-STE100 uses it." }
+  ],
+  "pendingAbout": "MANUAL-REVIEW-1: findings of a term rule in a source that another open branch of the same review rewrites. source is the name -ListSources gives; idPrefix narrows engine-strings to one file; pattern is the rule's pattern, exactly. The tool reports each as waived, and SimplifiedEnglish.Tests.ps1 fails an entry that waives nothing, so the owner removes it with the fix.",
+  "pending": [],
+  "bannedPhrases": [
+    {
+      "pattern": "\\bway[ -]back\\b",
+      "use": "'rollback disk' for a disk made from the first safety copy; 'rollback', or 'a rollback or a restore', for the act",
+      "source": "RENAME-WAY-BACK-1 (2026-11-12): the disks are rollback disks; the way back is not their name.",
+      "examples": [ "The product could not make the disks for the way back.", "Safety copies and the way back", "Every machine has a way back." ],
+      "allowed": [ "The product could not make the rollback disks.", "Safety copies and rollback", "The product can roll back every machine." ]
+    },
+    {
+      "pattern": "\\bgeneral[ -]capacity\\b",
+      "use": "'no capacity reservation' (Azure has on-demand capacity reservations, and a machine has one or has none)",
+      "source": "TERMS-AUDIT-1 (2026-11-04): Azure has no general capacity; name the quota or the capacity reservation.",
+      "examples": [ "Capacity: placed on general capacity.", "These machines move on general capacity.", "General capacity" ],
+      "allowed": [ "No on-demand capacity reservation. Its wave does not reserve capacity.", "The general settings of the wave do not change." ]
+    },
+    {
+      "pattern": "\\baccelerated hardware\\b",
+      "use": "'accelerated networking', the Azure name",
+      "source": "TERMS-AUDIT-1 (2026-11-04), on the activity line 'Checking the network is running on accelerated hardware'.",
+      "examples": [ "Checking the network is running on accelerated hardware" ],
+      "allowed": [ "Checking that accelerated networking is in use" ]
+    },
+    {
+      "pattern": "\\b(new|newer|original|old) (disk )?hardware\\b",
+      "use": "'the new size', or 'NVMe' for the disk controller",
+      "source": "TERMS-AUDIT-1 (lab Session A, 2026-11-04): the size and the disk controller have Azure names.",
+      "examples": [ "The machine starts on the new hardware.", "Preparing the operating system for the new disk hardware", "It is returned to its original hardware." ],
+      "allowed": [ "The machine starts on its new size.", "Preparing the operating system for NVMe" ]
+    },
+    {
+      "pattern": "\\bthe tool\\b",
+      "use": "'the product', the noun every other string uses for it (or its name, Migration Factory)",
+      "source": "TERMS-AUDIT-1 (lab Session A, 2026-11-04): 'The tool stopped' names nothing the product calls itself. The strings say 'the product' more than 800 times, and the stop texts name 'the product's managed identity' (STOP-TEXT-SPECIFIC-1).",
+      "examples": [ "The tool stopped the machine.", "Do nothing. The tool moves the page file." ],
+      "allowed": [ "The product stopped the machine.", "Migration Factory stopped the machine.", "Install the tools on this page." ]
+    },
+    {
+      "pattern": "(?<!\\bcapacity )\\breservations?\\b",
+      "use": "'on-demand capacity reservation', Azure's name. A capacity reservation group and a capacity reservation are Azure's resource names. Azure Reservations is another Azure service.",
+      "source": "MANUAL-REVIEW-1 catch list (2026-11-12): on-demand capacity reservation, never reservation alone. The exceptions name Azure Reservations, the other Azure service, and the sentence with a reservation for the old size (approved 2026-11-13).",
+      "except": [ "Azure Reservations", "Azure Reservation", "a reservation for the old size" ],
+      "examples": [ "A reservation holds capacity for the wave.", "The reservation group is made in the resource group of the machines.", "Quota and reservations are settled when the migration is planned." ],
+      "allowed": [ "An on-demand capacity reservation holds capacity for the wave.", "The capacity reservation group is made in the resource group of the machines.", "Azure Reservations and savings plans do not follow the machine.", "An Azure Reservation covers only the sizes of its own instance size flexibility group, so a reservation for the old size does not cover the new size." ]
+    },
+    {
+      "pattern": "\\b(rg-vmf-[a-z0-9-]+|(east|west|central|north|south|northcentral|southcentral|westcentral)us\\d?|(east|west|central|north|south) US( \\d)?|labs?|drills?)\\b(?!-)",
+      "rawText": true,
+      "use": "the fact for every install, with no lab, test run, region or resource group of the lab. Write <region> or <resource group> for a value that is yours.",
+      "source": "MANUAL-REVIEW-1 catch list (2026-11-12): no lab numbers, lab dates or regions in shipped docs (\"the lab used ...\", \"Central US\").",
+      "examples": [ "The lab used Central US.", "Open rg-vmf-lab in the portal.", "The engine ran in centralus and westus3.", "No lab run has moved such a machine.", "The drill measured it." ],
+      "allowed": [ "Open the resource group of the install in the portal.", "The engine runs in the region of the install.", "Select the label on the page." ]
+    },
+    {
+      "pattern": "(?<!\\bscope of )\\bthis tool\\b",
+      "use": "'the product'. 'Outside the scope of this tool' stays: those are the approved words for a scope statement.",
+      "source": "TERMS-AUDIT-1 (lab Session A, 2026-11-04): 'This tool cannot see' names no product.",
+      "examples": [ "This tool cannot see the role assignments." ],
+      "allowed": [ "A cluster node is outside the scope of this tool." ]
+    }
+  ],
+  "phrasalVerbs": [
+   {
+      "pattern": "\\btid(y|ies|ied|ying) (up|away)\\b",
+      "use": "'remove' or 'delete'",
+      "source": "TERMS-AUDIT-1 (2026-11-04), on 'Tidying up the disk it left behind': ASD-STE100 does not use this verb this way.",
+      "examples": [ "Tidying up the disk it left behind", "The migration can be tidied away." ],
+      "allowed": [ "Deleting the disk that the rollback made" ]
+    },
+    {
+      "pattern": "\\b(winds|winding|wound)\\b(\\s+\\S+){0,4}?\\s+down\\b|\\bwind down\\b",
+      "use": "'reduce' or 'set to zero'",
+      "source": "TERMS-AUDIT-1 (lab Session A): 'Winding a capacity reservation down to zero'.",
+      "examples": [ "Winding a capacity reservation down to zero", "The engine winds the reservation down." ],
+      "allowed": [ "Setting the capacity reservation to zero instances", "The wind speed went down." ]
+    },
+    {
+      "pattern": "\\b(end|ends|ended|ending) up\\b",
+      "use": "the verb for the result: 'is on', 'has'",
+      "source": "TERMS-AUDIT-1 (lab Session A): 'Reading the size it ended up on'.",
+      "examples": [ "Reading the size it ended up on" ],
+      "allowed": [ "Reading the size of the machine after the move", "At the end, up to two machines remain." ]
+    },
+    {
+      "pattern": "\\b(leave|leaves|leaving|left) behind\\b",
+      "use": "'remains' or 'is not deleted'",
+      "source": "TERMS-AUDIT-1 (2026-11-04), on 'Tidying up the disk it left behind'.",
+      "examples": [ "Tidying up the disk it left behind", "Nothing else was left behind." ],
+      "allowed": [ "Nothing else remains.", "The left side of the page shows the waves." ]
+    },
+    {
+      "pattern": "\\b(go|goes|going|went|gone) back\\b",
+      "use": "the verb for the action: 'return to', 'restore', or name the state ('the disk from before the move')",
+      "source": "TERMS-AUDIT-1 (lab Session A): 'Attaching the disk it is going back to'.",
+      "examples": [ "Attaching the disk it is going back to", "Go back to the first step." ],
+      "allowed": [ "Attaching the disk from before the move", "Select Back to see the last step." ]
+    },
+    {
+      "pattern": "\\b(find|finds|finding|found) out\\b",
+      "use": "'find', 'check' or 'learn'",
+      "source": "ASD-STE100 uses one verb with one meaning; 'find out' is a verb and a particle (TERMS-AUDIT-1).",
+      "examples": [ "Find out who deleted the copy and why." ],
+      "allowed": [ "Find who deleted the copy, and why.", "The check found outdated drivers." ]
+    },
+    {
+      "pattern": "\\b(set|sets|setting) up\\b",
+      "use": "'configure', 'install', 'make' or 'prepare'",
+      "source": "ASD-STE100 uses one verb with one meaning; 'set up' is a verb and a particle (TERMS-AUDIT-1).",
+      "except": [ "Set up preview features in Azure subscription" ],
+      "examples": [ "Set up the network before the wave starts.", "Microsoft gives the steps, and you set up the feature." ],
+      "allowed": [ "Configure the network before the wave starts.", "The setup page shows the roles.", "Set upper limits for each wave.", "Microsoft gives the steps in Set up preview features in Azure subscription." ]
+    },
+    {
+      "pattern": "\\b(carry|carries|carried|carrying) out\\b",
+      "use": "'do'",
+      "source": "ASD-STE100 uses one verb with one meaning; 'carry out' is a verb and a particle (TERMS-AUDIT-1).",
+      "examples": [ "The engine carries out each step." ],
+      "allowed": [ "The engine does each step." ]
+    },
+    {
+      "pattern": "\\b(come|comes|came|coming) off\\b",
+      "use": "'is removed'",
+      "source": "TERMS-AUDIT-1 (lab Session A): 'The lock on the safety copy comes off now'.",
+      "examples": [ "The lock on the safety copy comes off now." ],
+      "allowed": [ "The lock on the safety copy is removed now." ]
+    },
+    {
+      "pattern": "\\b(take|takes|took|taking|taken)\\b(\\s+\\S+){0,3}?\\s+(off|away|out)\\b",
+      "use": "'remove'",
+      "source": "ASD-STE100 uses one verb with one meaning; 'take off', 'take away' and 'take out' are a verb and a particle (TERMS-AUDIT-1).",
+      "examples": [ "The engine takes the lock off before it deletes the copy.", "This takes away the role.", "Taking the machine out of its capacity reservation group" ],
+      "allowed": [ "The engine removes the lock before it deletes the copy.", "The engine takes a safety copy of each disk.", "Removing the machine from its capacity reservation group" ]
+    },
+    {
+      "pattern": "\\b(pick|picks|picked|picking) up\\b",
+      "use": "'read', 'use' or 'take'",
+      "source": "ASD-STE100 uses one verb with one meaning; 'pick up' is a verb and a particle (TERMS-AUDIT-1).",
+      "examples": [ "The next wave picks up the new settings." ],
+      "allowed": [ "The next wave uses the new settings." ]
+    },
+    {
+      "pattern": "\\b(look|looks|looked|looking) up\\b",
+      "use": "'find' or 'read'",
+      "source": "ASD-STE100 uses one verb with one meaning; 'look up' is a verb and a particle (TERMS-AUDIT-1).",
+      "examples": [ "Look up the role in the Azure portal." ],
+      "allowed": [ "Find the role in the Azure portal." ]
+    },
+    {
+      "pattern": "\\b(give|gives|gave|giving|given) up\\b",
+      "use": "'stop'",
+      "source": "ASD-STE100 uses one verb with one meaning; 'give up' is a verb and a particle (TERMS-AUDIT-1).",
+      "examples": [ "The engine gives up after three tries." ],
+      "allowed": [ "The engine stops after three tries.", "The role given upon sign-in is Reader." ]
+    },
+    {
+      "pattern": "\\b(clean|cleans|cleaned|cleaning) up\\b",
+      "use": "'remove' or 'delete'",
+      "source": "ASD-STE100 uses one verb with one meaning; 'clean up' is a verb and a particle (TERMS-AUDIT-1).",
+      "examples": [ "Clean up the disks after the move." ],
+      "allowed": [ "Delete the disks after the move.", "The cleanup removes the disks." ]
+    },
+    {
+      "pattern": "\\b(work|works|worked|working) out\\b",
+      "use": "'calculate' or 'find'",
+      "source": "ASD-STE100 uses one verb with one meaning; 'work out' is a verb and a particle (TERMS-AUDIT-1).",
+      "examples": [ "The engine works out the quota it needs." ],
+      "allowed": [ "The engine calculates the quota it needs." ]
+    },
+    {
+      "pattern": "\\b(show|shows|showed|showing|shown) up\\b",
+      "use": "'appear' or 'is shown'",
+      "source": "ASD-STE100 uses one verb with one meaning; 'show up' is a verb and a particle (TERMS-AUDIT-1).",
+      "examples": [ "The machine shows up in the list after the scan." ],
+      "allowed": [ "The machine appears in the list after the scan.", "The page shows updates every minute." ]
+    },
+    {
+      "pattern": "\\b(run|runs|ran|running) out\\b",
+      "use": "'has no more' or 'is used'",
+      "source": "ASD-STE100 uses one verb with one meaning; 'run out' is a verb and a particle (TERMS-AUDIT-1).",
+      "examples": [ "The wave ran out of quota." ],
+      "allowed": [ "The wave has no more quota.", "The run output is in the log." ]
+    },
+    {
+      "pattern": "\\b(fall|falls|fell|falling|fallen) back\\b",
+      "use": "'uses ... instead'",
+      "source": "ASD-STE100 uses one verb with one meaning; 'fall back' is a verb and a particle (TERMS-AUDIT-1).",
+      "examples": [ "The page falls back to the last reading." ],
+      "allowed": [ "The page uses the last reading instead." ]
+    },
+    {
+      "pattern": "\\b(bring|brings|brought|bringing) back\\b",
+      "use": "'restore' or 'put back'",
+      "source": "ASD-STE100 uses one verb with one meaning; 'bring back' is a verb and a particle (TERMS-AUDIT-1).",
+      "examples": [ "No restore brings back the old identity." ],
+      "allowed": [ "No restore returns the old identity.", "Restore puts back the disks." ]
+    },
+    {
+      "pattern": "\\b(come|comes|came|coming) back\\b",
+      "use": "'return' or 'start again'",
+      "source": "ASD-STE100 uses one verb with one meaning; 'come back' is a verb and a particle (TERMS-AUDIT-1).",
+      "examples": [ "Come back to this page when the wave ends." ],
+      "allowed": [ "Open this page again when the wave ends." ]
+    },
+    {
+      "pattern": "\\b(close|closes|closed|closing) out\\b",
+      "use": "'close' or 'finish'",
+      "source": "ASD-STE100 uses one verb with one meaning; 'close out' is a verb and a particle (TERMS-AUDIT-1).",
+      "examples": [ "The last container closes out the wave." ],
+      "allowed": [ "The last container finishes the wave." ]
+    }
+  ]
+}

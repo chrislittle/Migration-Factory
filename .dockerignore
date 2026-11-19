@@ -1,0 +1,27 @@
+# `az acr build ... .` uploads this whole folder to the registry. Its own
+# default rules leave out only .git and .gitignore, so without this file every
+# local file would go up too: a run store's output, the azd environment.
+#
+# This is an ALLOW-LIST. A deny-list must change each time the repository gets
+# a new folder, and when it is not changed, nothing says so. The Dockerfiles
+# copy six paths between them. Those six, and nothing else, go up.
+#
+# ONE FILE FOR BOTH BUILDS: `az acr build` reads the .dockerignore beside the
+# build context, not beside the Dockerfile, so the engine image and the
+# publish image share this list.
+#
+# tests/unit/BuildContext.Tests.ps1 reads each Dockerfile under docker/ and
+# fails if one copies a path this file does not allow, or if this file allows
+# a path no Dockerfile copies.
+*
+
+# the engine image (docker/Dockerfile)
+!src/VmMigrationFactory
+!src/guest
+!docker/entrypoint.ps1
+
+# the publish image (docker/publish/Dockerfile). It carries the service's
+# code package, so it needs the two things the package is made of.
+!src/facade/app
+!src/facade/FacadeCore
+!docker/publish/entrypoint.ps1

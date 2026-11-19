@@ -1,0 +1,58 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 880 548" width="880" height="548" role="img" aria-label="Where a machine can move. A machine on A v2, D, E or F, v1 to v4, moves to v5, or to v6 or v7. A machine on B v1 moves to Bsv2 first, or to v5, or to v6 or v7. A machine on D, Dl or E v5 has no v5 target, and moves to v6 or v7. Each target on v5, v6 or v7 is a D, Dl or E size. A move to v5 or Bsv2 is a resize on SCSI, for Generation 1 and Generation 2, with Windows Server 2016 and later. A move to v6 or v7 changes the disk controller from SCSI to NVMe. It needs Generation 2 and Windows Server 2019 and later. A machine keeps its processor maker.">
+  <title>Where a machine can move</title>
+<g font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif">
+<text x="8" y="22" font-size="13" fill="#6c6c6c" >An older size can be Intel or AMD, and Generation 1 or Generation 2.</text>
+<g data-route="older">
+<path d="M8 46 A10 10 0 0 1 18 36 H268 L298 118 L268 200 H18 A10 10 0 0 1 8 190 Z" fill="#446e9b" stroke="#446e9b" stroke-width="1.5"/>
+<text x="24" y="126" font-size="16" fill="#ffffff" font-weight="700">A v2, D, E and F</text>
+<text x="24" y="144" font-size="12.5" fill="#ffffff" >v1 to v4</text>
+<g data-target="v5">
+<path d="M274 36 H862 A10 10 0 0 1 872 46 V104 A10 10 0 0 1 862 114 H304 Z" fill="#dae2eb" stroke="#446e9b" stroke-width="1.5"/>
+<text x="322" y="58" font-size="11.5" fill="#1b2c3e" font-weight="700" letter-spacing="1">v5</text>
+<text x="856" y="58" text-anchor="end" font-size="11.5" fill="#1b2c3e" font-weight="700" letter-spacing="1">RESIZE ON SCSI</text>
+<text x="322" y="81" font-size="15" fill="#1b2c3e" font-weight="700">D, Dl or E on v5</text>
+<text x="322" y="101" font-size="12" fill="#1b2c3e" >Generation 1 and Generation 2. Windows Server 2016 and later.</text>
+</g>
+<g data-target="v6v7">
+<path d="M304 122 H862 A10 10 0 0 1 872 132 V190 A10 10 0 0 1 862 200 H274 Z" fill="#d8f0d3" stroke="#2c8418" stroke-width="1.5"/>
+<text x="322" y="144" font-size="11.5" fill="#18480d" font-weight="700" letter-spacing="1">v6 AND v7</text>
+<text x="856" y="144" text-anchor="end" font-size="11.5" fill="#18480d" font-weight="700" letter-spacing="1">SCSI TO NVMe</text>
+<text x="322" y="167" font-size="15" fill="#18480d" font-weight="700">D, Dl or E on v6 or v7</text>
+<text x="322" y="187" font-size="12" fill="#18480d" >Generation 2 only. Windows Server 2019 and later.</text>
+</g>
+</g>
+<g data-route="b-v1">
+<path d="M8 232 A10 10 0 0 1 18 222 H268 L298 304 L268 386 H18 A10 10 0 0 1 8 376 Z" fill="#446e9b" stroke="#446e9b" stroke-width="1.5"/>
+<text x="24" y="312" font-size="16" fill="#ffffff" font-weight="700">B v1</text>
+<text x="24" y="330" font-size="12.5" fill="#ffffff" >Bs, Bms and Bls</text>
+<g data-target="v5">
+<path d="M274 222 H862 A10 10 0 0 1 872 232 V290 A10 10 0 0 1 862 300 H304 Z" fill="#dae2eb" stroke="#446e9b" stroke-width="1.5"/>
+<text x="322" y="244" font-size="11.5" fill="#1b2c3e" font-weight="700" letter-spacing="1">Bsv2 first, or v5</text>
+<text x="856" y="244" text-anchor="end" font-size="11.5" fill="#1b2c3e" font-weight="700" letter-spacing="1">RESIZE ON SCSI</text>
+<text x="322" y="267" font-size="15" fill="#1b2c3e" font-weight="700">Bsv2 or D, Dl or E on v5</text>
+<text x="322" y="287" font-size="12" fill="#1b2c3e" >Generation 1 and Generation 2. Windows Server 2016 and later.</text>
+</g>
+<g data-target="v6v7">
+<path d="M304 308 H862 A10 10 0 0 1 872 318 V376 A10 10 0 0 1 862 386 H274 Z" fill="#d8f0d3" stroke="#2c8418" stroke-width="1.5"/>
+<text x="322" y="330" font-size="11.5" fill="#18480d" font-weight="700" letter-spacing="1">v6 AND v7</text>
+<text x="856" y="330" text-anchor="end" font-size="11.5" fill="#18480d" font-weight="700" letter-spacing="1">SCSI TO NVMe</text>
+<text x="322" y="353" font-size="15" fill="#18480d" font-weight="700">D, Dl or E on v6 or v7</text>
+<text x="322" y="373" font-size="12" fill="#18480d" >Generation 2 only. Windows Server 2019 and later.</text>
+</g>
+</g>
+<g data-route="on-v5">
+<path d="M8 418 A10 10 0 0 1 18 408 H268 L298 447 L268 486 H18 A10 10 0 0 1 8 476 Z" fill="#446e9b" stroke="#446e9b" stroke-width="1.5"/>
+<text x="24" y="455" font-size="16" fill="#ffffff" font-weight="700">D, Dl and E on v5</text>
+<text x="24" y="473" font-size="12" fill="#ffffff" font-style="italic">No v5 target: it is already on v5.</text>
+<g data-target="v6v7">
+<path d="M274 408 H862 A10 10 0 0 1 872 418 V476 A10 10 0 0 1 862 486 H274 L304 447 Z" fill="#d8f0d3" stroke="#2c8418" stroke-width="1.5"/>
+<text x="322" y="430" font-size="11.5" fill="#18480d" font-weight="700" letter-spacing="1">v6 AND v7</text>
+<text x="856" y="430" text-anchor="end" font-size="11.5" fill="#18480d" font-weight="700" letter-spacing="1">SCSI TO NVMe</text>
+<text x="322" y="453" font-size="15" fill="#18480d" font-weight="700">D, Dl or E on v6 or v7</text>
+<text x="322" y="473" font-size="12" fill="#18480d" >Generation 2 only. Windows Server 2019 and later.</text>
+</g>
+</g>
+<text x="8" y="516" font-size="13" fill="#6c6c6c" >A machine keeps its processor maker: Intel stays Intel, and AMD stays AMD.</text>
+<text x="8" y="536" font-size="13" fill="#6c6c6c" >A machine on an F, Fs or Fsv2 size gets a D, Dl or E size.</text>
+</g>
+</svg>

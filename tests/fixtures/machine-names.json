@@ -1,0 +1,47 @@
+{
+  "why": "VMID-CASE-1: one rule for the name a person reads, held by the dashboard (VmfHelp.machineName) and the engine (Get-VmfMachineName). Azure gives some resource IDs with the resource group or the machine name in upper case, so a name cut from the ID can show APP-01 for the machine app-01. The records hold the name itself: the capture read from the machine, then the assessment. A recorded name is used only when it is the ID's last part, ignoring case.",
+  "cases": [
+    {
+      "case": "the capture spells the name, and the ID is in upper case",
+      "vmId": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/RG-APP/providers/Microsoft.Compute/virtualMachines/APP-01",
+      "captured": "app-01",
+      "assessed": "APP-01",
+      "want": "app-01"
+    },
+    {
+      "case": "no capture yet, so the assessment spells the name",
+      "vmId": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/RG-APP/providers/Microsoft.Compute/virtualMachines/APP-02",
+      "captured": null,
+      "assessed": "app-02",
+      "want": "app-02"
+    },
+    {
+      "case": "no record, so the ID's last part",
+      "vmId": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/RG-APP/providers/Microsoft.Compute/virtualMachines/APP-03",
+      "captured": null,
+      "assessed": null,
+      "want": "APP-03"
+    },
+    {
+      "case": "a recorded name of another machine never renames this one",
+      "vmId": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-app/providers/Microsoft.Compute/virtualMachines/app-04",
+      "captured": "db-01",
+      "assessed": "web-01",
+      "want": "app-04"
+    },
+    {
+      "case": "an empty recorded name is not a name",
+      "vmId": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-app/providers/Microsoft.Compute/virtualMachines/App-05",
+      "captured": "",
+      "assessed": "app-05",
+      "want": "app-05"
+    },
+    {
+      "case": "the capture comes before the assessment when both fit",
+      "vmId": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-app/providers/Microsoft.Compute/virtualMachines/app-06",
+      "captured": "App-06",
+      "assessed": "APP-06",
+      "want": "App-06"
+    }
+  ]
+}

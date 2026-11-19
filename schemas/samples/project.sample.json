@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "projectId": "contoso-datacentre-exit",
+  "name": "Contoso datacentre exit",
+  "createdUtc": "2026-09-01T14:20:00.0000000Z",
+  "createdBy": "sam@contoso.com",
+  "scope": {
+    "subscriptions": ["00000000-0000-0000-0000-000000000000"],
+    "managementGroup": null,
+    "resourceGroups": ["rg-contoso-apps", "rg-contoso-data"]
+  },
+  "note": "Everything leaving the Slough datacentre before the lease ends in March."
+}

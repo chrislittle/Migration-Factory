@@ -1,0 +1,40 @@
+{
+  "schema": "vmf.guest/2",
+  "script": "Test-NvmeReady.ps1",
+  "version": "1.0.0",
+  "os": "Microsoft Windows Server 2022 Datacenter (10.0.20348)",
+  "result": "NEEDS_PREP",
+  "checks": [
+    {
+      "name": "stornvme.sys",
+      "status": "PASS",
+      "detail": "version 10.0.20348.1"
+    },
+    {
+      "name": "ControlSet001\\stornvme Start",
+      "status": "PASS",
+      "detail": "0 (Boot)"
+    },
+    {
+      "name": "ControlSet001\\stornvme StartOverride",
+      "status": "FAIL",
+      "detail": "present (value=3) overrides Start to demand-start"
+    },
+    {
+      "name": "ControlSet002\\stornvme StartOverride",
+      "status": "FAIL",
+      "detail": "present (value=3)"
+    },
+    {
+      "name": "ControlSet001\\pci Start",
+      "status": "PASS",
+      "detail": "0 (Boot)"
+    }
+  ],
+  "facts": {
+    "os": "Windows",
+    "osVersion": "10.0.20348",
+    "ioTimeout": "ControlSet001=240 ControlSet002=240"
+  },
+  "warnings": []
+}

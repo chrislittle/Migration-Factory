@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 2,
+  "cycleStartedUtc": "2026-11-02T03:30:01.2345678Z",
+  "lastPassUtc": "2026-11-02T04:30:00.9876543Z",
+  "finishedUtc": "2026-11-02T04:31:12.0000000Z",
+  "passesInCycle": 2,
+  "runsInStore": 42,
+  "runsExamined": 42,
+  "runsWithCopiesDue": 1,
+  "machinesDue": 3,
+  "executionsStarted": [
+    { "runId": "contoso-exit/wave-plan-1", "machines": 3, "execution": "vmf-engine-retention-abc123" }
+  ],
+  "failures": [],
+  "resumeAtRunId": null,
+  "resumeStops": 0,
+  "slowestRun": { "runId": "contoso-exit/wave-plan-1", "milliseconds": 8412, "reportMs": 5120, "summaryMs": 1904, "copiesMs": 1388 },
+  "nextPassUtc": "2026-11-03T03:30:00.0000000Z"
+}

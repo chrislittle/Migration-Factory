@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://vmf.local/schemas/lease.schema.json",
+  "title": "VMF machine lease",
+  "description": "WAVE-RUNNING-LEASE-1: the hold one job has on one machine, at leases/<machine key>.lease in the run. A wave worker, a restore or a rebuild makes it with the store's exclusive create, renews heartbeatUtc while it works, and removes it when it ends. The Migrations page and the wave editor read it, so a wave whose machine is held reads as running there, as it does in the engine (Get-VmfMachineHold). A lease written before version 1 had no schemaVersion; a lease lives only while its job runs, so none is kept for long.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "vmId", "workerId", "acquiredUtc", "heartbeatUtc"],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "vmId": { "type": "string", "minLength": 1, "description": "The Azure resource ID of the machine, as the plan spells it. A worker also holds an availability set while it converts one of its machines: then this is 'group-avset/' and the set's ID in lower case, and no plan entry has it." },
+    "workerId": { "type": "string", "minLength": 1, "description": "Who holds the machine. 'restore:<operation id>' is a restore; any other value is a wave worker." },
+    "acquiredUtc": { "type": "string", "description": "When the hold was taken, ISO 8601 UTC." },
+    "heartbeatUtc": { "type": "string", "description": "When the holder last renewed it, ISO 8601 UTC. A wave worker's hold older than the lease limit (900 seconds) on a machine whose state is final belongs to a worker that stopped, and the service removes it at its next check." }
+  }
+}

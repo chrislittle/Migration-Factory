@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "updatedUtc": "2026-10-31",
+  "why": "DISCLAIMER-1: the words that say the product is not an official Microsoft product and that Microsoft does not support it. They are written once, here. The report and the install read this file. The dashboard pages carry a copy in help.js and the manual has the full notice on its Disclaimer page; tests/unit/Disclaimer.Tests.ps1 holds both copies to this file, and this file to the agreed words. Change them only with the agreement of the owner.",
+  "fields": {
+    "shortLine": "The short line: at the foot of every dashboard page, and in every report and download.",
+    "title": "The title of the full notice.",
+    "paragraphs": "The full notice, one paragraph each: at the first sign-in in a browser, on the manual page and in the install."
+  },
+  "shortLine": "Migration Factory is not an official Microsoft product. Microsoft does not support or endorse it. It is provided as is, with no warranty.",
+  "title": "Disclaimer",
+  "paragraphs": [
+    "Migration Factory is not an official Microsoft product. Microsoft does not support, sponsor or endorse it.",
+    "Do not open an Azure support request for the product. Report a problem with the product on its GitHub repository.",
+    "The product is provided as is, with no warranty, under the Apache License 2.0. You are responsible for the changes it makes in your subscriptions. Test it on machines that are not in production first."
+  ]
+}

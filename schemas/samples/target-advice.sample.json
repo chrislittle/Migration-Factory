@@ -1,0 +1,1122 @@
+{
+  "schemaVersion": 33,
+  "assessmentId": "contoso-scan-1",
+  "assessmentHash": "0000000000000000000000000000000000000000000000000000000000000000",
+  "generatedUtc": "2026-09-26T18:00:00Z",
+  "regions": [
+    {
+      "location": "centralus",
+      "read": true
+    }
+  ],
+  "machines": [
+    {
+      "vmId": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-app/providers/Microsoft.Compute/virtualMachines/app-01",
+      "name": "app-01",
+      "os": "Linux",
+      "osVersion": "22_04-lts-gen2",
+      "gen": "V2",
+      "location": "centralus",
+      "sourceSize": "Standard_D2ds_v4",
+      "diskController": "SCSI",
+      "osDiskType": "Standard_LRS",
+      "sourceStage": {
+        "stage": "Extended",
+        "basis": "stated"
+      },
+      "identityType": "None",
+      "acceleratedNicCount": 0,
+      "processor": "Intel",
+      "linuxRelease": {
+        "distroId": "ubuntu",
+        "version": "22.04",
+        "source": "image",
+        "mana": "listed",
+        "manaUpgrade": null
+      },
+      "eusImage": null,
+      "options": [
+        {
+          "option": "v5",
+          "supported": true,
+          "notSupported": [],
+          "targetSize": "Standard_D2ds_v5",
+          "sizeUnverified": false,
+          "sizesNotTaken": [],
+          "path": "A",
+          "blockers": [],
+          "prep": [],
+          "move": "scsi-resize",
+          "preview": false,
+          "tempDisksFrom": 1,
+          "tempDisksTo": 1,
+          "targetStage": {
+            "stage": "Extended",
+            "basis": "stated"
+          },
+          "stageChange": "same",
+          "acceleratedNetworking": {
+            "required": true,
+            "mayUseMana": true,
+            "turnsOn": true,
+            "keptOn": null,
+            "keptOnWhy": null
+          },
+          "stops": [
+            "acceleratedNetworkingRequired"
+          ],
+          "sizeChoices": [],
+          "premiumDisks": true,
+          "burstableEnds": false,
+          "burstableKept": false,
+          "burstableTarget": null,
+          "processorChange": false,
+          "processor": "Intel"
+        },
+        {
+          "option": "v6",
+          "supported": true,
+          "notSupported": [],
+          "targetSize": "Standard_D2ds_v6",
+          "sizeUnverified": false,
+          "sizesNotTaken": [],
+          "path": "A",
+          "blockers": [],
+          "prep": [
+            "linux-nvme-prep"
+          ],
+          "move": "nvme-conversion",
+          "preview": false,
+          "tempDisksFrom": 1,
+          "tempDisksTo": null,
+          "targetStage": {
+            "stage": "Current",
+            "basis": "stated"
+          },
+          "stageChange": "up",
+          "acceleratedNetworking": {
+            "required": true,
+            "mayUseMana": true,
+            "turnsOn": true,
+            "keptOn": null,
+            "keptOnWhy": null
+          },
+          "stops": [
+            "acceleratedNetworkingRequired"
+          ],
+          "sizeChoices": [],
+          "premiumDisks": true,
+          "burstableEnds": false,
+          "burstableKept": false,
+          "burstableTarget": null,
+          "processorChange": false,
+          "processor": "Intel"
+        },
+        {
+          "option": "v7",
+          "supported": false,
+          "notSupported": [
+            "not-in-region"
+          ],
+          "targetSize": null,
+          "sizeUnverified": false,
+          "sizesNotTaken": [],
+          "path": "MANUAL",
+          "blockers": [],
+          "prep": [
+            "linux-nvme-prep"
+          ],
+          "move": "nvme-conversion",
+          "preview": false,
+          "tempDisksFrom": 1,
+          "tempDisksTo": null,
+          "targetStage": null,
+          "stageChange": "unknown",
+          "acceleratedNetworking": {
+            "required": null,
+            "mayUseMana": null,
+            "turnsOn": null,
+            "keptOn": null,
+            "keptOnWhy": null
+          },
+          "stops": [],
+          "sizeChoices": [],
+          "premiumDisks": null,
+          "burstableEnds": null,
+          "burstableKept": null,
+          "burstableTarget": null,
+          "processorChange": null,
+          "processor": null
+        }
+      ],
+      "start": {
+        "current": "v6",
+        "extended": "v5"
+      }
+    },
+    {
+      "vmId": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-app/providers/Microsoft.Compute/virtualMachines/legacy-01",
+      "name": "legacy-01",
+      "os": "Windows",
+      "osVersion": "2019-Datacenter",
+      "gen": "V1",
+      "location": "centralus",
+      "sourceSize": "Standard_D2s_v4",
+      "diskController": null,
+      "osDiskType": "Standard_LRS",
+      "sourceStage": {
+        "stage": "Extended",
+        "basis": "stated"
+      },
+      "identityType": "None",
+      "acceleratedNicCount": 1,
+      "processor": "Intel",
+      "linuxRelease": null,
+      "eusImage": null,
+      "options": [
+        {
+          "option": "v5",
+          "supported": true,
+          "notSupported": [],
+          "targetSize": "Standard_D2s_v5",
+          "sizeUnverified": false,
+          "sizesNotTaken": [],
+          "path": "A",
+          "blockers": [],
+          "prep": [],
+          "move": "scsi-resize",
+          "preview": false,
+          "tempDisksFrom": 0,
+          "tempDisksTo": 0,
+          "targetStage": {
+            "stage": "Extended",
+            "basis": "stated"
+          },
+          "stageChange": "same",
+          "acceleratedNetworking": {
+            "required": true,
+            "mayUseMana": true,
+            "turnsOn": false,
+            "keptOn": true,
+            "keptOnWhy": null
+          },
+          "stops": [],
+          "sizeChoices": [
+            {
+              "size": "Standard_D2s_v5",
+              "family": "D",
+              "variant": "default",
+              "vcpus": 2,
+              "activeVcpus": 2,
+              "memoryGB": 8,
+              "best": true,
+              "path": "A",
+              "preview": false,
+              "tempDisksTo": 0,
+              "sizeUnverified": false,
+              "acceleratedNetworking": {
+                "required": true,
+                "mayUseMana": true,
+                "turnsOn": false,
+                "keptOn": true,
+                "keptOnWhy": null
+              },
+              "stops": [],
+              "premiumDisks": true,
+              "targetStage": {
+                "stage": "Extended",
+                "basis": "stated"
+              },
+              "stageChange": "same",
+              "burstableEnds": false,
+              "burstableKept": false,
+              "prep": []
+            },
+            {
+              "size": "Standard_E2s_v5",
+              "family": "E",
+              "variant": "default",
+              "vcpus": 2,
+              "activeVcpus": 2,
+              "memoryGB": 16,
+              "best": false,
+              "path": "A",
+              "preview": false,
+              "tempDisksTo": 0,
+              "sizeUnverified": false,
+              "acceleratedNetworking": {
+                "required": true,
+                "mayUseMana": true,
+                "turnsOn": false,
+                "keptOn": true,
+                "keptOnWhy": null
+              },
+              "stops": [],
+              "premiumDisks": true,
+              "targetStage": {
+                "stage": "Extended",
+                "basis": "stated"
+              },
+              "stageChange": "same",
+              "burstableEnds": false,
+              "burstableKept": false,
+              "prep": []
+            }
+          ],
+          "premiumDisks": true,
+          "burstableEnds": false,
+          "burstableKept": false,
+          "burstableTarget": null,
+          "processorChange": false,
+          "processor": "Intel"
+        },
+        {
+          "option": "v6",
+          "supported": false,
+          "notSupported": [
+            "gen1-requires-redeploy"
+          ],
+          "targetSize": null,
+          "sizeUnverified": false,
+          "sizesNotTaken": [],
+          "path": "MANUAL",
+          "blockers": [
+            "gen1-requires-redeploy"
+          ],
+          "prep": [],
+          "move": "nvme-conversion",
+          "preview": false,
+          "tempDisksFrom": 0,
+          "tempDisksTo": null,
+          "targetStage": null,
+          "stageChange": "unknown",
+          "acceleratedNetworking": {
+            "required": null,
+            "mayUseMana": null,
+            "turnsOn": null,
+            "keptOn": null,
+            "keptOnWhy": null
+          },
+          "stops": [],
+          "sizeChoices": [],
+          "premiumDisks": null,
+          "burstableEnds": null,
+          "burstableKept": null,
+          "burstableTarget": null,
+          "processorChange": null,
+          "processor": null
+        },
+        {
+          "option": "v7",
+          "supported": false,
+          "notSupported": [
+            "gen1-requires-redeploy"
+          ],
+          "targetSize": null,
+          "sizeUnverified": false,
+          "sizesNotTaken": [],
+          "path": "MANUAL",
+          "blockers": [
+            "gen1-requires-redeploy"
+          ],
+          "prep": [],
+          "move": "nvme-conversion",
+          "preview": false,
+          "tempDisksFrom": 0,
+          "tempDisksTo": null,
+          "targetStage": null,
+          "stageChange": "unknown",
+          "acceleratedNetworking": {
+            "required": null,
+            "mayUseMana": null,
+            "turnsOn": null,
+            "keptOn": null,
+            "keptOnWhy": null
+          },
+          "stops": [],
+          "sizeChoices": [],
+          "premiumDisks": null,
+          "burstableEnds": null,
+          "burstableKept": null,
+          "burstableTarget": null,
+          "processorChange": null,
+          "processor": null
+        }
+      ],
+      "start": {
+        "current": "v5",
+        "extended": "v5"
+      }
+    },
+    {
+      "vmId": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-web/providers/Microsoft.Compute/virtualMachines/web-07",
+      "name": "web-07",
+      "os": "Windows",
+      "osVersion": "2022-datacenter-g2",
+      "gen": "V2",
+      "location": "centralus",
+      "sourceSize": "Standard_D4s_v3",
+      "diskController": "SCSI",
+      "osDiskType": "StandardSSD_LRS",
+      "sourceStage": {
+        "stage": "End of Life",
+        "basis": "stated"
+      },
+      "identityType": "SystemAssigned",
+      "acceleratedNicCount": 1,
+      "processor": "Intel",
+      "linuxRelease": null,
+      "eusImage": null,
+      "options": [
+        {
+          "option": "v5",
+          "supported": true,
+          "notSupported": [],
+          "targetSize": "Standard_D4ds_v5",
+          "sizeUnverified": false,
+          "sizesNotTaken": [],
+          "path": "A",
+          "blockers": [],
+          "prep": [],
+          "move": "scsi-resize",
+          "preview": false,
+          "tempDisksFrom": 1,
+          "tempDisksTo": 1,
+          "targetStage": {
+            "stage": "Extended",
+            "basis": "stated"
+          },
+          "stageChange": "up",
+          "acceleratedNetworking": {
+            "required": true,
+            "mayUseMana": true,
+            "turnsOn": false,
+            "keptOn": true,
+            "keptOnWhy": null
+          },
+          "stops": [],
+          "sizeChoices": [
+            {
+              "size": "Standard_D4ds_v5",
+              "family": "D",
+              "variant": "default",
+              "vcpus": 4,
+              "activeVcpus": 4,
+              "memoryGB": 16,
+              "best": true,
+              "path": "A",
+              "preview": false,
+              "tempDisksTo": 1,
+              "sizeUnverified": false,
+              "acceleratedNetworking": {
+                "required": true,
+                "mayUseMana": true,
+                "turnsOn": false,
+                "keptOn": true,
+                "keptOnWhy": null
+              },
+              "stops": [],
+              "premiumDisks": true,
+              "targetStage": {
+                "stage": "Extended",
+                "basis": "stated"
+              },
+              "stageChange": "up",
+              "burstableEnds": false,
+              "burstableKept": false,
+              "prep": []
+            },
+            {
+              "size": "Standard_D4s_v5",
+              "family": "D",
+              "variant": "default",
+              "vcpus": 4,
+              "activeVcpus": 4,
+              "memoryGB": 16,
+              "best": false,
+              "path": "A",
+              "preview": true,
+              "tempDisksTo": 0,
+              "sizeUnverified": false,
+              "acceleratedNetworking": {
+                "required": true,
+                "mayUseMana": true,
+                "turnsOn": false,
+                "keptOn": true,
+                "keptOnWhy": null
+              },
+              "stops": [],
+              "premiumDisks": true,
+              "targetStage": {
+                "stage": "Extended",
+                "basis": "stated"
+              },
+              "stageChange": "up",
+              "burstableEnds": false,
+              "burstableKept": false,
+              "prep": [
+                "pagefile"
+              ]
+            }
+          ],
+          "premiumDisks": true,
+          "burstableEnds": false,
+          "burstableKept": false,
+          "burstableTarget": null,
+          "processorChange": false,
+          "processor": "Intel"
+        },
+        {
+          "option": "v6",
+          "supported": true,
+          "notSupported": [],
+          "targetSize": "Standard_D4ds_v6",
+          "sizeUnverified": false,
+          "sizesNotTaken": [],
+          "path": "A",
+          "blockers": [],
+          "prep": [],
+          "move": "nvme-conversion",
+          "preview": true,
+          "tempDisksFrom": 1,
+          "tempDisksTo": 1,
+          "targetStage": {
+            "stage": "Current",
+            "basis": "stated"
+          },
+          "stageChange": "up",
+          "acceleratedNetworking": {
+            "required": true,
+            "mayUseMana": true,
+            "turnsOn": false,
+            "keptOn": true,
+            "keptOnWhy": null
+          },
+          "stops": [],
+          "sizeChoices": [
+            {
+              "size": "Standard_D4ds_v6",
+              "family": "D",
+              "variant": "default",
+              "vcpus": 4,
+              "activeVcpus": 4,
+              "memoryGB": 16,
+              "best": true,
+              "path": "A",
+              "preview": true,
+              "tempDisksTo": 1,
+              "sizeUnverified": false,
+              "acceleratedNetworking": {
+                "required": true,
+                "mayUseMana": true,
+                "turnsOn": false,
+                "keptOn": true,
+                "keptOnWhy": null
+              },
+              "stops": [],
+              "premiumDisks": true,
+              "targetStage": {
+                "stage": "Current",
+                "basis": "stated"
+              },
+              "stageChange": "up",
+              "burstableEnds": false,
+              "burstableKept": false,
+              "prep": []
+            },
+            {
+              "size": "Standard_D4s_v6",
+              "family": "D",
+              "variant": "default",
+              "vcpus": 4,
+              "activeVcpus": 4,
+              "memoryGB": 16,
+              "best": false,
+              "path": "A",
+              "preview": true,
+              "tempDisksTo": 0,
+              "sizeUnverified": false,
+              "acceleratedNetworking": {
+                "required": true,
+                "mayUseMana": true,
+                "turnsOn": false,
+                "keptOn": true,
+                "keptOnWhy": null
+              },
+              "stops": [],
+              "premiumDisks": true,
+              "targetStage": {
+                "stage": "Current",
+                "basis": "stated"
+              },
+              "stageChange": "up",
+              "burstableEnds": false,
+              "burstableKept": false,
+              "prep": []
+            }
+          ],
+          "premiumDisks": true,
+          "burstableEnds": false,
+          "burstableKept": false,
+          "burstableTarget": null,
+          "processorChange": false,
+          "processor": "Intel"
+        },
+        {
+          "option": "v7",
+          "supported": true,
+          "notSupported": [],
+          "targetSize": "Standard_D4ds_v7",
+          "sizeUnverified": false,
+          "sizesNotTaken": [],
+          "path": "A",
+          "blockers": [],
+          "prep": [],
+          "move": "nvme-conversion",
+          "preview": true,
+          "tempDisksFrom": 1,
+          "tempDisksTo": 1,
+          "targetStage": {
+            "stage": "Current",
+            "basis": "stated"
+          },
+          "stageChange": "up",
+          "acceleratedNetworking": {
+            "required": false,
+            "mayUseMana": true,
+            "turnsOn": false,
+            "keptOn": true,
+            "keptOnWhy": null
+          },
+          "stops": [],
+          "sizeChoices": [
+            {
+              "size": "Standard_D4ds_v7",
+              "family": "D",
+              "variant": "default",
+              "vcpus": 4,
+              "activeVcpus": 4,
+              "memoryGB": 16,
+              "best": true,
+              "path": "A",
+              "preview": true,
+              "tempDisksTo": 1,
+              "sizeUnverified": false,
+              "acceleratedNetworking": {
+                "required": false,
+                "mayUseMana": true,
+                "turnsOn": false,
+                "keptOn": true,
+                "keptOnWhy": null
+              },
+              "stops": [],
+              "premiumDisks": true,
+              "targetStage": {
+                "stage": "Current",
+                "basis": "stated"
+              },
+              "stageChange": "up",
+              "burstableEnds": false,
+              "burstableKept": false,
+              "prep": []
+            },
+            {
+              "size": "Standard_D4s_v7",
+              "family": "D",
+              "variant": "default",
+              "vcpus": 4,
+              "activeVcpus": 4,
+              "memoryGB": 16,
+              "best": false,
+              "path": "A",
+              "preview": true,
+              "tempDisksTo": 0,
+              "sizeUnverified": false,
+              "acceleratedNetworking": {
+                "required": false,
+                "mayUseMana": true,
+                "turnsOn": false,
+                "keptOn": true,
+                "keptOnWhy": null
+              },
+              "stops": [],
+              "premiumDisks": true,
+              "targetStage": {
+                "stage": "Current",
+                "basis": "stated"
+              },
+              "stageChange": "up",
+              "burstableEnds": false,
+              "burstableKept": false,
+              "prep": []
+            }
+          ],
+          "premiumDisks": true,
+          "burstableEnds": false,
+          "burstableKept": false,
+          "burstableTarget": null,
+          "processorChange": false,
+          "processor": "Intel"
+        }
+      ],
+      "start": {
+        "current": "v6",
+        "extended": "v5"
+      }
+    },
+    {
+      "vmId": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-web/providers/Microsoft.Compute/virtualMachines/tools-02",
+      "name": "tools-02",
+      "os": "Linux",
+      "osVersion": "22_04-lts-gen2",
+      "gen": "V2",
+      "location": "centralus",
+      "sourceSize": "Standard_B2ms",
+      "diskController": "SCSI",
+      "osDiskType": null,
+      "sourceStage": {
+        "stage": "End of Life",
+        "basis": "stated"
+      },
+      "identityType": "None",
+      "acceleratedNicCount": 0,
+      "processor": "Intel",
+      "linuxRelease": {
+        "distroId": "ubuntu",
+        "version": "22.04",
+        "source": "image",
+        "mana": "listed",
+        "manaUpgrade": null
+      },
+      "eusImage": null,
+      "options": [
+        {
+          "option": "v5",
+          "supported": true,
+          "notSupported": [],
+          "targetSize": "Standard_B2s_v2",
+          "sizeUnverified": false,
+          "sizesNotTaken": [],
+          "path": "A",
+          "blockers": [],
+          "prep": [],
+          "move": "scsi-resize",
+          "preview": false,
+          "tempDisksFrom": 1,
+          "tempDisksTo": 0,
+          "targetStage": {
+            "stage": "Current",
+            "basis": "derived"
+          },
+          "stageChange": "up",
+          "acceleratedNetworking": {
+            "required": false,
+            "mayUseMana": true,
+            "turnsOn": null,
+            "keptOn": null,
+            "keptOnWhy": null
+          },
+          "stops": [],
+          "sizeChoices": [
+            {
+              "size": "Standard_B2s_v2",
+              "family": "Bsv2",
+              "variant": "default",
+              "vcpus": 2,
+              "activeVcpus": 2,
+              "memoryGB": 8.0,
+              "best": true,
+              "path": "A",
+              "preview": false,
+              "tempDisksTo": 0,
+              "sizeUnverified": false,
+              "acceleratedNetworking": {
+                "required": false,
+                "mayUseMana": true,
+                "turnsOn": null,
+                "keptOn": null,
+                "keptOnWhy": null
+              },
+              "stops": [],
+              "premiumDisks": true,
+              "targetStage": {
+                "stage": "Current",
+                "basis": "derived"
+              },
+              "stageChange": "up",
+              "burstableEnds": false,
+              "burstableKept": true,
+              "prep": []
+            },
+            {
+              "size": "Standard_D4lds_v5",
+              "family": "Dl",
+              "variant": "default",
+              "vcpus": 4,
+              "activeVcpus": 4,
+              "memoryGB": 8.0,
+              "best": false,
+              "path": "A",
+              "preview": false,
+              "tempDisksTo": 1,
+              "sizeUnverified": false,
+              "acceleratedNetworking": {
+                "required": true,
+                "mayUseMana": true,
+                "turnsOn": true,
+                "keptOn": null,
+                "keptOnWhy": null
+              },
+              "stops": [
+                "acceleratedNetworkingRequired"
+              ],
+              "premiumDisks": true,
+              "targetStage": {
+                "stage": "Extended",
+                "basis": "stated"
+              },
+              "stageChange": "up",
+              "burstableEnds": true,
+              "burstableKept": false,
+              "prep": []
+            },
+            {
+              "size": "Standard_D2ds_v5",
+              "family": "D",
+              "variant": "default",
+              "vcpus": 2,
+              "activeVcpus": 2,
+              "memoryGB": 8.0,
+              "best": false,
+              "path": "A",
+              "preview": false,
+              "tempDisksTo": 1,
+              "sizeUnverified": false,
+              "acceleratedNetworking": {
+                "required": true,
+                "mayUseMana": true,
+                "turnsOn": true,
+                "keptOn": null,
+                "keptOnWhy": null
+              },
+              "stops": [
+                "acceleratedNetworkingRequired"
+              ],
+              "premiumDisks": true,
+              "targetStage": {
+                "stage": "Extended",
+                "basis": "stated"
+              },
+              "stageChange": "up",
+              "burstableEnds": true,
+              "burstableKept": false,
+              "prep": []
+            },
+            {
+              "size": "Standard_E2ds_v5",
+              "family": "E",
+              "variant": "default",
+              "vcpus": 2,
+              "activeVcpus": 2,
+              "memoryGB": 16.0,
+              "best": false,
+              "path": "A",
+              "preview": false,
+              "tempDisksTo": 1,
+              "sizeUnverified": false,
+              "acceleratedNetworking": {
+                "required": true,
+                "mayUseMana": true,
+                "turnsOn": true,
+                "keptOn": null,
+                "keptOnWhy": null
+              },
+              "stops": [
+                "acceleratedNetworkingRequired"
+              ],
+              "premiumDisks": true,
+              "targetStage": {
+                "stage": "Extended",
+                "basis": "stated"
+              },
+              "stageChange": "up",
+              "burstableEnds": true,
+              "burstableKept": false,
+              "prep": []
+            }
+          ],
+          "premiumDisks": true,
+          "burstableEnds": false,
+          "burstableKept": true,
+          "burstableTarget": "offered",
+          "processorChange": false,
+          "processor": "Intel"
+        },
+        {
+          "option": "v6",
+          "supported": true,
+          "notSupported": [],
+          "targetSize": "Standard_D2ds_v6",
+          "sizeUnverified": false,
+          "sizesNotTaken": [],
+          "path": "A",
+          "blockers": [],
+          "prep": [],
+          "move": "nvme-conversion",
+          "preview": false,
+          "tempDisksFrom": 1,
+          "tempDisksTo": null,
+          "targetStage": {
+            "stage": "Current",
+            "basis": "stated"
+          },
+          "stageChange": "up",
+          "acceleratedNetworking": {
+            "required": true,
+            "mayUseMana": true,
+            "turnsOn": true,
+            "keptOn": null,
+            "keptOnWhy": null
+          },
+          "stops": [
+            "acceleratedNetworkingRequired"
+          ],
+          "sizeChoices": [
+            {
+              "size": "Standard_D4lds_v6",
+              "family": "Dl",
+              "variant": "default",
+              "vcpus": 4,
+              "activeVcpus": 4,
+              "memoryGB": 8.0,
+              "best": false,
+              "path": "A",
+              "preview": false,
+              "tempDisksTo": null,
+              "sizeUnverified": false,
+              "acceleratedNetworking": {
+                "required": true,
+                "mayUseMana": true,
+                "turnsOn": true,
+                "keptOn": null,
+                "keptOnWhy": null
+              },
+              "stops": [
+                "acceleratedNetworkingRequired"
+              ],
+              "premiumDisks": true,
+              "targetStage": {
+                "stage": "Current",
+                "basis": "stated"
+              },
+              "stageChange": "up",
+              "burstableEnds": true,
+              "burstableKept": false,
+              "prep": []
+            },
+            {
+              "size": "Standard_D2ds_v6",
+              "family": "D",
+              "variant": "default",
+              "vcpus": 2,
+              "activeVcpus": 2,
+              "memoryGB": 8.0,
+              "best": true,
+              "path": "A",
+              "preview": false,
+              "tempDisksTo": null,
+              "sizeUnverified": false,
+              "acceleratedNetworking": {
+                "required": true,
+                "mayUseMana": true,
+                "turnsOn": true,
+                "keptOn": null,
+                "keptOnWhy": null
+              },
+              "stops": [
+                "acceleratedNetworkingRequired"
+              ],
+              "premiumDisks": true,
+              "targetStage": {
+                "stage": "Current",
+                "basis": "stated"
+              },
+              "stageChange": "up",
+              "burstableEnds": true,
+              "burstableKept": false,
+              "prep": []
+            },
+            {
+              "size": "Standard_E2ds_v6",
+              "family": "E",
+              "variant": "default",
+              "vcpus": 2,
+              "activeVcpus": 2,
+              "memoryGB": 16.0,
+              "best": false,
+              "path": "A",
+              "preview": false,
+              "tempDisksTo": null,
+              "sizeUnverified": false,
+              "acceleratedNetworking": {
+                "required": true,
+                "mayUseMana": true,
+                "turnsOn": true,
+                "keptOn": null,
+                "keptOnWhy": null
+              },
+              "stops": [
+                "acceleratedNetworkingRequired"
+              ],
+              "premiumDisks": true,
+              "targetStage": {
+                "stage": "Current",
+                "basis": "stated"
+              },
+              "stageChange": "up",
+              "burstableEnds": true,
+              "burstableKept": false,
+              "prep": []
+            }
+          ],
+          "premiumDisks": true,
+          "burstableEnds": true,
+          "burstableKept": false,
+          "burstableTarget": null,
+          "processorChange": false,
+          "processor": "Intel"
+        },
+        {
+          "option": "v7",
+          "supported": true,
+          "notSupported": [],
+          "targetSize": "Standard_D2ds_v7",
+          "sizeUnverified": false,
+          "sizesNotTaken": [],
+          "path": "A",
+          "blockers": [],
+          "prep": [],
+          "move": "nvme-conversion",
+          "preview": false,
+          "tempDisksFrom": 1,
+          "tempDisksTo": null,
+          "targetStage": {
+            "stage": "Current",
+            "basis": "stated"
+          },
+          "stageChange": "up",
+          "acceleratedNetworking": {
+            "required": false,
+            "mayUseMana": true,
+            "turnsOn": null,
+            "keptOn": null,
+            "keptOnWhy": null
+          },
+          "stops": [],
+          "sizeChoices": [
+            {
+              "size": "Standard_D4lds_v7",
+              "family": "Dl",
+              "variant": "default",
+              "vcpus": 4,
+              "activeVcpus": 4,
+              "memoryGB": 8.0,
+              "best": false,
+              "path": "A",
+              "preview": false,
+              "tempDisksTo": null,
+              "sizeUnverified": false,
+              "acceleratedNetworking": {
+                "required": false,
+                "mayUseMana": true,
+                "turnsOn": null,
+                "keptOn": null,
+                "keptOnWhy": null
+              },
+              "stops": [],
+              "premiumDisks": true,
+              "targetStage": {
+                "stage": "Current",
+                "basis": "stated"
+              },
+              "stageChange": "up",
+              "burstableEnds": true,
+              "burstableKept": false,
+              "prep": []
+            },
+            {
+              "size": "Standard_D2ds_v7",
+              "family": "D",
+              "variant": "default",
+              "vcpus": 2,
+              "activeVcpus": 2,
+              "memoryGB": 8.0,
+              "best": true,
+              "path": "A",
+              "preview": false,
+              "tempDisksTo": null,
+              "sizeUnverified": false,
+              "acceleratedNetworking": {
+                "required": false,
+                "mayUseMana": true,
+                "turnsOn": null,
+                "keptOn": null,
+                "keptOnWhy": null
+              },
+              "stops": [],
+              "premiumDisks": true,
+              "targetStage": {
+                "stage": "Current",
+                "basis": "stated"
+              },
+              "stageChange": "up",
+              "burstableEnds": true,
+              "burstableKept": false,
+              "prep": []
+            },
+            {
+              "size": "Standard_E2ds_v7",
+              "family": "E",
+              "variant": "default",
+              "vcpus": 2,
+              "activeVcpus": 2,
+              "memoryGB": 16.0,
+              "best": false,
+              "path": "A",
+              "preview": false,
+              "tempDisksTo": null,
+              "sizeUnverified": false,
+              "acceleratedNetworking": {
+                "required": false,
+                "mayUseMana": true,
+                "turnsOn": null,
+                "keptOn": null,
+                "keptOnWhy": null
+              },
+              "stops": [],
+              "premiumDisks": true,
+              "targetStage": {
+                "stage": "Current",
+                "basis": "stated"
+              },
+              "stageChange": "up",
+              "burstableEnds": true,
+              "burstableKept": false,
+              "prep": []
+            }
+          ],
+          "premiumDisks": true,
+          "burstableEnds": true,
+          "burstableKept": false,
+          "burstableTarget": null,
+          "processorChange": false,
+          "processor": "Intel"
+        }
+      ],
+      "start": {
+        "current": "v5",
+        "extended": "v5"
+      }
+    }
+  ]
+}

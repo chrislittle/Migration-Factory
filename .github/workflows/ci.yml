@@ -1,0 +1,177 @@
+name: CI
+
+# The checks of every pull request and every push to main. They are the same
+# checks the release ran before this code arrived here: the pinned Bicep, the
+# templates, every gate and the unit tests (tools/Invoke-VmfTests.ps1, one
+# tool, so no second copy of a rule), and the Linux checks of the guest
+# scripts and the schemas.
+#
+# GitHub-hosted runners only. A pull request from a fork runs here with a
+# read-only token and no secret, on a machine GitHub throws away after the job.
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+# A newer push to the same pull request replaces the run in progress. A push
+# to main is never cancelled.
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+jobs:
+  # One job per share of the test files, all at once, as the private CI does
+  # (CI-SHARD-1). The whole suite in one job took more than 60 minutes on a
+  # GitHub-hosted runner (the first release pull request, 2026-11-18). Share 1
+  # also runs every gate; the other shares run only their tests.
+  checks:
+    name: Gates and unit tests ${{ matrix.shard }} of ${{ strategy.job-total }} (Windows)
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3, 4]
+    runs-on: windows-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      # The Bicep CLI version is pinned in infra/bicep-version.json. The
+      # templates and the tests compile with that version.
+      - name: Bicep at the pinned version
+        shell: pwsh
+        run: |
+          ./tools/Sync-VmfBicepVersion.ps1
+
+      - name: Templates compile
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          foreach ($t in Get-ChildItem infra -Filter *.bicep) {
+            az bicep build --file $t.FullName --stdout > $null
+            if ($LASTEXITCODE -ne 0) { throw "$($t.Name) does not compile" }
+            Write-Host "compiled $($t.Name)"
+          }
+
+      - name: Ensure Pester + PSScriptAnalyzer are present, at the pinned versions
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          function Install-WithRetry {
+              param([string]$Name, [string]$Version)
+              for ($attempt = 1; $attempt -le 4; $attempt++) {
+                  try {
+                      Install-Module $Name -RequiredVersion $Version -Force -Scope CurrentUser -SkipPublisherCheck
+                      return
+                  }
+                  catch {
+                      if ($attempt -eq 4) { throw }
+                      $wait = [math]::Pow(2, $attempt) * 5
+                      Write-Host "::warning::$Name $Version install attempt $attempt failed ($($_.Exception.Message.Split([char]10)[0])) - retrying in $wait s"
+                      Start-Sleep -Seconds $wait
+                  }
+              }
+          }
+          foreach ($m in @(@('Pester', '5.9.1'), @('PSScriptAnalyzer', '1.25.0'))) {
+              if (Get-Module -ListAvailable $m[0] | Where-Object { $_.Version -eq $m[1] }) {
+                  Write-Host "$($m[0]) $($m[1]) already present"
+                  continue
+              }
+              Install-WithRetry -Name $m[0] -Version $m[1]
+          }
+
+      # The analyzer, Simplified Technical English, the UX strings, the
+      # dashboard's JavaScript tests, the tests that cannot fail (share 1
+      # only), and then this job's share of the Pester unit tests on the
+      # pinned Pester. The share's number and the count come from the matrix.
+      - name: Every gate and the unit tests
+        shell: pwsh
+        env:
+          VMF_SHARD: ${{ matrix.shard }}
+          VMF_SHARD_COUNT: ${{ strategy.job-total }}
+        run: |
+          $shard = [int]$env:VMF_SHARD
+          $count = [int]$env:VMF_SHARD_COUNT
+          if ($shard -eq 1) {
+            ./tools/Invoke-VmfTests.ps1 -Shard $shard -ShardCount $count
+          }
+          else {
+            ./tools/Invoke-VmfTests.ps1 -TestsOnly -Shard $shard -ShardCount $count
+          }
+          exit $LASTEXITCODE
+
+  linux-checks:
+    name: ShellCheck + schema validation (Linux)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      # pipx keeps check-jsonschema in its own environment: a pip install
+      # over the Debian-packaged jsonschema fails on Ubuntu 24.04.
+      - name: Tools for the job
+        run: |
+          command -v shellcheck >/dev/null 2>&1 || sudo apt-get install -y -q shellcheck
+          command -v check-jsonschema >/dev/null 2>&1 || pipx install check-jsonschema
+          shellcheck --version | grep version:
+          check-jsonschema --version
+
+      - name: ShellCheck guest scripts
+        run: |
+          shellcheck -S warning src/guest/linux/*.sh tests/linux/*.sh
+
+      # The guest scripts RUN, against fake /sys and /dev trees.
+      - name: Guest scripts behave
+        run: |
+          for t in tests/linux/*.test.sh; do
+            echo "== $t"
+            bash "$t" || exit 1
+          done
+
+      - name: Validate schemas compile and samples conform
+        run: |
+          for schema in schemas/*.schema.json; do
+            name=$(basename "$schema" .schema.json)
+            sample="schemas/samples/${name}.sample.json"
+            if [ -f "$sample" ]; then
+              echo "validating $sample against $schema"
+              check-jsonschema --schemafile "$schema" "$sample"
+            else
+              echo "::error::missing sample for $schema"; exit 1
+            fi
+          done
+
+  # ONE result for the whole run, for branch protection to require. It waits
+  # for every other job and passes only when each one passed: a job that
+  # failed, was cancelled or never ran is a failure here.
+  ci-result:
+    name: CI result
+    needs: [checks, linux-checks]
+    if: ${{ always() }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Every job passed
+        shell: pwsh
+        env:
+          VMF_NEEDS: ${{ toJSON(needs) }}
+        run: |
+          $needs = $env:VMF_NEEDS | ConvertFrom-Json -AsHashtable
+          if (-not $needs -or $needs.Count -eq 0) {
+            Write-Host '::error::No job results came to this job.'
+            exit 1
+          }
+          $failed = @()
+          foreach ($job in @($needs.Keys | Sort-Object)) {
+            $result = [string]$needs[$job].result
+            Write-Host "${job}: $result"
+            if ($result -ne 'success') { $failed += $job }
+          }
+          if ($failed.Count) {
+            Write-Host "::error::These jobs did not pass: $($failed -join ', ')."
+            exit 1
+          }
+          Write-Host 'Every job passed.'

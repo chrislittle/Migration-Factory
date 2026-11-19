@@ -1,0 +1,415 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://vmf.local/schemas/capacity-claim.schema.json",
+  "title": "VMF quota record",
+  "description": "One (wave x region x zone x size) cell of the demand matrix, with its quota/ODCR lifecycle.",
+  "type": "object",
+  "required": [
+    "schemaVersion",
+    "runId",
+    "wave",
+    "subscriptionId",
+    "resourceGroup",
+    "region",
+    "size",
+    "state",
+    "demand"
+  ],
+  "additionalProperties": false,
+  "allOf": [
+    {
+      "description": "OLD-VERSION-READERS-REMOVE-5: a record at RESERVING holds the resource IDs it asked Azure for. New-VmfWaveReservation, the only writer of RESERVING, records them in the same save, and the release and the read refuse a record without them rather than make a name.",
+      "if": {
+        "properties": { "state": { "const": "RESERVING" } },
+        "required": [ "state" ]
+      },
+      "then": { "required": [ "reservationAsked" ] }
+    }
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": 15,
+      "description": "15 (CRG-MOVE-DEMAND-1, 2026-11-07): demand.ownGroupVmIds. 14 (REGIONAL-QUOTA-BOTH-1): regionalShort and demand.regionalAdds. Every earlier version is in docs/schema-migrations.md."
+    },
+    "runId": {
+      "type": "string"
+    },
+    "wave": {
+      "type": "string"
+    },
+    "subscriptionId": {
+      "type": "string",
+      "minLength": 1,
+      "description": "ODCR-SUB-1: the subscription this cell\u2019s machines live in. A capacity reservation group is subscription-scoped - a VM can only associate with one in its own subscription - so a claim that cannot say which subscription it applies to cannot be acted on. Required, and never defaulted to the signed-in context."
+    },
+    "resourceGroup": {
+      "type": "string",
+      "minLength": 1,
+      "description": "CAPRG-1: the resource group a reservation for this cell is created in - the one its own machines are already in. A VM attaches to a reservation by the reservation group's full resource id, so the reservation only has to share the machines' SUBSCRIPTION and REGION; which resource group holds it does not affect whether they can use it. So the tool asks nobody: it uses the resource group the machines are in, which by definition exists and is one the operator can already see. When a cell's machines span several resource groups the one holding the most of them wins (ties broken by name, so it is deterministic), and it is recorded here so it is never a mystery where a reservation went."
+    },
+    "region": {
+      "type": "string"
+    },
+    "zone": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "size": {
+      "type": "string"
+    },
+    "vmFamily": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "Quota family, e.g. standardEADSv6Family. NULL when the size is not offered in the region, so there is no family to name - which is exactly when a claim is blocked and most worth reading."
+    },
+    "state": {
+      "type": "string",
+      "enum": [
+        "FORECAST",
+        "QUOTA_VERIFIED",
+        "QUOTA_REQUESTED",
+        "RESERVING",
+        "RESERVED",
+        "CONSUMED",
+        "RELEASED",
+        "BLOCKED"
+      ]
+    },
+    "blockReason": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "enum": [
+        "quota-shortfall",
+        "regional-quota-shortfall",
+        "sku-restricted",
+        "size-missing",
+        "reservation-failed",
+        null
+      ],
+      "description": "Why the state is BLOCKED, and the only thing that says so: of the four, ONLY 'reservation-failed' is about capacity - a quota is a limit, a restricted size is a policy, and a missing size is not offered in that region at all. 'reservation-failed' is written by New-VmfWaveReservation when an on-demand capacity reservation could not be created. BLOCKED-NAME-1: an earlier name of the state asserted the wrong cause three times in four. REGIONAL-VCPU-QUOTA-1 (v11) added regional-quota-shortfall: the size family has the vCPUs, and the subscription's Total Regional vCPUs quota in the region does not. It is a quota too, never capacity."
+    },
+    "regionalShort": {
+      "type": [
+        "boolean",
+        "null"
+      ],
+      "description": "REGIONAL-QUOTA-BOTH-1 (v14): the quota check's answer to whether the machines of this record are short of the subscription's Total Regional vCPUs quota in the region, whatever blockReason says: true when the region has fewer vCPUs free than the whole plan adds there (demand.regionalVcpus) and this record's machines add some (demand.regionalAdds above 0). A record blocked with quota-shortfall keeps that reason, because the family request is made for it; regionalShort true puts it in the regional request too, in the same press of Request an increase. NULL when it was not judged: Azure did not list the regional quota, or the record was blocked on its size before."
+    },
+    "notes": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "associatedVmIds": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "VMs the engine landed on this reservation (for release-time disassociation)"
+    },
+    "demand": {
+      "type": "object",
+      "required": [
+        "instances",
+        "reservableInstances",
+        "ownGroupVmIds",
+        "vcpus",
+        "familyVcpus",
+        "regionalVcpus",
+        "regionalAdds"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "instances": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Total demand of the cell - drives quota verification (AvSet members draw general quota)"
+        },
+        "reservableInstances": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "CAP-2: demand excluding availability-set members (Azure cannot associate AvSet VMs to reservations) - drives ODCR quantity. CRG-MOVE-DEMAND-1 (v15): it also excludes the machines in ownGroupVmIds."
+        },
+        "ownGroupVmIds": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "description": "CRG-MOVE-DEMAND-1 (v15): the machines of the record, by resource id, that the assessment found in a capacity reservation group this migration did not make (Test-VmfEntryReservable). CRG-MOVE-1 keeps each one in its own group through the move, so the reservation of the wave holds no place for it: reservableInstances leaves it out, as it leaves out an availability set member, and the price counts only the places reserved. Empty when there is none."
+        },
+        "vcpus": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "familyVcpus": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0,
+          "description": "QUOTA-FAMILY-1 (v10): the vCPUs the whole plan asks of this record's quota family, in its subscription and region, when the quota was checked - the number Test-VmfQuota judged the headroom against (ODCR-FAMILY-1). The dashboard shows it as vCPUs needed. NULL when the record has no family to total."
+        },
+        "regionalVcpus": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0,
+          "description": "REGIONAL-VCPU-QUOTA-1 (v11): the vCPUs the whole plan ADDS to the subscription's Total Regional vCPUs quota ('cores' in the usage list) in this record's region, when the quota was checked. Azure counts a machine's old size, deallocated or not, until its move gives it back, so each machine adds its new size's vCPUs less its old size's, never below 0. One machine's smaller size is never set against another machine's larger one, because the order they run in is not known. A machine that continues a move and is not on its new size yet adds its whole new size, and so does a machine a capacity reservation holds in a Reserved wave, because the reservation is made while the old machine still counts. Test-VmfQuota always writes it, 0 included, also when Azure did not list the regional quota (regionalLimit is then NULL); NULL is accepted for a record that has no total."
+        },
+        "regionalAdds": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0,
+          "description": "REGIONAL-QUOTA-WAVES-1 (v14): the vCPUs THIS record's machines add to the Total Regional vCPUs quota - its own part of regionalVcpus, worked out by the same rule (each machine's new size less its old one, never below 0; the whole new size for a machine a capacity reservation holds). The confirmation of Request an increase gives the regional row a line for each wave from it. NULL when the size is not offered in the region."
+        }
+
+      }
+    },
+    "estimatedHourly": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "description": "ODCR-UX-1: what reserving this cell would cost per hour, so an operator can see the size of the spend BEFORE approving it. Null when the price could not be read - shown as unknown, never as zero, because zero reads as free. RETAIL LIST PRICE (2026-08-31: public prices may be used, marked as retail, because they do not show a MACC discount): the public price list knows nothing about the customer's agreement, so a customer with a commitment or an enterprise discount pays less than this. It is an ORDER OF MAGNITUDE for a decision, not an invoice, and every surface that shows it must say so.",
+      "additionalProperties": false,
+      "required": [
+        "perInstance",
+        "total",
+        "currency",
+        "basis"
+      ],
+      "properties": {
+        "perInstance": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "total": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "description": "perInstance multiplied by the reservable instances - what the reservation itself would bill."
+        },
+        "currency": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "basis": {
+          "const": "retail-list-price",
+          "description": "Named in the data rather than left to each caller to remember. A number with no basis is a number somebody will quote at a customer."
+        }
+      }
+    },
+    "quota": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "limit": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "description": "NULL when the family did not appear in the usage listing (the documented s-suffix v6 platform bug) - the reading could not be taken. Never 0, which would read as \"none used\"."
+        },
+        "used": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "description": "NULL when the reading could not be taken. See limit."
+        },
+        "regionalLimit": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "description": "REGIONAL-VCPU-QUOTA-1 (v11): the subscription's Total Regional vCPUs limit in this region ('cores' in the usage list), read with limit and used. NULL when Azure did not list it - the regional quota was then not checked. Never 0."
+        },
+        "regionalUsed": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "description": "REGIONAL-VCPU-QUOTA-1 (v11): the vCPUs in use against regionalLimit when the quota was checked. NULL when the reading could not be taken."
+        },
+        "name": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "QUOTA-PREVIEW-1 (v12): Azure's own name for this quota, as the usage list gives it (LocalizedValue, for example 'Standard DDSv6 Family vCPUs'). The wave editor shows it in the Quota column of the request confirmation, the column name Azure uses. NULL when the family is not in the usage list."
+        },
+        "requestAccess": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "enum": [
+            "granted",
+            "missing",
+            "unknown",
+            null
+          ],
+          "description": "QUOTA-PREVIEW-1 (v12): whether the identity that runs the quota check may request this quota, asked of Azure when the check finds the quota too low (blockReason quota-shortfall, and since v13 regional-quota-shortfall, REGIONAL-QUOTA-REQUEST-1: Request an increase asks for the Total Regional vCPUs quota too). Test-VmfQuota reads the identity's effective permissions on the SUBSCRIPTION (Get-VmfEffectivePermissions) and compares them with the Microsoft.Quota actions of data/rbac-actions.json: 'granted' when it holds them, 'missing' when it does not (a role on a resource group never reaches its subscription), 'unknown' when the read failed. Unknown is never shown as either: the wave editor keeps Request an increase, and Azure decides. NULL when the quota fits."
+        },
+        "requestId": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "requestedUtc": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date-time"
+        },
+        "regionalRequestId": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "REGIONAL-QUOTA-BOTH-1 (v14): the Total Regional vCPUs request filed BESIDE the family request for a record blocked with quota-shortfall and regionalShort true. requestId keeps the request of the record's own reason. NULL until such a request is filed."
+        },
+        "regionalRequestedUtc": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date-time"
+        },
+        "checkedUtc": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date-time",
+          "description": "When limit/used were read. They are taken at plan time and never refreshed, so the dashboard must say when rather than imply the figure is live."
+        }
+      }
+    },
+    "reservingSinceUtc": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time",
+      "description": "ODCR-VERIFY-1: when the engine started asking Azure for this reservation. Written with RESERVING, before the request. RESERVING-STUCK-1: a claim RESERVING for longer than any create takes (60 minutes) is one nobody is making any more."
+    },
+    "reservationAsked": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "groupId",
+        "reservationId",
+        "askedUtc"
+      ],
+      "description": "RESERVING-STUCK-1: the RESOURCE IDS of the group and reservation the engine asked Azure for, recorded BEFORE it asked. The names used to be learned only from Azure's answer, so a claim Azure never answered could not be released. A release reads subscription, resource group and names from these ids - a name alone is unique only inside one resource group of one subscription.",
+      "properties": {
+        "groupId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "reservationId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "askedUtc": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "reservationUnconfirmedUtc": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time",
+      "description": "RESERVING-STUCK-1: when the wait for Azure ran out with the reservation still being made. The claim stays RESERVING, which bills in the product's rule, because Azure can still finish it. Released by reservationAsked. A Failed or Canceled answer is BLOCKED instead: nothing is held."
+    },
+    "reservation": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "groupId": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Capacity Reservation Group resource id"
+        },
+        "reservationId": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "createdUtc": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date-time"
+        },
+        "releasedUtc": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date-time"
+        },
+        "consumedInstances": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "fallback": {
+      "type": "array",
+      "description": "Applied fallback-ladder steps, newest last",
+      "items": {
+        "type": "object",
+        "required": [
+          "tsUtc",
+          "action"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "tsUtc": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "action": {
+            "type": "string",
+            "enum": [
+              "alternateZone",
+              "alternateSize",
+              "splitWave",
+              "escalate"
+            ]
+          },
+          "detail": {
+            "type": "string"
+          },
+          "approvedBy": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}

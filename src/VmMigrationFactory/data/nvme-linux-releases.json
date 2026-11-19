@@ -1,0 +1,29 @@
+{
+  "schemaVersion": 1,
+  "why": "IMAGE-SCRIPT-MATCH-1 (2026-11-14: support follows the Microsoft migration guide that the drift check watches, because the product is built on that guide): Microsoft lists the Linux releases that support NVMe. The scan holds a Linux machine whose release is not on this list from v6 and v7 (linux-release-not-on-nvme-list), and v5 stays; an unknown release is a warning (linux-release-nvme-not-read). Each row is one bullet of the page's section, in its order: distroId is the os-release ID the release reader gives (ConvertTo-VmfDistroId, Get-VmfImageRelease), major and minor the release, and andNewer means every later minor release of the same major (the page gives each major its own row). A null minor is every minor release of the major. NvmeLinuxRelease.Tests.ps1 fails when the pinned page and these rows differ, so a change on the page cannot pass without a change here. Azure Linux 3.0 is on the page, and data/supported-images.json refuses its image (AZURE-LINUX-3-SUPPORT-1). SLES-for-SAP is on the page, and the scan refuses SAP images (sap-needs-a-certified-size).",
+  "source": "https://learn.microsoft.com/azure/virtual-machines/enable-nvme-interface",
+  "pinnedFile": "docs/upstream-docs/azure/virtual-machines/enable-nvme-interface.md",
+  "section": "Supported Linux OS images",
+  "readUtc": "2026-11-14",
+  "releases": [
+    { "label": "Azure Linux 3.0", "distroId": "azurelinux", "major": 3, "minor": 0, "andNewer": false },
+    { "label": "Almalinux 8.x", "distroId": "almalinux", "major": 8, "minor": null, "andNewer": false },
+    { "label": "Almalinux 9.x", "distroId": "almalinux", "major": 9, "minor": null, "andNewer": false },
+    { "label": "Debian 11", "distroId": "debian", "major": 11, "minor": null, "andNewer": false },
+    { "label": "Debian 12", "distroId": "debian", "major": 12, "minor": null, "andNewer": false },
+    { "label": "Oracle Linux 7.9", "distroId": "ol", "major": 7, "minor": 9, "andNewer": false },
+    { "label": "Oracle Linux 8.5 and newer", "distroId": "ol", "major": 8, "minor": 5, "andNewer": true },
+    { "label": "Oracle Linux 9.0 and newer", "distroId": "ol", "major": 9, "minor": 0, "andNewer": true },
+    { "label": "RHEL 7.9", "distroId": "rhel", "major": 7, "minor": 9, "andNewer": false },
+    { "label": "RHEL 8.6 and newer", "distroId": "rhel", "major": 8, "minor": 6, "andNewer": true },
+    { "label": "RHEL 9.0 and newer", "distroId": "rhel", "major": 9, "minor": 0, "andNewer": true },
+    { "label": "SLES 15 SP4 and newer", "distroId": "sles", "major": 15, "minor": 4, "andNewer": true },
+    { "label": "SLES-for-SAP 15 SP3 and newer", "distroId": "sles_sap", "major": 15, "minor": 3, "andNewer": true },
+    { "label": "Ubuntu 18.04", "distroId": "ubuntu", "major": 18, "minor": 4, "andNewer": false },
+    { "label": "Ubuntu 20.04", "distroId": "ubuntu", "major": 20, "minor": 4, "andNewer": false },
+    { "label": "Ubuntu 22.04", "distroId": "ubuntu", "major": 22, "minor": 4, "andNewer": false },
+    { "label": "Ubuntu 24.04", "distroId": "ubuntu", "major": 24, "minor": 4, "andNewer": false },
+    { "label": "Rocky Linux 8.10", "distroId": "rocky", "major": 8, "minor": 10, "andNewer": false },
+    { "label": "Rocky Linux 9.6", "distroId": "rocky", "major": 9, "minor": 6, "andNewer": false }
+  ]
+}

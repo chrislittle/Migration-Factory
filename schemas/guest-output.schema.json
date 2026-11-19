@@ -1,0 +1,232 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://vmf.local/schemas/guest-output.schema.json",
+  "title": "VMF guest script output",
+  "description": "The single JSON object every guest script emits on stdout. The engine parses nothing else.",
+  "type": "object",
+  "required": [
+    "schema",
+    "script",
+    "version",
+    "result",
+    "checks"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schema": {
+      "enum": ["vmf.guest/2", "vmf.guest/3", "vmf.guest/4", "vmf.guest/5", "vmf.guest/6", "vmf.guest/7"],
+      "description": "vmf.guest/3 (VERIFY-FP-1) declares the Instance Metadata Service facts; vmf.guest/4 (CLUSTER-DETECT-1) declares the cluster facts; vmf.guest/5 (ORACLE-UEK-UPDATE-1) declares uekRepositories; vmf.guest/6 (KERNEL-OFFER-EDGES-1, KERNEL-FLOOR-UPLOAD-1) declares releaseverLock and kernelPackageVersion; vmf.guest/7 (VF-UNMANAGED-CONFIG-1) declares the facts of the unmanaged network setting. A v2 to v6 output is a valid v7 one without them."
+    },
+    "script": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Script file name, e.g. Test-NvmeReady.ps1"
+    },
+    "version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$"
+    },
+    "os": {
+      "type": "string",
+      "description": "Guest OS caption/version as detected"
+    },
+    "result": {
+      "type": "string",
+      "enum": [
+        "READY",
+        "NEEDS_PREP",
+        "FIXED",
+        "NO_CHANGE",
+        "BLOCKED",
+        "PASS",
+        "FAIL"
+      ],
+      "description": "READY/NEEDS_PREP/BLOCKED for checks; FIXED/NO_CHANGE/BLOCKED for fixes; PASS/FAIL for validations"
+    },
+    "checks": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "name",
+          "status"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "PASS",
+              "FAIL",
+              "WARN",
+              "FIXED",
+              "INFO"
+            ]
+          },
+          "detail": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "warnings": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "error": {
+      "type": "string",
+      "description": "Fatal error detail when result is BLOCKED/FAIL"
+    },
+    "facts": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "GUEST-2: what the machine REPORTED, as declared fields the engine judges - never a verdict. Before v2 these travelled as checks named 'fact:<name>', which was a convention rather than a contract: nothing declared which facts existed, so a guest could omit one and nothing noticed. That is exactly how every Windows machine came to report an UNKNOWN driver state - the Windows guest emitted no os fact and the engine fell back to guessing from a caption string. Closed on purpose: an undeclared or misspelled fact is now a validation failure instead of a silent absence.",
+      "properties": {
+        "os": {
+          "type": "string",
+          "description": "'Windows' or 'Linux'. Stated by the guest so the engine never infers it from an OS caption."
+        },
+        "osVersion": {
+          "type": "string",
+          "description": "The OS build/version string."
+        },
+        "kernelVersion": {
+          "type": "string",
+          "description": "Linux kernel release, as uname -r reports it."
+        },
+        "distroId": {
+          "type": "string",
+          "description": "Linux distribution id from /etc/os-release, e.g. 'ubuntu'."
+        },
+        "distroVersion": {
+          "type": "string",
+          "description": "Linux distribution VERSION_ID, e.g. '22.04'."
+        },
+        "fabric": {
+          "type": "string",
+          "description": "The network fabric the guest currently sees - 'mana', 'mlx5', or empty. Judged against the PLAN'S TARGET, never taken as the answer on its own (DRIVER-1)."
+        },
+        "driverVersion": {
+          "type": "string",
+          "description": "Network driver version as the guest reports it. Recorded, not judged: Microsoft publishes no minimum for Windows or for Mellanox."
+        },
+        "vfTraffic": {
+          "type": "string",
+          "description": "Whether accelerated-path packet counters are moving - the only proof accelerated networking is really in use."
+        },
+        "ioTimeout": {
+          "type": "string",
+          "description": "stornvme IoTimeoutValue per ControlSet, as 'ControlSet001=240 ControlSet002=240'. One flat fact because a declared contract cannot describe names it cannot know in advance."
+        },
+        "ioTimeoutBefore": {
+          "type": "string",
+          "description": "The same, as found BEFORE the post-boot repair - the evidence that the first NVMe boot resets it."
+        },
+        "imdsReached": {
+          "type": "string",
+          "enum": ["yes", "no"],
+          "description": "VERIFY-FP-1: whether the Instance Metadata Service answered. It answers only on the primary interface and primary IP with DHCP, so an answer proves the part of the network a move rebuilds. Judged before against after, never alone."
+        },
+        "imdsVmSize": {
+          "type": "string",
+          "description": "VERIFY-FP-1: the size the Instance Metadata Service says this machine is on, read from inside the guest."
+        },
+        "imdsSecurityType": {
+          "type": "string",
+          "description": "VERIFY-FP-1: securityProfile.securityType, for example TrustedLaunch. Recorded, not judged."
+        },
+        "imdsSecureBoot": {
+          "type": "string",
+          "description": "VERIFY-FP-1: securityProfile.secureBootEnabled. Recorded, not judged."
+        },
+        "imdsVtpm": {
+          "type": "string",
+          "description": "VERIFY-FP-1: securityProfile.virtualTpmEnabled. Recorded, not judged."
+        },
+        "clusterService": {
+          "type": "string",
+          "enum": ["running", "installed", "absent"],
+          "description": "CLUSTER-DETECT-1 (Windows): the ClusSvc service - running, installed and not running, or not installed. The engine judges it (Get-VmfClusterNodeVerdict)."
+        },
+        "clusterKey": {
+          "type": "string",
+          "enum": ["yes", "no"],
+          "description": "CLUSTER-DETECT-1 (Windows): whether the registry key HKLM\\Cluster is present."
+        },
+        "sqlHadr": {
+          "type": "string",
+          "enum": ["yes", "no"],
+          "description": "CLUSTER-DETECT-1: a SQL Server instance has HADR_Enabled set to 1 (Windows registry), or hadr.hadrenabled is 1 in /var/opt/mssql/mssql.conf (Linux). It names the kind of cluster in the reason, and never decides the block."
+        },
+        "pacemaker": {
+          "type": "string",
+          "description": "CLUSTER-DETECT-1 (Linux): what systemctl is-active pacemaker says, for example active or inactive."
+        },
+        "corosync": {
+          "type": "string",
+          "description": "CLUSTER-DETECT-1 (Linux): what systemctl is-active corosync says, for example active or inactive."
+        },
+        "uekRepositories": {
+          "type": "string",
+          "description": "ORACLE-UEK-UPDATE-1 (Oracle Linux only): the ids of the enabled repositories whose id has UEK in it, read from /etc/yum.repos.d, separated by one space, for example 'ol9_UEKR7 ol9_UEKR8'; 'none' when no such repository is enabled; 'unknown' when the folder cannot be read. The engine runs Update the kernel for a UEK kernel below UEK R8 only when the UEK R8 repository of the release is in this list (Resolve-VmfKernelUpdate)."
+        },
+        "releaseverLock": {
+          "type": "string",
+          "description": "KERNEL-OFFER-EDGES-1 (Red Hat, Alma, Rocky, CentOS and Oracle Linux only): the first line of /etc/dnf/vars/releasever, else /etc/yum/vars/releasever, for example '9.4' - the minor release dnf is held to (Microsoft: the EUS, SAP and HA RHUI clients lock it); 'none' when neither file is there. The engine does not run Update the kernel where this minor release is below the release whose kernel Microsoft lists for MANA (Get-VmfKernelUpdateReach)."
+        },
+        "kernelPackageVersion": {
+          "type": "string",
+          "description": "KERNEL-FLOOR-UPLOAD-1 (Ubuntu and Debian only): the version of the package of the running kernel, dpkg-query -W -f='${Version}' linux-image-$(uname -r), for example '5.15.0-1096.105'. Ubuntu's uname -r has no upload number, and Microsoft's minimum has one, so the engine compares this version where uname equals the minimum as far as its numbers go (Get-VmfDriverJudgement); 'unknown' when dpkg-query gives none."
+        },
+        "networkManager": {
+          "type": "string",
+          "description": "VF-UNMANAGED-CONFIG-1 (Linux): what systemctl is-active NetworkManager says."
+        },
+        "networkd": {
+          "type": "string",
+          "description": "VF-UNMANAGED-CONFIG-1 (Linux): what systemctl is-active systemd-networkd says."
+        },
+        "wicked": {
+          "type": "string",
+          "description": "VF-UNMANAGED-CONFIG-1 (Linux): what systemctl is-active wicked says. Recorded, not judged: Microsoft gives no unmanaged setting for it."
+        },
+        "ifupdown": {
+          "type": "string",
+          "enum": ["yes", "no"],
+          "description": "VF-UNMANAGED-CONFIG-1 (Linux): yes when /etc/network/interfaces or interfaces.d has an iface stanza for an interface other than lo. Recorded, not judged."
+        },
+        "systemdVersion": {
+          "type": "string",
+          "description": "VF-UNMANAGED-CONFIG-1 (Linux): the version number systemctl --version gives, or unknown. systemd-networkd 255 or later reads ID_NET_MANAGED_BY."
+        },
+        "cloudInitVersion": {
+          "type": "string",
+          "description": "VF-UNMANAGED-CONFIG-1 (Linux): the version cloud-init --version gives (for example 23.4.4), none when cloud-init is not installed, or unknown."
+        },
+        "cloudInitNetwork": {
+          "type": "string",
+          "enum": ["enabled", "disabled"],
+          "description": "VF-UNMANAGED-CONFIG-1 (Linux): disabled when network-config=disabled is on the kernel command line or a cloud.cfg file holds config: disabled; then cloud-init applied no network configuration."
+        },
+        "sriovUdevLines": {
+          "type": "string",
+          "description": "VF-UNMANAGED-CONFIG-1 (Linux): each udev rule line in force, not a comment, that names NM_UNMANAGED, ID_NET_MANAGED_BY or AZURE_UNMANAGED_SRIOV, as '<file>: <line>', joined by ' ;; '; none when there is no line."
+        },
+        "sriovNetworkFiles": {
+          "type": "string",
+          "description": "VF-UNMANAGED-CONFIG-1 (Linux): each systemd .network file in force that holds Property=AZURE_UNMANAGED_SRIOV=1 and Unmanaged=yes, joined by ' ;; '; none when there is no file."
+        },
+        "nmUnmanagedDevices": {
+          "type": "string",
+          "description": "VF-UNMANAGED-CONFIG-1 (Linux): each unmanaged-devices value of NetworkManager, as '<file>: <value>', joined by ' ;; '; none when there is no value."
+        }
+      }
+    }
+  }
+}

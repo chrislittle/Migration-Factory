@@ -1,0 +1,79 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "vmf/wave-options-acceptance",
+  "title": "Wave options acceptance",
+  "description": "WAVE-2: the record that a named person reviewed and accepted a wave's policy levers as they stood. The optionsHash binds it to the exact membership and levers - any later edit invalidates it, and the engine refuses to start the wave until someone accepts again.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "runId",
+    "wave",
+    "acceptedBy",
+    "acceptedUtc",
+    "machineCount",
+    "optionsHash",
+    "levers"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": 9,
+      "description": "v9 (OLD-VERSION-READERS-REMOVE-1): no identityLoss and no rebuild in the contract. No writer gave them since v8, and nothing is public before 1.0, so no store holds a record with one; no reader takes them. Each earlier version is in docs/schema-migrations.md."
+    },
+    "runId": {
+      "type": "string",
+      "minLength": 1,
+      "description": "The run this acceptance belongs to. Required and non-empty: this document is the record that a named person chose a named wave's settings, and one that cannot say which run it belongs to is not that record."
+    },
+    "wave": {
+      "type": "string",
+      "minLength": 1
+    },
+    "acceptedBy": {
+      "type": "string",
+      "minLength": 1
+    },
+    "acceptedUtc": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "machineCount": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "optionsHash": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "levers": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "description": "one distinct policy set carried by the wave's entries - recorded so the acceptance can be read back, not just verified"
+      }
+    },
+    "note": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "amendments": {
+      "type": "array",
+      "description": "DECIDE-KEEP-1: decisions recorded on this record after it was made. An approver's decision that changed one machine's setting moves the record to the plan as it is after the decision, when the record was current just before it. Anything else that changes the plan still needs a new record.",
+      "items": {
+        "type": "object",
+        "required": ["by", "utc", "vmId", "change", "reason"],
+        "additionalProperties": false,
+        "properties": {
+          "by": { "type": "string", "minLength": 1, "description": "Who made the decision" },
+          "utc": { "type": "string", "format": "date-time" },
+          "vmId": { "type": "string", "minLength": 1, "description": "The one machine the decision changed" },
+          "change": { "type": "string", "minLength": 1, "description": "The settings it changed, as name=value" },
+          "reason": { "const": "decision" }
+        }
+      }
+    }
+  }
+}

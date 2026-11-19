@@ -1,0 +1,29 @@
+{
+  "description": "SQL-TEMPDB-SIGNOFF-1: one table of cases for the engine's Test-VmfSqlTempdbRisk and the page's help.js sqlTempdbRisk. Both tests read this file, so the two rules cannot differ.",
+  "cases": [
+    { "name": "SQL Server found, SCSI temporary disk to NVMe temporary disk", "risk": true,
+      "entry": { "path": "A", "assessment": { "sqlServerDetected": true, "sourceDiskArch": "scsi-temp" }, "target": { "diskArch": "nvme-temp" } } },
+    { "name": "SQL Server found, SCSI temporary disk to none", "risk": true,
+      "entry": { "path": "A", "assessment": { "sqlServerDetected": true, "sourceDiskArch": "scsi-temp" }, "target": { "diskArch": "diskless" } } },
+    { "name": "no SQL Server found, NVMe target", "risk": false,
+      "entry": { "path": "A", "assessment": { "sqlServerDetected": false, "sourceDiskArch": "scsi-temp" }, "target": { "diskArch": "nvme-temp" } } },
+    { "name": "no SQL Server found, no temporary disk on the target", "risk": false,
+      "entry": { "path": "A", "assessment": { "sqlServerDetected": false, "sourceDiskArch": "scsi-temp" }, "target": { "diskArch": "diskless" } } },
+    { "name": "no finding stored", "risk": false,
+      "entry": { "path": "A", "assessment": { "sourceDiskArch": "scsi-temp" }, "target": { "diskArch": "nvme-temp" } } },
+    { "name": "a finding that is not a stored true", "risk": false,
+      "entry": { "path": "A", "assessment": { "sqlServerDetected": "true", "sourceDiskArch": "scsi-temp" }, "target": { "diskArch": "nvme-temp" } } },
+    { "name": "SQL Server found, SCSI temporary disk to SCSI temporary disk (v5 d)", "risk": false,
+      "entry": { "path": "A", "assessment": { "sqlServerDetected": true, "sourceDiskArch": "scsi-temp" }, "target": { "diskArch": "scsi-temp" } } },
+    { "name": "SQL Server found, no temporary disk now", "risk": false,
+      "entry": { "path": "A", "assessment": { "sqlServerDetected": true, "sourceDiskArch": "diskless" }, "target": { "diskArch": "nvme-temp" } } },
+    { "name": "SQL Server found, NVMe temporary disk now", "risk": false,
+      "entry": { "path": "A", "assessment": { "sqlServerDetected": true, "sourceDiskArch": "nvme-temp" }, "target": { "diskArch": "diskless" } } },
+    { "name": "SQL Server found, the machine does not move (MANUAL)", "risk": false,
+      "entry": { "path": "MANUAL", "assessment": { "sqlServerDetected": true, "sourceDiskArch": "scsi-temp" }, "target": { "diskArch": "nvme-temp" } } },
+    { "name": "SQL Server found, the machine is left out (EXCLUDED)", "risk": false,
+      "entry": { "path": "EXCLUDED", "assessment": { "sqlServerDetected": true, "sourceDiskArch": "scsi-temp" }, "target": { "diskArch": "nvme-temp" } } },
+    { "name": "SQL Server found, no target", "risk": false,
+      "entry": { "path": "A", "assessment": { "sqlServerDetected": true, "sourceDiskArch": "scsi-temp" } } }
+  ]
+}

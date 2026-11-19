@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Migration Factory - Overview</title>
+<!--
+  HOME-1: the overview. The front door.
+
+  index.html used to be the migrations page - a leftover from when Migrations
+  WAS the product. So the name
+  of the whole tool opened one of its five areas, and a person arriving for the
+  first time landed in the middle of the thing rather than at the start of it.
+
+  The migrations list moved to migrations.html. This page answers the two
+  questions somebody actually arrives with: WHAT IS HAPPENING, and WHAT NEEDS
+  ME. Everything on it is read from the store with the viewer's own token, the
+  same way Projects, Assessments and Reports read it. Nothing here changes
+  anything, and nothing here is computed twice: each number is followed to the
+  page that owns it.
+
+  THE RULE THIS PAGE LIVES BY: it must never invent a number. An overview that
+  summarises is an overview that can disagree with the pages beneath it, and a
+  disagreement here is worse than no overview - it is the screen a person
+  trusts BEFORE they look at anything else.
+-->
+<script src="msal-browser.min.js"></script>
+<!-- DARK-1: one stylesheet, Bootswatch Darkly. Rules in docs/ux.md;
+     the short version is that no page carries CSS of its own. -->
+<script src="theme.js"></script>
+<link rel="icon" href="logo.svg" type="image/svg+xml">
+<link rel="stylesheet" href="app.css">
+</head>
+<body class="p-index">
+<header class="topbar">
+  <!-- The product name, not a control. It used to link to Migrations,
+       which is only one of the five areas. -->
+  <span class="brand"><span class="logo" aria-hidden="true"></span><span class="brand-name"><span class="b-1">Migration</span><span class="b-2">Factory</span></span></span>
+  <nav class="topnav"></nav>
+  <span id="demo-tag" class="demo-tag" style="display:none">SAMPLE DATA</span>
+</header>
+
+<main class="wrap">
+  <div id="err"></div>
+  <!-- SIGNIN-1: filled by VmfHelp.showSignIn(). One card, on all of them. -->
+  <div id="login-view"></div>
+
+  <div id="app" style="display:none">
+    <div class="pagehead">
+      <div>
+        <h1 id="h1"></h1>
+        <p class="lede" id="lede"></p>
+      </div>
+      <!-- ENTRY-1: the front door offers the thing a person came to do. The
+           wizard gates on the operator role, the same way the Projects page
+           relies on it. -->
+      <a class="btn" id="assess-btn" href="wizard.html"></a>
+    </div>
+    <div id="panels"></div>
+  </div>
+</main>
+
+<script src="help.js"></script>
+<script src="index.js"></script>
+</body>
+</html>

@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Migration Factory - Reports</title>
+<!--
+  REPORT-2: the Reports page. A static READ-ONLY page - its one write is ATTEST-1
+  keeping a migration's record when an administrator downloads it, which
+  changes nothing about any migration - that answers "how did our migration runs go?" across every
+  run in the store: outcomes, waves, sign-offs, issues, capacity reservations -
+  and opens the per-run report (the engine writes customer-report.html into
+  the run store by itself, REPORT-AUTO-1) with the viewer's own token. Same design system and
+  plain-language bar as the dashboard. ?demo=1 renders bundled sample data.
+-->
+<script src="msal-browser.min.js"></script>
+<!-- DARK-1: one stylesheet, Bootswatch Darkly. Rules in docs/ux.md;
+     the short version is that no page carries CSS of its own. -->
+<script src="theme.js"></script>
+<link rel="icon" href="logo.svg" type="image/svg+xml">
+<link rel="stylesheet" href="app.css">
+</head>
+<body class="p-reports">
+<header class="topbar">
+  <!-- The product name, not a control. It used to link to Migrations,
+       which is ONE of the five areas, so the name of the whole product
+       acted as a shortcut to
+       a part of it. The navigation beside it names every area. -->
+  <span class="brand"><span class="logo" aria-hidden="true"></span><span class="brand-name"><span class="b-1">Migration</span><span class="b-2">Factory</span></span></span>
+  <nav class="topnav"></nav>
+  <span id="demo-tag" class="demo-tag" style="display:none">SAMPLE DATA</span>
+</header>
+
+<main class="wrap">
+  <div id="err"></div>
+  <!-- SIGNIN-1: filled by VmfHelp.showSignIn(). One card, on all of them. -->
+  <div id="login-view"></div>
+
+  <div id="app" style="display:none">
+    <!-- PAGE-SCALE-REPORTS-1: the heading and its sentence; then the count
+         tiles and ONE list in two tabs (VmfHelp.listMount): the migration
+         runs, and the records to download for an administrator. -->
+    <div class="pagehead">
+      <div>
+        <h1 id="page-title" tabindex="-1"></h1>
+        <p class="lede" id="lede"></p>
+      </div>
+    </div>
+    <div id="reports-list"></div>
+    <!-- The detail of one migration, opened by its name in the list, with
+         Close and Escape (rule 11). -->
+    <section class="card" id="run-detail" aria-labelledby="detail-title" hidden>
+      <div class="ch"><div><h2 id="detail-title"></h2><div id="detail-run" class="mono muted vmf-sub"></div></div>
+        <button type="button" id="detail-close" class="btn small ghost"></button></div>
+      <div class="cardbody detail" id="detail-body"></div>
+    </section>
+    <!-- PAGE-SCALE-REPORTS-1: the Safety copies card MOVED here from the
+         Overview. -->
+    <div id="copies-card"></div>
+  </div>
+</main>
+
+<!-- NO-POPUPS-1: the report shows here, over the page, never in a new window.
+     The frame goes in the slot when a report opens and leaves it on Close. -->
+<div id="report-view" class="report-view" role="dialog" aria-modal="true" aria-labelledby="report-title" hidden>
+  <div class="report-bar">
+    <h2 id="report-title"></h2><span id="report-run" class="mono"></span>
+    <span id="report-print" class="hint"></span>
+    <span class="report-actions"><button type="button" id="report-download" class="btn small ghost"></button><button type="button" id="report-close" class="btn small"></button></span>
+  </div>
+  <div id="report-slot" class="report-slot"></div>
+</div>
+
+<script src="help.js"></script>
+
+<script src="reports.js"></script>
+  </body>
+</html>
