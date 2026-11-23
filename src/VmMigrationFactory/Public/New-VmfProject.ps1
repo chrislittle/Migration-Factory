@@ -57,6 +57,12 @@ function New-VmfProject {
         [Parameter()][hashtable]$OnBehalfOf
     )
 
+    # STORE-RESERVED-NAMES-1: never a folder the product keeps. A project
+    # called vmf-records was created as vmf-records/project.json, and its
+    # delete then removed every kept migration record. Asked before the store
+    # is read at all.
+    Assert-VmfStoreNameAllowed -Name $ProjectId
+
     $projectPath = "$($StorePath.TrimEnd('/', '\'))/$ProjectId"
 
     # A project that already exists is NOT recreated. Overwriting its document
@@ -67,6 +73,13 @@ function New-VmfProject {
         $existing = Read-VmfStoreJson -RunPath $projectPath -RelPath 'project.json' -Depth 6
         throw ("A project called '$ProjectId' already exists here" +
                "$(if ($existing.name) { " ('$($existing.name)')" }). Use it, or pick another id.")
+    }
+    # STORE-RESERVED-NAMES-1: and never over a run. A loose run with this id
+    # would become a "project" whose root is a run, and the delete of either
+    # would then take the other.
+    if (@(Get-VmfStorePrefixes -StorePath $projectPath).Count -gt 0 -or
+        @(Get-VmfStoreNames -RunPath $projectPath -Folder '').Count -gt 0) {
+        throw "400: An assessment or a migration already uses the name '$ProjectId'. Use a different name for the project."
     }
 
     if (-not $PSCmdlet.ShouldProcess($projectPath, 'create a project')) { return }

@@ -32,46 +32,88 @@ BeforeAll {
 
 Describe 'DIST-1a: the release workflow refuses a tag that lies' -Skip:(-not (Test-Path (Join-Path $PSScriptRoot '..' '..' 'tools' 'Initialize-VmfCiRunner.ps1'))) {
 
-    It 'runs on the button and on a version tag, and on nothing else' {
-        # Not on a branch push: a release is a deliberate act, never a side
-        # effect of a merge.
-        $script:release | Should -Match 'workflow_dispatch:'
-        $script:release | Should -Match "tags: \['v\*'\]"
-        $script:release | Should -Not -Match '(?m)^\s+branches:'
+    BeforeAll {
+        . (Join-Path $PSScriptRoot '_WorkflowCommands.ps1')
+        . (Join-Path $PSScriptRoot '_CodeOnly.ps1')
+        $script:relSteps = @(Get-VmfWorkflowSteps -Path (Join-Path $script:repoRoot '.github' 'workflows' 'release.yml'))
+        $script:allCode = (@($script:relSteps | ForEach-Object { Get-VmfCodeOnly -Language PowerShell -Text $_.Script })) -join "`n"
+        $script:on = [regex]::Match($script:release, '(?ms)^on:\s*$(.+?)^\S').Groups[1].Value
+        function script:Get-RelPermissions([string]$Text) {
+            $block = [regex]::Match($Text, '(?ms)^permissions:\s*$(.+?)^\S').Groups[1].Value
+            @([regex]::Matches($block, '(?m)^  ([a-z-]+): (\S+)\s*$') | ForEach-Object { "$($_.Groups[1].Value)=$($_.Groups[2].Value)" } | Sort-Object)
+        }
+        function script:Get-RelTimeout([string]$Text) { [int][regex]::Match($Text, '(?m)^    timeout-minutes: (\d+)\s*$').Groups[1].Value }
     }
 
-    It 'compares the tag against the manifest, and throws when they differ' {
-        $script:release | Should -Match 'Import-PowerShellDataFile'
-        $script:release | Should -Match 'ModuleVersion'
-        $script:release | Should -Match '\$tag -ne \$wanted'
-        $script:release | Should -Match 'throw '
+    It 'the button runs on the button and on nothing else: a pushed tag starts no release (RELEASE-TAG-PUSH-TRIGGER-1)' {
+        # On 2026-11-19 a tag pushed by hand started this workflow and made a
+        # second draft release. A release is a deliberate act, never a side
+        # effect of a push.
+        $script:on | Should -Match '(?m)^  workflow_dispatch:\s*$'
+        $script:on | Should -Not -Match '(?m)^  push:'
+        $script:on | Should -Not -Match 'tags:'
+        $script:on | Should -Not -Match '(?m)^\s+branches:'
+        $script:on | Should -Not -Match 'pull_request|schedule|workflow_run|release:'
     }
 
-    It 'runs the gates on the tagged commit before it publishes anything' {
-        # The order matters and is checked as an order: a release that ran the
-        # gates AFTER publishing would be a release nobody could withdraw.
-        $gates   = $script:release.IndexOf('Invoke-VmfTests.ps1')
-        $publish = $script:release.IndexOf('Publish the release')
-        $gates | Should -BeGreaterThan 0
-        $publish | Should -BeGreaterThan $gates -Because 'a release must not be published before the gates pass'
+    It 'ONE job checks CI, commits, tags, makes the bill of materials and publishes, in that order (RELEASE-FLOW-RESTORE-1)' {
+        $jobs = [regex]::Match($script:release, '(?ms)^jobs:\s*$(.*)').Groups[1].Value
+        @([regex]::Matches($jobs, '(?m)^  [A-Za-z0-9_-]+:\s*$')).Count | Should -Be 1 -Because 'one job'
+        @($script:relSteps.Name) | Should -Be @(
+            'Let git read a directory an earlier service account created',
+            'Check CI on main, commit the version and tag it',
+            'Read the version that was released',
+            'Make the bill of materials',
+            'Publish the release')
+        @($script:relSteps | Where-Object { $_.If }) | Should -BeNullOrEmpty -Because 'no step may be skipped'
+    }
+
+    It 'NOTHING WAITS FOR CI on a runner CI needs: the tool looks once, with no time limit to wait for (RELEASE-FLOW-RESTORE-1)' {
+        # Four Windows runners for CI's four Windows shares, one Linux runner
+        # for its last two jobs: any job that waited for CI on either would
+        # take the runner CI needs.
+        foreach ($wf in @(Get-ChildItem (Join-Path $script:repoRoot '.github' 'workflows') -Filter '*.yml')) {
+            $code = (@(Get-VmfWorkflowSteps -Path $wf.FullName | ForEach-Object { Get-VmfCodeOnly -Language PowerShell -Text $_.Script })) -join "`n"
+            $code | Should -Not -Match 'Wait-VmfCiResult' -Because "$($wf.Name) must not wait for CI on a pool runner; release.yml checks CI through its tool, with no wait"
+        }
+        $tool = Get-VmfCodeOnly -Language PowerShell -Text (Get-Content (Join-Path $script:repoRoot 'tools' 'New-VmfReleaseTag.ps1') -Raw)
+        $tool | Should -Match ([regex]::Escape('TimeoutMinutes = 0; PollSeconds = 0 }'))
+        $tool | Should -Match ([regex]::Escape("WaitScript = (Join-Path `$PSScriptRoot 'Wait-VmfCiResult.ps1')"))
+        $tool | Should -Not -Match 'Start-Sleep|dispatches'
+        Get-RelTimeout $script:release | Should -BeLessOrEqual 30 -Because 'one look at CI, a commit, two pushes, the bill of materials and the release'
+    }
+
+    It 'compares the tag against the manifest of the tagged commit, and throws when they differ' {
+        $step = @($script:relSteps | Where-Object Name -eq 'Read the version that was released')[0]
+        $step.Script | Should -Match 'git checkout --quiet --detach "refs/tags/\$tag"'
+        $step.Script | Should -Match 'Get-VmfReleaseVersion -Root \.'
+        $step.Script | Should -Match '\$tag -ne \$wanted'
+        $step.Script | Should -Match 'throw '
+    }
+
+    It 'runs no suite of its own: CI on the head of main is the check (RELEASE-NO-SECOND-SUITE-1)' {
+        # It took about an hour, on a tree from before the version change.
+        $script:allCode | Should -Not -Match 'Invoke-VmfTests|Invoke-Pester|Invoke-VmfPesterParallel|Sync-VmfBicepVersion'
     }
 
     It 'uses the same runner as CI, so a release costs no billed minutes' {
         # CI-RUNNER-1. A Windows GitHub-hosted runner bills at 2x against an
         # allowance that ran out once already.
-        $script:release | Should -Match 'runs-on: \[self-hosted, Windows, vmf-ci\]'
+        $script:release | Should -Match '(?m)^    runs-on: \[self-hosted, Windows, vmf-ci\]\s*$'
+        $script:release | Should -Not -Match 'runs-on: (ubuntu|windows|macos)-'
     }
 
-    It 'asks for no more permission than creating a release needs' {
-        $script:release | Should -Match 'contents: write'
+    It 'asks for no more permission than it needs, and can start no workflow' {
+        # It pushes the version commit and the tag, makes the release, and
+        # reads the CI runs.
+        Get-RelPermissions $script:release | Should -Be @('actions=read', 'contents=write')
         $script:release | Should -Not -Match '(?m)^\s+permissions: write-all'
         $script:release | Should -Not -Match 'id-token'
     }
 
     It 'never cancels a release in flight' {
-        # Two tags pushed together are two releases. Cancelling the first would
-        # leave a tag with no release behind it, which is the state this item
-        # exists to remove.
+        # Two releases started together are two releases. Cancelling the first
+        # would leave a tag with no release behind it.
         $script:release | Should -Match 'cancel-in-progress: false'
     }
 
@@ -83,20 +125,24 @@ Describe 'DIST-1a: the release workflow refuses a tag that lies' -Skip:(-not (Te
         $runnerInit = Get-Content (Join-Path $script:repoRoot 'tools' 'Initialize-VmfCiRunner.ps1') -Raw
         $runnerInit | Should -Not -Match '(?m)gh\.exe|GitHub CLI'
         $script:release | Should -Not -Match '(?m)^\s+run: gh |gh release '
-        # The REST call lives in the publish tool since SBOM-1. The deploy step
-        # that also called it from this file went with WORKFLOWS-UNUSED-1.
         $script:release | Should -Match 'tools/Publish-VmfRelease\.ps1'
-        $publish = Get-Content (Join-Path $script:repoRoot 'tools' 'Publish-VmfRelease.ps1') -Raw
-        $publish | Should -Match 'api\.github\.com/repos/'
-        $publish | Should -Not -Match '(?m)^\s*gh |gh release '
+        foreach ($tool in 'Publish-VmfRelease.ps1', 'Wait-VmfCiResult.ps1') {
+            $code = Get-VmfCodeOnly -Language PowerShell -Text (Get-Content (Join-Path $script:repoRoot 'tools' $tool) -Raw)
+            $code | Should -Match 'api\.github\.com/repos/' -Because $tool
+            $code | Should -Not -Match '(?m)^\s*gh |gh release |gh api ' -Because $tool
+        }
+        $code = Get-VmfCodeOnly -Language PowerShell -Text (Get-Content (Join-Path $script:repoRoot 'tools' 'New-VmfReleaseTag.ps1') -Raw)
+        $code | Should -Not -Match '(?m)^\s*gh |gh release |gh api '
     }
 }
 
 Describe 'DIST-1a: the button releases without anybody running a script' -Skip:(-not (Test-Path (Join-Path $PSScriptRoot '..' '..' 'tools' 'Initialize-VmfCiRunner.ps1'))) {
 
-    # Since 2026-09-08 a release needs nobody to run a script by hand each
-    # time. The first version of this item
-    # put the DECISION in the right place and the WORK in the wrong one.
+    BeforeAll {
+        . (Join-Path $PSScriptRoot '_WorkflowCommands.ps1')
+        $script:relSteps = @(Get-VmfWorkflowSteps -Path (Join-Path $script:repoRoot '.github' 'workflows' 'release.yml'))
+        $script:tagStep = @($script:relSteps | Where-Object Name -eq 'Check CI on main, commit the version and tag it')[0]
+    }
 
     It 'takes the version as an input, so a person types a number and nothing else' {
         $script:release | Should -Match '(?s)workflow_dispatch:.*inputs:.*version:'
@@ -105,62 +151,37 @@ Describe 'DIST-1a: the button releases without anybody running a script' -Skip:(
 
     It 'RUNS the rules rather than restating them' {
         # Two copies of "what refuses a release" would drift, and the copy that
-        # drifted would be the one nobody ran. The button path must call the
-        # script, and must NOT carry its own version comparison.
-        $script:release | Should -Match './tools/New-VmfRelease\.ps1 -Version'
-        $button = [regex]::Match($script:release,
-            '(?s)- name: Prepare and push the release(.*?)(?=
-      - name: )').Groups[1].Value
-        $button | Should -Not -BeNullOrEmpty
-        $button | Should -Not -Match 'Import-PowerShellDataFile' -Because 'the version rules live in one place'
+        # drifted would be the one nobody ran.
+        $script:tagStep | Should -Not -BeNullOrEmpty
+        $script:tagStep.Script | Should -Match '\./tools/New-VmfReleaseTag\.ps1 -Version \$env:VMF_VERSION -Repository \$env:GITHUB_REPOSITORY'
+        $script:tagStep.Script | Should -Not -Match 'Import-PowerShellDataFile|git push|git tag' -Because 'the version rules and the pushes live in the tool'
+        Get-Content (Join-Path $script:repoRoot 'tools' 'New-VmfReleaseTag.ps1') -Raw | Should -Match 'NewReleaseScript = \(Join-Path \$PSScriptRoot ''New-VmfRelease\.ps1''\)'
     }
 
-    It 'pushes only AFTER the script has run, which is after the checks pass' {
-        $button = [regex]::Match($script:release,
-            '(?s)- name: Prepare and push the release(.*?)(?=
-      - name: )').Groups[1].Value
-        $runsScript = $button.IndexOf('New-VmfRelease.ps1')
-        $pushes     = $button.IndexOf('git push origin main')
-        $runsScript | Should -BeGreaterThan 0
-        $pushes | Should -BeGreaterThan $runsScript -Because 'nothing anybody else can see may happen before the refusals and the checks'
+    It 'no run: script holds a value GitHub writes into it: the input and the token come through env (RELEASE-INPUT-ENV-1)' {
+        foreach ($s in $script:relSteps) { $s.Script | Should -Not -Match '\$\{\{' -Because "step '$($s.Name)': a value GitHub writes into a script is part of the script" }
+        $block = [regex]::Match($script:release, '(?s)- name: Check CI on main, commit the version and tag it(.*?)(?=\n      - name: |\n      #)').Groups[1].Value
+        $block | Should -Match 'VMF_VERSION: \$\{\{ inputs\.version \}\}'
+        $block | Should -Match 'GH_TOKEN: \$\{\{ github\.token \}\}'
     }
 
-    It 'checks out main for the button and the tag for a pushed tag' {
-        $script:release | Should -Match "ref: \$\{\{ github.event_name == 'workflow_dispatch' && 'main' \|\| github.ref \}\}"
+    It 'checks out main' {
+        $script:release | Should -Match '(?m)^          ref: main\s*$'
     }
 
-    It 'fetches every tag, or the refusal on an existing tag cannot see one' {
-        # A shallow checkout has no tags, so New-VmfRelease would happily
-        # re-cut a version that already exists.
+    It 'fetches every tag, or the look for an existing tag cannot see one' {
         $script:release | Should -Match 'fetch-depth: 0'
     }
 
     It 'names a committer, because a commit with no author fails on the runner' {
-        $script:release | Should -Match 'git config user\.name'
-        $script:release | Should -Match 'git config user\.email'
-    }
-
-    It 'the two paths never both run' {
-        # Each step that belongs to one way in says which. A step with no
-        # condition runs on both by design - reading the version, and
-        # publishing - and those are the same on either path.
-        $script:release | Should -Match "if: github.event_name == 'workflow_dispatch'"
-        $script:release | Should -Match "if: github.event_name == 'push'"
-    }
-
-    It 'the checks run exactly once, whichever way in' {
-        # The button gets them from New-VmfRelease; a pushed tag gets them from
-        # its own step, which is why that step is conditional. Two runs of the
-        # suite would double a release that already takes minutes.
-        @([regex]::Matches($script:release, 'Invoke-VmfTests\.ps1')).Count | Should -Be 1
-        $script:release | Should -Match "(?s)- name: The checks must pass on the tagged commit\s+if: github.event_name == 'push'"
+        $script:tagStep.Script | Should -Match 'git config user\.name'
+        $script:tagStep.Script | Should -Match 'git config user\.email'
     }
 
     It 'the release names the version the released commit states' {
-        # Not the typed input. If the script and the input ever disagreed, the
-        # manifest is the one that ships, so the manifest is the one that names
-        # the release.
-        $script:release | Should -Match '(?s)- name: Read the version that was released.*Import-PowerShellDataFile'
+        $script:release | Should -Match '(?s)- name: Read the version that was released.*Get-VmfReleaseVersion'
+        $script:release | Should -Match ([regex]::Escape('VMF_VERSION: ${{ steps.tag.outputs.number }}'))
+        $script:tagStep.Script | Should -Match ([regex]::Escape('"number=$($done.Version)" >> $env:GITHUB_OUTPUT'))
         # SBOM-1 moved the release's creation into tools/Publish-VmfRelease.ps1
         # (a draft, the bill of materials attached, then published), which
         # names the tag v<version> from the one number this step read.
@@ -170,6 +191,49 @@ Describe 'DIST-1a: the button releases without anybody running a script' -Skip:(
     }
 }
 
+Describe 'RELEASE-FLOW-RESTORE-1: a merge to main starts CI only, and Public release follows Release only' -Skip:(-not (Test-Path (Join-Path $PSScriptRoot '..' '..' 'tools' 'Initialize-VmfCiRunner.ps1'))) {
+
+    BeforeAll {
+        $script:wfDir = Join-Path $script:repoRoot '.github' 'workflows'
+        # The on: block of each workflow, comments removed.
+        $script:onBlocks = @{}
+        foreach ($wf in @(Get-ChildItem $script:wfDir -File -Filter '*.yml')) {
+            $code = (@(Get-Content -LiteralPath $wf.FullName | Where-Object { $_ -notmatch '^\s*#' }) -join "`n") + "`n"
+            $script:onBlocks[$wf.Name] = [regex]::Match($code, '(?ms)^on:\s*$(.+?)^\S').Groups[1].Value
+        }
+    }
+
+    It 'reads every workflow, so this cannot pass by reading nothing' {
+        $script:onBlocks.Count | Should -BeGreaterOrEqual 4
+        foreach ($name in $script:onBlocks.Keys) { $script:onBlocks[$name] | Should -Not -BeNullOrEmpty -Because "$name has an on: block" }
+    }
+
+    It 'only ci.yml starts on a push or a pull request' {
+        foreach ($name in $script:onBlocks.Keys) {
+            if ($name -eq 'ci.yml') { $script:onBlocks[$name] | Should -Match '(?m)^  push:'; continue }
+            $script:onBlocks[$name] | Should -Not -Match '(?m)^  (push|pull_request|pull_request_target|merge_group):' -Because "$name would start on a merge to main"
+        }
+    }
+
+    It 'no workflow starts when a CI run ends' {
+        foreach ($name in $script:onBlocks.Keys) {
+            $block = $script:onBlocks[$name]
+            if ($block -notmatch '(?m)^  workflow_run:') { continue }
+            $listed = [regex]::Match($block, '(?m)^    workflows: \[([^\]]*)\]').Groups[1].Value
+            @($listed -split ',' | ForEach-Object { $_.Trim() }) | Should -Not -Contain 'CI' -Because "$name would run after every CI run"
+        }
+    }
+
+    It 'workflow_run is used once: Public release, after Release and nothing else' {
+        $withRun = @($script:onBlocks.Keys | Where-Object { $script:onBlocks[$_] -match '(?m)^  workflow_run:' })
+        $withRun | Should -Be @('public-release.yml')
+        $block = $script:onBlocks['public-release.yml']
+        $block | Should -Match '(?m)^    workflows: \[Release\]\s*$'
+        $block | Should -Match '(?m)^    types: \[completed\]\s*$'
+        $block | Should -Match '(?m)^  workflow_dispatch:\s*$' -Because 'a failed send is sent again by its own button'
+        [IO.File]::ReadAllText((Join-Path $script:wfDir 'release.yml')) | Should -Match '(?m)^name: Release\s*$' -Because 'workflow_run names the workflow, not the file'
+    }
+}
 Describe 'DIST-1a: git can read a directory an earlier service account created' -Skip:(-not (Test-Path (Join-Path $PSScriptRoot '..' '..' 'tools' 'Initialize-VmfCiRunner.ps1'))) {
 
     # FOUND BY THE FIRST PRESS OF THE BUTTON, which is what the first press was
@@ -240,11 +304,12 @@ Describe 'DIST-1a: the version has one source' {
 
 Describe 'DIST-1a: New-VmfRelease refuses before it writes, and never pushes' {
 
-    It 'stops before the outward step' {
-        # Pushing the tag is what starts the release, so it stays a decision a
-        # person makes. The command is printed, not run.
-        $script:newRelease | Should -Match 'git push origin main \$tag'
+    It 'stops before the outward step: it commits, and never tags or pushes' {
+        # VERSION-BUMP-TESTED-TREE-1: the tag comes only after CI passed on
+        # the head of main this commit is on (tools/New-VmfReleaseTag.ps1).
         $script:newRelease | Should -Not -Match '(?m)^\s*git .*push'
+        $script:newRelease | Should -Not -Match '(?m)^\s*git .*\btag -a'
+        $script:newRelease | Should -Match 'git -C \$repoRoot commit -m "Release \$tag"'
     }
 
     It 'refuses a dirty tree, a branch that is not main, a tag that exists, and a version that goes backwards' -ForEach @(
@@ -256,15 +321,8 @@ Describe 'DIST-1a: New-VmfRelease refuses before it writes, and never pushes' {
         $script:newRelease | Should -Match $Pattern -Because "a release must refuse: $Refusal"
     }
 
-    It 'runs the gates before it writes the version, not after' {
-        $gates  = $script:newRelease.IndexOf('Invoke-VmfTests.ps1')
-        $write  = $script:newRelease.IndexOf('setting ModuleVersion to')
-        $gates | Should -BeGreaterThan 0
-        $write | Should -BeGreaterThan $gates -Because 'a person should find out before a commit exists, not after'
-    }
-
-    It 'writes an annotated tag, which carries who cut it and when' {
-        $script:newRelease | Should -Match 'git -C \$repoRoot tag -a \$tag'
+    It 'the release writes an annotated tag, which carries who cut it and when' {
+        Get-Content (Join-Path $script:repoRoot 'tools' 'New-VmfReleaseTag.ps1') -Raw | Should -Match "tag --annotate \`$tag \`$sha"
     }
 
     It 'parses, and the analyzer has nothing to say about it' {

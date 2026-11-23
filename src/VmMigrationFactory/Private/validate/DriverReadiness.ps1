@@ -51,14 +51,18 @@ function Compare-VmfKernelVersion {
 
     if ([string]::IsNullOrWhiteSpace($Running) -or [string]::IsNullOrWhiteSpace($Floor)) { return $null }
 
+    # LINUX-VERSION-OVERFLOW-1: a segment that does not fit a 64-bit number
+    # is read as nothing, and the comparison is not made - unknown, never a
+    # pass and never a fail. A cast threw, and stopped the caller.
     $segmentsOf = {
         param([string]$Text)
         $clean = $Text -replace '^\s*kernel-', ''
-        @([regex]::Matches($clean, '\d+') | ForEach-Object { [int64]$_.Value })
+        @([regex]::Matches($clean, '\d+') | ForEach-Object { ConvertTo-VmfBoundedNumber -Text $_.Value -Long })
     }
     $a = @(& $segmentsOf $Running)
     $b = @(& $segmentsOf $Floor)
     if ($a.Count -eq 0 -or $b.Count -eq 0) { return $null }
+    if (@($a + $b | Where-Object { $null -eq $_ }).Count) { return $null }
 
     $len = [math]::Min($a.Count, $b.Count)
     for ($i = 0; $i -lt $len; $i++) {
@@ -126,9 +130,12 @@ function Find-VmfManaTableEntry {
         RHEL8-MANA-1: the row of Microsoft's MANA table that covers this
         machine, or nothing when the table does not cover it.
     .DESCRIPTION
-        Each row names a MINIMUM release, so a later minor release of the same
-        major is covered by the nearest row at or below it: Red Hat 9.8 by the
-        9.6 row (measured - it got MANA), SUSE 15 SP8 by SP7. An earlier release
+        Each row names a MINIMUM release, so on a distribution named in
+        coveredByEarlierRow a later minor release of the same major is covered
+        by the nearest row at or below it: Red Hat 9.8 by the 9.6 row
+        (measured - it got MANA), SUSE 15 SP8 by SP7. Any other distribution
+        takes a row only for its exact release: Ubuntu 24.10 is not covered by
+        the 24.04 row (KERNEL-MINOR-ROW-1). An earlier release
         is not covered: SUSE 15 SP4, Red Hat 8 - except an earlier minor on a
         distribution where a normal update reaches the row (Red Hat 9.4, Rocky
         and Alma 9.x: minorReachedByUpdate, AN-MANA-DRIVER-RULE-1), which is
@@ -158,6 +165,11 @@ function Find-VmfManaTableEntry {
         return $rows | Where-Object { $Kernel -like "$($_.kernelSeries).*" } | Select-Object -First 1
     }
 
+    # LINUX-VERSION-OVERFLOW-1: no row covers a release nobody can read. A
+    # part that does not fit a 32-bit number (9.99999999999) threw below, in
+    # the scan, the advice and the run; it matched a row by its first parts.
+    if (-not (Test-VmfVersionInRange -Version $DistroVersion)) { return $null }
+
     $exact = $rows | Where-Object { $_.versionId -eq $DistroVersion -or $DistroVersion -like "$($_.versionId).*" } | Select-Object -First 1
     if ($exact) { return $exact }
 
@@ -169,14 +181,24 @@ function Find-VmfManaTableEntry {
     }
     $mine = & $split $DistroVersion
     if ($null -eq $mine.minor) { return $null }
-    $covering = $rows | ForEach-Object {
-        $row = $_
-        $v = & $split ([string]$row.versionId)
-        if ($v.major -eq $mine.major -and $null -ne $v.minor -and $v.minor -le $mine.minor) {
-            [pscustomobject]@{ row = $row; minor = $v.minor }
-        }
-    } | Sort-Object minor -Descending | Select-Object -First 1 | ForEach-Object { $_.row }
-    if ($covering) { return $covering }
+    # KERNEL-MINOR-ROW-1 (2026-11-21): only a distribution named in
+    # coveredByEarlierRow is covered by an earlier row of its major. Ubuntu
+    # 24.10 got the 24.04 row, and Microsoft lists 24.04 only. An Ubuntu
+    # version is YY.MM: 24.10 is an interim release with its own kernel
+    # series, not a later minor release of 24.04. With no row it is a release
+    # Microsoft does not list, as 20.04 is - never a floor the table does not
+    # give.
+    $coveredIds = if ($f.mana.linux.PSObject.Properties['coveredByEarlierRow']) { @($f.mana.linux.coveredByEarlierRow.ids) } else { @() }
+    if ($coveredIds -contains $id) {
+        $covering = $rows | ForEach-Object {
+            $row = $_
+            $v = & $split ([string]$row.versionId)
+            if ($v.major -eq $mine.major -and $null -ne $v.minor -and $v.minor -le $mine.minor) {
+                [pscustomobject]@{ row = $row; minor = $v.minor }
+            }
+        } | Sort-Object minor -Descending | Select-Object -First 1 | ForEach-Object { $_.row }
+        if ($covering) { return $covering }
+    }
 
     # AN-MANA-DRIVER-RULE-1 (2026-11-06): on Red Hat and its rebuilds
     # a normal update within the major reaches a later minor release, and its
@@ -338,9 +360,12 @@ function Test-VmfKernelVersionPrefix {
         [Parameter()][AllowNull()][AllowEmptyString()][string]$Floor,
         [switch]$Within
     )
-    $nums = { param([string]$s) @([regex]::Matches(($s -replace '^\s*kernel-', ''), '\d+') | ForEach-Object { [int64]$_.Value }) }
+    # LINUX-VERSION-OVERFLOW-1: a number that does not fit is not read, and
+    # nothing is a prefix of a version nobody can read.
+    $nums = { param([string]$s) @([regex]::Matches(($s -replace '^\s*kernel-', ''), '\d+') | ForEach-Object { ConvertTo-VmfBoundedNumber -Text $_.Value -Long }) }
     $short = @(& $nums $(if ($Within) { $Floor } else { $Running }))
     $long = @(& $nums $(if ($Within) { $Running } else { $Floor }))
+    if (@($short + $long | Where-Object { $null -eq $_ }).Count) { return $false }
     if ($short.Count -eq 0 -or $long.Count -le $short.Count) { return $false }
     for ($i = 0; $i -lt $short.Count; $i++) { if ($short[$i] -ne $long[$i]) { return $false } }
     $true
@@ -417,7 +442,18 @@ function Get-VmfManaDriverPresence {
     }
     $cmp = Compare-VmfKernelVersion -Running $kernel -Floor ([string]$f.mana.linux.fallbackForUnlistedDistros.minKernel)
     if ($null -eq $cmp) { return 'unknown' }
-    if ($cmp -ge 0) { 'present' } else { 'unlisted' }
+    # The fallback (a kernel of 6.14 or later) does not depend on the release,
+    # so it stands for any release.
+    if ($cmp -ge 0) { return 'present' }
+    # LINUX-VERSION-OVERFLOW-1: a release version with a number that does not
+    # fit is a release the product cannot read, not an unlisted one.
+    # Find-VmfManaTableEntry gives no row for it, so 'unlisted' here would be
+    # a no made from a value nobody read - unknown is never a no. (A UEK
+    # kernel is matched by its series, not by the release, so its answer
+    # stands.)
+    $distroVersion = [string]$Facts.distroVersion
+    if ($kernel -notmatch '(?i)uek' -and $distroVersion -match '\d' -and -not (Test-VmfVersionInRange -Version $distroVersion)) { return 'unknown' }
+    'unlisted'
 }
 
 function Test-VmfTargetNeedsManaDriver {
@@ -735,7 +771,9 @@ function Get-VmfManaDriverInstallOutcome {
     $result = if ($GuestOutput) { [string]$GuestOutput.result } else { '' }
     $addedText = & $check 'packages added'
     $added = 0
-    if ($addedText -match '^\d+$') { $added = [int]$addedText }
+    # LINUX-VERSION-OVERFLOW-1: a count that does not fit is not said, as text
+    # that is not a number is not.
+    if ($addedText -match '^\d+$') { $read = ConvertTo-VmfBoundedNumber -Text $addedText; if ($null -ne $read) { $added = $read } }
     $record = [ordered]@{
         outcome     = 'failed'
         result      = $result

@@ -303,6 +303,15 @@ The scan could not read the list of sizes that Azure offers in the subscription 
 
 Read more: [Microsoft: Resource Skus - List](https://learn.microsoft.com/en-us/rest/api/compute/resource-skus/list)
 
+
+### Facts of this machine not read
+
+The product could not read the facts of this machine. The product cannot tell which sizes this machine can use. The other machines are not affected.
+
+**What to do:** Read what the product said under What this scan could not read. Then start a new assessment.
+
+Read more: [Microsoft: Azure Resource Graph](https://learn.microsoft.com/en-us/azure/governance/resource-graph/overview)
+
 ## What to check before the move
 
 These findings do not stop the machine. A person checks the thing that each one names before the migration starts.

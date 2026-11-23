@@ -63,7 +63,10 @@ yet, make one:
 }
 $rg = Get-AzdValue -Name 'AZURE_RESOURCE_GROUP' -Default "rg-$envName"
 Set-AzdValue -Name 'AZURE_RESOURCE_GROUP' -Value $rg
-
+# AZD-DOWN-RG-RECHECK-1: a new install has no removal in progress. A name a
+# stopped removal recorded could be of another group, and postdown would read
+# that group as this install's.
+Set-AzdValue -Name 'VMF_DOWN_RESOURCE_GROUP' -Value ''
 # ---- 1. readiness ---------------------------------------------------------------
 Write-Step "Is subscription $subscription ready for the platform in ${location}?"
 $checks = @(& (Join-Path $PSScriptRoot 'Test-VmfReadiness.ps1') -Location $location -SubscriptionId $subscription -ResourceGroup $rg)
@@ -388,35 +391,45 @@ Set-AzdValue -Name 'VMF_DASHBOARD_DISPLAY_NAME' -Value $names.Dashboard
 # own tombstone. A key on the uniqueName sidesteps that; the displayName a
 # person reads never changes.
 #
-# THREE CASES, and the middle one is the migration:
+# THREE CASES (Resolve-VmfRegistrationKey, INSTALL-ADOPT-OWNER-1):
 #   a key is already recorded  -> reuse it, so an UPDATE upserts the same
-#                                 registration rather than making a second one
-#   no key, but the registration EXISTS -> record an empty key, which means
-#                                 "uniqueName equals displayName, as it was".
-#                                 An install that predates this change is left
-#                                 exactly as it is.
+#                                 registration rather than making a second one.
+#                                 The directory is not read.
 #   no key, no registration    -> a fresh install, so generate one
-$registrationKey = Get-AzdValue -Name 'VMF_REGISTRATION_KEY'
-if ($null -eq $registrationKey -or '' -eq $registrationKey) {
-    $existing = Get-VmfEntraApplication -DisplayName $names.Api
-    if ($existing) {
-        Set-AzdValue -Name 'VMF_REGISTRATION_KEY' -Value ''
-        $registrationKey = ''
-        Write-Host '   registrations already exist; their names are kept as they are'
-    }
-    else {
-        $registrationKey = -join ((1..6) | ForEach-Object { 'abcdefghijklmnopqrstuvwxyz0123456789'[(Get-Random -Maximum 36)] })
+#   no key, but a registration with the name EXISTS -> STOP, before anything
+#                                 here touches the directory. It used to record
+#                                 an EMPTY key, and the uniqueName
+#                                 'vmf-api-<env>' is one any member of the
+#                                 tenant can make first. Nothing the directory
+#                                 shows proves who made a registration, so none
+#                                 is taken over.
+$registration = Resolve-VmfRegistrationKey -RecordedKey (Get-AzdValue -Name 'VMF_REGISTRATION_KEY') `
+    -ApiDisplayName $names.Api -DashboardDisplayName $names.Dashboard
+$registrationKey = $registration.Key
+switch ($registration.Source) {
+    'recorded' { Write-Host "   registration key $registrationKey (recorded by the first install)" }
+    'new' {
         Set-AzdValue -Name 'VMF_REGISTRATION_KEY' -Value $registrationKey
         Write-Host "   fresh install: registrations get the key $registrationKey"
     }
-}
-else { Write-Host "   registration key $registrationKey (recorded by the first install)" }
 
+}
+
+# INSTALL-PURGE-DELETED-1: the ids the last install recorded, read before they
+# are blanked below. identity-deploy looks for a live registration with each:
+# one that is there means no deleted registration can hold its unique name.
+$recordedApiAppId = [string](Get-AzdValue -Name 'VMF_API_APP_ID')
+$recordedDashboardAppId = [string](Get-AzdValue -Name 'VMF_DASHBOARD_APP_ID')
 $identityArgs = @{
     ResourceGroup        = $rg
+    RecordedApiAppId     = $recordedApiAppId
+    RecordedDashboardAppId = $recordedDashboardAppId
     ApiDisplayName       = $names.Api
     DashboardDisplayName = $names.Dashboard
     RegistrationKey      = $registrationKey
+    # INSTALL-PURGE-DELETED-1: a key made in this run is held by no deleted
+    # registration, so identity-deploy reads no deleted items for it.
+    RegistrationKeyIsNew = ($registration.Source -eq 'new')
 }
 if ($suffix) { $identityArgs.BaseSuffix = $suffix }
 # The id comes from the DEPLOYMENT'S OWN OUTPUT (identity.bicep reports

@@ -373,8 +373,21 @@ function Get-VmfWaveLayoutWrites {
     # answer - the service hands it to the writer, which refuses a plan that
     # changed since (review finding 2: with no version from the page, a write
     # between the judgement and the save would have gone unjudged).
-    $read = Read-VmfPlanFileVersioned -Path (Get-VmfStoreItemHandle -RunPath $RunPath -RelPath 'plan.json')
-    $entries = @(if ($read) { @($read.Plan.entries) })
-    $judged = Get-VmfWaveSettingWrites -Entries $entries -Waves @(ConvertTo-VmfWaveLayout -Layout $Layout)
-    $judged | Add-Member -NotePropertyName Version -NotePropertyValue $(if ($read) { $read.Version } else { '' }) -PassThru
+    # WAVE-SAVE-NO-PLAN-1: with no plan there is nothing to judge, and nothing
+    # to save. This judged an empty list - no writes, so no role check - and
+    # gave back the version '', which the writer reads as "no check". A save
+    # whose judgement read before the plan operation wrote plan.json, and whose
+    # write read after it, then took the sign-off off with no approver. It is
+    # refused here, and an empty version is never given back. The look comes
+    # first so a missing file is this 400 on the file backend too, not a read
+    # error; the read is asked again because the plan can go in between.
+    $read = $null
+    if (Test-VmfStoreItem -RunPath $RunPath -RelPath 'plan.json') {
+        $read = Read-VmfPlanFileVersioned -Path (Get-VmfStoreItemHandle -RunPath $RunPath -RelPath 'plan.json')
+    }
+    if (-not $read -or [string]::IsNullOrWhiteSpace([string]$read.Version)) {
+        throw '400: There is no plan in this migration yet. Wait for the plan to finish, or build the plan. Then save the waves again.'
+    }
+    $judged = Get-VmfWaveSettingWrites -Entries @($read.Plan.entries) -Waves @(ConvertTo-VmfWaveLayout -Layout $Layout)
+    $judged | Add-Member -NotePropertyName Version -NotePropertyValue $read.Version -PassThru
 }

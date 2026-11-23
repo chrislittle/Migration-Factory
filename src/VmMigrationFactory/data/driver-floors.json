@@ -56,10 +56,14 @@
   ],
   "mana": {
     "linux": {
-      "note": "Minimum RECOMMENDED kernel per distribution, copied verbatim from the source table. Each row names the MINIMUM release, so a later minor release of the same major is covered by it (RHEL8-MANA-1; measured: Red Hat 9.8 got MANA). A distribution or release the table does not list is NOT supported for MANA, unless its kernel meets fallbackForUnlistedDistros (RHEL8-MANA-1; measured: Red Hat 8.10, not listed, loaded mana and bound nothing).",
+      "note": "Minimum RECOMMENDED kernel per distribution, copied verbatim from the source table. Each row names the MINIMUM release, so on a distribution in coveredByEarlierRow a later minor release of the same major is covered by it (RHEL8-MANA-1; measured: Red Hat 9.8 got MANA). A distribution or release the table does not list is NOT supported for MANA, unless its kernel meets fallbackForUnlistedDistros (RHEL8-MANA-1; measured: Red Hat 8.10, not listed, loaded mana and bound nothing).",
       "fallbackForUnlistedDistros": {
         "minKernel": "6.14",
         "note": "Microsoft, verbatim: 'For users of non endorsed Linux distributions or utilizing custom kernels, we recommend the Linux Kernel 6.14 or later'. RHEL8-MANA-1: an unlisted distribution or release counts as supported for MANA only when its kernel is at least this."
+      },
+      "coveredByEarlierRow": {
+        "ids": ["rhel", "almalinux", "rocky", "sles"],
+        "note": "KERNEL-MINOR-ROW-1 (2026-11-21): the distributions on which a later minor release is covered by the nearest row of its major at or below it - Red Hat 9.8 by the 9.6 row (RHEL8-MANA-1, measured: it got MANA), a later SUSE 15 service pack by the SP7 row. Every other distribution takes a row only for its exact release. Ubuntu is not here: its version is YY.MM, so 24.10 is an interim release with its own kernel series, not a later minor release of 24.04, and the table lists Ubuntu 22.04, 24.04 and 26.04 only. An Ubuntu release with no row is a release Microsoft does not list, as Ubuntu 20.04 is."
       },
       "minorReachedByUpdate": {
         "ids": ["rhel", "almalinux", "rocky"],

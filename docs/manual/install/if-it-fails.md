@@ -54,6 +54,12 @@ The readiness table reads the quota of each hosting plan before the install crea
 
 Your account created the application registrations but cannot list them. Ask a directory administrator to give your account the right to read applications, or to run the install.
 
+## The install stops at an application registration with the same name
+
+The install names the two registrations after your environment. A first install stops when a registration with one of these names already exists. It stops before it makes a registration or deploys the platform. The install does not use a registration that it did not make. Any user in the directory can make a registration with that name, and its owner controls who may sign in. Two registrations that you kept at a removal also stop the install.
+
+The message gives the name and the application ID of each registration. Ask a directory administrator to remove these registrations. Or run `azd env new` with a different environment name, and then run `azd up` again.
+
 ## Building the image failed
 
 The build runs in your registry, in the cloud. The message above the error is from the build itself. The usual cause is a network rule on the registry that refuses the upload. Run `azd up` again once the rule allows it.
@@ -85,7 +91,33 @@ If the group is still there, nothing is protecting it. Delete it:
 az group delete --name <your resource group> --yes
 ```
 
-Then remove the two application registrations in the Azure portal if the removal did not reach them. They are named after your environment.
+When the group is gone, type this to remove the two application registrations:
+
+```console
+azd hooks run postdown
+```
+
+## The removal stops with an error
+
+```
+ERROR: deleting infrastructure: ... context canceled
+```
+
+Azure can continue to delete the resource group after `azd down` stops. The removal removes the two application registrations only when `azd down` completes. So the registrations can stay in your directory.
+
+Type the removal command again:
+
+```console
+azd down
+```
+
+Before azd deletes anything, the command reads the resource group and tells you what it found:
+
+- **The resource group is still in Azure.** azd deletes it again. Then the command removes the registrations.
+- **Azure is still deleting the resource group.** The command reads it again every 30 seconds, for up to 30 minutes.
+- **The resource group is already gone.** The command removes the registrations. Then azd stops with the error `ResourceGroupNotFound`, because the group is already gone. You can ignore this error.
+
+To do only the last step, type `azd hooks run postdown`. It removes the registrations only when the resource group is gone. If the group is still in Azure, it removes nothing and tells you to type `azd down` again.
 
 ## The perimeter could not be created
 

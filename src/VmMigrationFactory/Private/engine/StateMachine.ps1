@@ -865,9 +865,16 @@ function Set-VmfRollbackRecord {
         # ROLLBACK-CRG-1 review (vm-state v24): a capacity reservation group the
         # machine left that this migration did not make. With -Done only.
         [Parameter()][AllowNull()]$ReservationLeft,
+        # CRG-ROLLBACK-ATTEMPT-GROUP-1 review: this write follows the rollback's
+        # try of the group (the full rollback's last write). Every other write
+        # carries on the group an earlier rollback did not put the machine back
+        # in (Get-VmfOwedReservationGroup), so it stays owed until a rollback
+        # has tried it.
+        [Parameter()][switch]$ReservationDecided,
         [Parameter()][switch]$Done
     )
     $doc = Read-VmfStateDoc -RunPath $Context.RunPath -VmId $Context.VmId
+    if (-not $ReservationDecided -and -not $ReservationNotBack) { $ReservationNotBack = Get-VmfOwedReservationGroup -Doc $doc }
     # ROLLBACK-ORIGINALS-LEFT-1 (vm-state v41): each disk these swaps took off
     # the machine, in the same write as the disks put on, added to the disks
     # earlier rollbacks left.
@@ -3871,7 +3878,9 @@ function Invoke-VmfRollback {
             Write-VmfStepLine -RunPath $Context.RunPath -Step 'rollback' -Outcome fail -VmId $Context.VmId -Detail $gapWords
             throw $gapWords
         }
-        $capture = Get-VmfPutBackCapture -Doc $doc
+        # CRG-ROLLBACK-ATTEMPT-GROUP-1: the group of this attempt, unless it is
+        # a group of this migration.
+        $capture = Get-VmfPutBackCapture -Doc $doc -ProductGroupIds @(Get-VmfProductReservationGroupIds -RunPath $Context.RunPath)
         # REVIEW of RETIRE-SCOPE-1: a move that passed PRECHECK before the margin
         # and resumed past the retirement date (a worker that stopped, a wave
         # started again) would stop the machine and ask Azure for a size it
@@ -4197,7 +4206,7 @@ function Invoke-VmfRollback {
         $staleLeft = Get-VmfSwapPending -Doc (Read-VmfStateDoc -RunPath $Context.RunPath -VmId $Context.VmId)
         if ($staleLeft -and [string]$staleLeft.kind -eq 'rollback') { Set-VmfSwapPending -RunPath $Context.RunPath -VmId $Context.VmId -Record $null }
     }
-    Set-VmfRollbackRecord -Context $Context -Path $recordPath -OsDisk $madeOs -DataDisks $madeData -KeptDataDisks @($keptList) -ReservationNotBack $crgNotBack -ReservationLeft $crgLeft -Done
+    Set-VmfRollbackRecord -Context $Context -Path $recordPath -OsDisk $madeOs -DataDisks $madeData -KeptDataDisks @($keptList) -ReservationNotBack $crgNotBack -ReservationLeft $crgLeft -ReservationDecided:(-not $GuestOnly) -Done
     $keptCount = $keptList.Count
     # EVAL-H3: the machine is back at the beginning, so the record of how far
     # the last attempt got must go too. Leaving it made a retry skip the whole

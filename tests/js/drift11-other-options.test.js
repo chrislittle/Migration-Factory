@@ -61,8 +61,8 @@ test('the reason has words, and the engine can send it', () => {
   eq(UX.whyNot['an-required-no-mana'], undefined, 'the old reason is gone');
   const schema = JSON.parse(fs.readFileSync(path.join(REPO, 'schemas', 'target-advice.schema.json'), 'utf8'));
   ok(schema.$defs.reason.enum.includes('no-mana-driver'), 'in the reason list');
-  eq(schema.properties.schemaVersion.const, 33);
-  eq(sample.schemaVersion, 33, 'the sample is the version the page reads');
+  eq(schema.properties.schemaVersion.const, 34);
+  eq(sample.schemaVersion, 34, 'the sample is the version the page reads');
 });
 
 test('RUN: the lab machine - no target, and Other options says why for v6 and v7', () => {

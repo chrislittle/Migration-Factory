@@ -160,8 +160,13 @@ test('every subject the engine writes has its own words, so the catch-all guard 
   const files = [path.join(src, 'Public', 'Invoke-VmfAssessment.ps1'), path.join(src, 'Private', 'assess', 'SizesNotRead.ps1')];
   const subjects = new Set(files.flatMap(f => [...fs.readFileSync(f, 'utf8').matchAll(/subject\s*=\s*'([A-Za-z]+)'/g)].map(m => m[1])));
   ok(subjects.size >= 3, `the engine subjects were found: ${[...subjects]}`);
+  // sizes and machine (LINUX-VERSION-OVERFLOW-1) each have a card of their
+  // own, drawn by their own function, not a line of NOT_READ_WORDS.
+  const ownCard = { sizes: 'sizesNotReadHtml', machine: 'machineNotReadHtml' };
   for (const s of subjects) {
-    ok(s === 'sizes' || new RegExp(`\\n\\s+${s}:\\s+'`).test(REPORT_JS.match(/const NOT_READ_WORDS = \{[\s\S]*?\n {2}\};/)[0]), `${s} has its own words`);
+    ok(ownCard[s]
+      ? new RegExp(`key === '${s}'\\) \\{ return ${ownCard[s]}\\(x\\)`).test(REPORT_JS)
+      : new RegExp(`\\n\\s+${s}:\\s+'`).test(REPORT_JS.match(/const NOT_READ_WORDS = \{[\s\S]*?\n {2}\};/)[0]), `${s} has its own words`);
   }
   ok(!/RETIRED_CODES/.test(REPORT_JS), 'no filter for a code no 1.0 scan writes');
 });

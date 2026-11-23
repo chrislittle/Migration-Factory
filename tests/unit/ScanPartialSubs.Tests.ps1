@@ -277,7 +277,7 @@ Describe 'SCAN-PARTIAL-SUBS-1: the target options hold the machine too' {
         $m = @($advice.machines)[0]
         @($m.options | Where-Object { $_.supported }).Count | Should -Be 0
         foreach ($o in @($m.options)) { @($o.notSupported) | Should -Contain 'sizes-not-read' -Because "option $($o.option)" }
-        $advice.schemaVersion | Should -Be 33
+        $advice.schemaVersion | Should -Be 34
         ($advice | ConvertTo-Json -Depth 30) | Test-Json -SchemaFile (Join-Path $script:repoRoot 'schemas' 'target-advice.schema.json') | Should -BeTrue
     }
 }

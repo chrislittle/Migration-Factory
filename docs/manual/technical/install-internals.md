@@ -27,7 +27,7 @@ Read each column from the top down. The three columns are the first three parts 
 
 Then it adopts what exists. An existing platform in the group is recognised by its storage account, and its suffix and its engine image win over a fresh derivation. This is what lets `azd up` run again on an installed platform without creating a second one.
 
-Then it deploys two things that live outside the product's resource group. The two application registrations are directory objects, not Azure resources. The two custom roles live at the subscription and are shared by every install in it, so the removal keeps them.
+Then it deploys two things that live outside the product's resource group. The two application registrations are directory objects, not Azure resources. Each registration has a unique name with a key of six letters and digits. A first install makes a new key from a random source. When a registration with one of the two names already exists, the first install stops before it makes a registration. The install does not use a registration that it did not make. A later install of the same environment uses the key that the first install recorded. The two custom roles live at the subscription and are shared by every install in it, so the removal keeps them.
 
 ## The templates
 
@@ -60,7 +60,9 @@ Each Azure CLI step of the install runs through `infra/Invoke-VmfAzStep.ps1`. Wh
 
 `predown.ps1` runs before `azd down` deletes the resource group. It counts the safety copies with the lock `vmf-safety-copy` in the subscription of the install. It does not count a copy without a lock. It also counts and lists the capacity reservation groups that the product made in that subscription. These copies and capacity reservation groups are in the resource groups of the machines, so the removal does not delete them. The script prints the commands that find them by their tags, `vmfSafetyCopy=true` and `vmfCapacityReservation=true`. You can use these commands after the removal. The script does not stop the removal.
 
-`postdown.ps1` runs after `azd down`, and only when the removal succeeded. It asks if it removes the two registrations. The default answer is yes. If you answer yes, it removes each registration that it finds. If you answer no, it keeps them, and a later install with the same environment name uses them again. Because this script runs after the removal, a removal that fails does not remove the registrations, and you can still sign in to the product.
+`predown.ps1` also records the name of the resource group as `VMF_DOWN_RESOURCE_GROUP`, because `azd down` clears `AZURE_RESOURCE_GROUP` before `postdown.ps1` runs. Then it reads the resource group. If Azure says `ResourceGroupNotFound`, the platform is already gone, and `predown.ps1` runs `postdown.ps1` itself. Then `azd down` stops on the same error. If Azure is deleting the group, the script reads it again every 30 seconds, for up to 30 minutes. The script deletes nothing itself.
+
+`postdown.ps1` runs after `azd down`, and only when the removal succeeded. You can also run it with `azd hooks run postdown`. First it reads the resource group. It continues only when Azure says `ResourceGroupNotFound`. In all other cases it removes nothing and stops with an error. For example, the group is still in Azure, or the read fails. Then it asks if it removes the two registrations. The default answer is yes. If you answer yes, it removes each registration that it finds. If you answer no, it keeps them. A later install with the same environment name then stops, until an administrator removes them. Because this script runs after the removal, a removal that fails does not remove the registrations, and you can still sign in to the product.
 
 ## What the environment records
 

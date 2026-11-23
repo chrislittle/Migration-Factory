@@ -208,7 +208,7 @@ pull requests from outside contributors yet.
 ---
 ## Version
 
-Version **1.0.0**. See [Releases](https://github.com/chrislittle/Migration-Factory/releases)
+Version **1.1.0**. See [Releases](https://github.com/chrislittle/Migration-Factory/releases)
 for what each one changed.
 
 ---

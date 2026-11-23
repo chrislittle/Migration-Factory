@@ -1,0 +1,17 @@
+{
+  "about": "WAVE-CASE-1: the wave names the wave editor and Set-VmfWavePlan refuse together. layout = the names of the waves to save; stored = the wave names of the plan as stored; clash = what both rules answer (null when the names are usable). kind same = two waves with one name; case = two waves whose names differ only in letter case; stored = a wave whose name differs only in letter case from a stored wave name. tests/js/wave-case.test.js runs findWaveNameClash (waves.js) against these cases, and tests/unit/WaveCase.Tests.ps1 runs Find-VmfWaveNameClash.",
+  "cases": [
+    { "why": "different names are usable", "layout": ["wave-1", "wave-2"], "stored": ["wave-1", "wave-2"], "clash": null },
+    { "why": "a rename to a new name is usable", "layout": ["prod", "wave-2"], "stored": ["wave-1", "wave-2"], "clash": null },
+    { "why": "no wave at all is usable", "layout": [], "stored": ["wave-1"], "clash": null },
+    { "why": "two waves that differ only in letter case", "layout": ["Wave1", "wave1"], "stored": [], "clash": { "name": "wave1", "other": "Wave1", "kind": "case" } },
+    { "why": "letter case anywhere in the name counts", "layout": ["prod-A", "x", "PROD-a"], "stored": [], "clash": { "name": "PROD-a", "other": "prod-A", "kind": "case" } },
+    { "why": "two waves with one name", "layout": ["prod", "prod"], "stored": ["prod"], "clash": { "name": "prod", "other": "prod", "kind": "same" } },
+    { "why": "a rename that changes only the letter case of a stored wave", "layout": ["Wave-1"], "stored": ["wave-1"], "clash": { "name": "Wave-1", "other": "wave-1", "kind": "stored" } },
+    { "why": "a new wave named as a stored wave in another letter case", "layout": ["alpha", "WAVE-1"], "stored": ["wave-1", "wave-2"], "clash": { "name": "WAVE-1", "other": "wave-1", "kind": "stored" } },
+    { "why": "a name that is exactly a stored wave name is that wave", "layout": ["wave-1"], "stored": ["wave-1", "Wave-1"], "clash": null },
+    { "why": "the planner's own word for no wave is not a wave", "layout": ["unscheduled", "wave-1"], "stored": ["unscheduled", "wave-1"], "clash": null },
+    { "why": "no wave twice is not two waves", "layout": ["unscheduled", "unscheduled"], "stored": [], "clash": null },
+    { "why": "an empty stored name is not a wave", "layout": ["wave-1"], "stored": ["", null], "clash": null }
+  ]
+}

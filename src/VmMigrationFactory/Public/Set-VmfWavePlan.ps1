@@ -60,6 +60,9 @@ function Set-VmfWavePlan {
         page sends every wave's settings on every save, so a save built from a
         page read before a decision would write that decision away. A stored
         version that differs is refused with 409. The facade passes the page's version, or, with none, the version it judged the save on (WAVE-LEVER-OVERRIDE-1).
+        A version that is given and empty is refused with 400 (WAVE-SAVE-NO-PLAN-1):
+        it would skip the check. Leave the parameter out to check only against
+        this save's own read.
     .OUTPUTS
         Summary object: waves, moved machine count, approvals invalidated, and
         the machines that do not follow a setting (KeptOwnSettings).
@@ -78,6 +81,14 @@ function Set-VmfWavePlan {
     # PLAN-WRITE-RACE-1: the version of the text read, so the write below is
     # refused if anybody wrote the plan in between - and, when the page says
     # which version it read, refused if the plan changed since then too.
+    # WAVE-SAVE-NO-PLAN-1: a version that was GIVEN must be a version. The
+    # service always gives one, so an empty one is a judgement made on no plan
+    # (Get-VmfWaveLayoutWrites), and a check skipped for it let a save write
+    # what no role check saw. A caller that gives none at all (the command
+    # line) is still checked against its own read below.
+    if ($PSBoundParameters.ContainsKey('ExpectedPlanVersion') -and [string]::IsNullOrWhiteSpace($ExpectedPlanVersion)) {
+        throw '400: The save did not give the version of the plan it read. Load the page again, then make the change again.'
+    }
     $read = Read-VmfPlanFileVersioned -Path $PlanPath
     if (-not $read) { throw "No plan found at '$PlanPath'." }
     if ($ExpectedPlanVersion -and $read.Version -ne $ExpectedPlanVersion) {
@@ -126,6 +137,14 @@ function Set-VmfWavePlan {
             $seen[$id] = $name
         }
     }
+    # WAVE-CASE-1: the engine compares wave names without letter case, and
+    # blob names keep it. So two waves whose names differ only in letter case
+    # would be one wave to the engine and two to the store, and a rename that
+    # changes only the letter case would change no machine. Refused, by the
+    # rule the wave editor asks too.
+    $nameClash = Find-VmfWaveNameClash -Names @($waves | ForEach-Object { [string]$_.name }) `
+        -StoredNames @($entries | ForEach-Object { [string]$_.wave })
+    if ($nameClash) { throw (Get-VmfWaveNameClashRefusal -Clash $nameClash) }
 
     # WAVE-REMOVE-NOT-SAVED-1: a saved layout is the COMPLETE set of waves.
     # The wave editor's Remove and Delete put machines on its left side, and

@@ -286,10 +286,10 @@ Describe 'SIZE-FALLTHROUGH-NOTE-1: the targets step gets the sizes not taken (ta
     }
 
     It 'the version is 29, the schema requires the field, and the sample passes it' {
-        InModuleScope VmMigrationFactory { Get-VmfTargetAdviceSchemaVersion | Should -Be 33 }
+        InModuleScope VmMigrationFactory { Get-VmfTargetAdviceSchemaVersion | Should -Be 34 }
         $schemaPath = Join-Path $script:repoRoot 'schemas' 'target-advice.schema.json'
         $s = Get-Content $schemaPath -Raw | ConvertFrom-Json -Depth 40
-        $s.properties.schemaVersion.const | Should -Be 33
+        $s.properties.schemaVersion.const | Should -Be 34
         @($s.'$defs'.option.required) | Should -Contain 'sizesNotTaken'
         @($s.'$defs'.option.properties.sizesNotTaken.items.properties.why.enum) | Should -Be @('not-listed', 'not-in-region', 'not-approved', 'gen1-no-size', 'too-few-nics', 'too-few-data-disks', 'smaller-than-source', 'shape-unknown', 'one-accelerated-nic')
         Get-Content (Join-Path $script:repoRoot 'schemas' 'samples' 'target-advice.sample.json') -Raw | Test-Json -SchemaFile $schemaPath | Should -BeTrue

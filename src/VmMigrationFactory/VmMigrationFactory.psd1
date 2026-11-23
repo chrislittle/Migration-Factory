@@ -1,6 +1,6 @@
 @{
     RootModule        = 'VmMigrationFactory.psm1'
-    ModuleVersion     = '1.0.0'
+    ModuleVersion     = '1.1.0'
     GUID              = '7f3f3a52-9c1e-4b8a-b9d0-52c1f6b0a9e4'
     Author            = 'Chris Little'
     Copyright         = 'Copyright 2026 Chris Little. Licensed under the Apache License, Version 2.0.'

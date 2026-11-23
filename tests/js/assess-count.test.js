@@ -71,6 +71,9 @@ test("THE DEFECT: a row's Can migrate counts by the shared rule", () => {
 });
 // The report beside the list, run: its pills must be the same numbers.
 const reportHtml = lift('assessments.html', 'reportHtml');
+// ASSESS-APPROVAL-HASH-1: Approve is off until the version is read, except in the demo.
+globalThis.DEMO_MODE = false;
+globalThis.approveWhy = lift('assessments.html', 'approveWhy');
 test('the report counts the same machines the same way', () => {
   global.UX = new Proxy({}, { get: (_, k) => String(k) });
   global.esc = (s) => String(s);

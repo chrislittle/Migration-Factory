@@ -7,6 +7,12 @@
     else can see happens before the last one:
 
       1. The document is there, or nothing is created.
+      1a. RELEASE-DRAFT-RERUN-1: read the releases of the repository first,
+         drafts included. A tag that already has a published release stops
+         here, and so does a tag with more than one draft; nothing is created
+         or changed. One draft of the tag is what an earlier run of the same
+         version left: this run finishes that draft (an attachment of the
+         same name on it is removed first) instead of making a second one.
       2. Create the release as a DRAFT, with release notes GitHub writes from
          the commits since the last release. Below 1.0.0 it is a pre-release:
          the schemas, the cmdlet names and the install path can still change.
@@ -65,18 +71,47 @@ if (-not $Rest) {
 
 $tag = "v$Version"
 $api = "https://api.github.com/repos/$Repository/releases"
-$body = @{
-    tag_name               = $tag
-    name                   = $tag
-    generate_release_notes = $true
-    draft                  = $true
-    prerelease             = ([version]$Version -lt [version]'1.0.0')
-} | ConvertTo-Json
-$draft = & $Rest 'Post' $api $body $null $null
-Write-Host "created $tag as a draft (release $($draft.id))"
-
 $name = [System.IO.Path]::GetFileName($SbomPath)
 $size = (Get-Item -LiteralPath $SbomPath).Length
+
+# RELEASE-DRAFT-RERUN-1: look before making anything. The list holds the
+# drafts too (the token can write the repository), page by page.
+$ofTag = [System.Collections.Generic.List[object]]::new()
+for ($page = 1; $page -le 50; $page++) {
+    $listed = @(& $Rest 'Get' "${api}?per_page=100&page=$page" $null $null $null | ForEach-Object { $_ } | Where-Object { $_ })
+    foreach ($r in $listed) { if ([string]$r.tag_name -eq $tag) { $ofTag.Add($r) } }
+    if ($listed.Count -lt 100) { break }
+}
+$published = @($ofTag | Where-Object { $_.draft -ne $true })
+if ($published.Count) {
+    throw "$tag is already released ($($published[0].html_url)). A released version is never released again, so nothing was created. Release the next version."
+}
+$drafts = @($ofTag | Where-Object { $_.draft -eq $true })
+if ($drafts.Count -gt 1) {
+    throw "$tag has $($drafts.Count) drafts ($(@($drafts | ForEach-Object html_url) -join ', ')), so nothing was created or changed. Delete all but one of them, then run the release again."
+}
+if ($drafts.Count -eq 1) {
+    # An earlier run of this version stopped after it made its draft. That
+    # draft is this release: the run finishes it instead of making a second.
+    $draft = $drafts[0]
+    Write-Host "$tag already has a draft (release $($draft.id)) from an earlier run, so this run finishes that draft."
+    foreach ($old in @(& $Rest 'Get' "$api/$($draft.id)/assets" $null $null $null | ForEach-Object { $_ } | Where-Object { $_ -and [string]$_.name -eq $name })) {
+        $null = & $Rest 'Delete' "$api/assets/$($old.id)" $null $null $null
+        Write-Host "removed the earlier $name from the draft"
+    }
+}
+else {
+    $body = @{
+        tag_name               = $tag
+        name                   = $tag
+        generate_release_notes = $true
+        draft                  = $true
+        prerelease             = ([version]$Version -lt [version]'1.0.0')
+    } | ConvertTo-Json
+    $draft = & $Rest 'Post' $api $body $null $null
+    Write-Host "created $tag as a draft (release $($draft.id))"
+}
+
 try {
     # The upload address is a URI template: {?name,label} is its query.
     $upload = ([string]$draft.upload_url -replace '\{[^}]*\}$', '') + '?name=' + [uri]::EscapeDataString($name)

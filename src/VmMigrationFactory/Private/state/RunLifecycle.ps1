@@ -260,12 +260,14 @@ function Get-VmfStoreRunPaths {
     param([Parameter(Mandatory)][string]$StorePath)
 
     $root = $StorePath.TrimEnd('/', '\')
-    $folders = @(Get-VmfStorePrefixes -StorePath $root | Where-Object { $_ -notin @('vmf-claims', 'vmf-records') })
+    $folders = @(Get-VmfStorePrefixes -StorePath $root | Where-Object { $_ -notin @(Get-VmfNotARunFolders) })
     $projects = @(Get-VmfStoreFoldersHolding -StorePath $root -Folder $folders -Name 'project.json')
     foreach ($prefix in $folders) {
         $path = "$root/$prefix"
         if ($prefix -cin $projects) {
-            foreach ($child in @(Get-VmfStorePrefixes -StorePath $path)) {
+            # PROJECT-LOGS-DELETE-1: and beside a project's runs too - a project's own
+            # logs is its event log, never a run.
+            foreach ($child in @(Get-VmfStorePrefixes -StorePath $path | Where-Object { $_ -notin @(Get-VmfNotARunFolders) })) {
                 [pscustomobject]@{ Id = "$prefix/$child"; Path = "$path/$child" }
             }
             continue

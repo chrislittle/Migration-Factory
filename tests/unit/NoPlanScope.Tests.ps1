@@ -241,8 +241,8 @@ Describe 'NO-PLAN-SCOPE-1: the scan puts a machine with a purchase plan outside 
     It 'the target advice may give it as a reason' {
         $schema = Get-Content (Join-Path $script:repoRoot 'schemas' 'target-advice.schema.json') -Raw | ConvertFrom-Json
         @($schema.'$defs'.reason.enum) | Should -Contain 'purchase-plan-out-of-scope'
-        $schema.properties.schemaVersion.const | Should -Be 33
-        InModuleScope VmMigrationFactory { Get-VmfTargetAdviceSchemaVersion | Should -Be 33 }
+        $schema.properties.schemaVersion.const | Should -Be 34
+        InModuleScope VmMigrationFactory { Get-VmfTargetAdviceSchemaVersion | Should -Be 34 }
     }
 
     It 'the scan reads the plan name from Resource Graph, and projects it' {

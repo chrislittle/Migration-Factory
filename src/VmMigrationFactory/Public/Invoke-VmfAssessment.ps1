@@ -307,24 +307,42 @@ function Invoke-VmfAssessment {
     # association (REBUILD-REMOVE-ROLE-1, v12). Both were read only for the
     # acceptance of a rebuild, which is gone with the rebuild.
 
+    # LINUX-VERSION-OVERFLOW-1: one machine whose record cannot be made does
+    # not stop the scan of the others. A Linux release with too many digits,
+    # which root inside one machine controls, ended the scan here and saved no
+    # assessment. The machine is held (machine-not-read) with what the product
+    # said, the run log says which machine, and the others are judged.
     $records = foreach ($vm in @($inventory)) {
-        $skuEntry = $null
-        $machineCatalog = Get-VmfMachineCatalog -Catalogs $catalogs -VmId ([string]$vm.id) -Location ([string]$vm.location)
-        if ($machineCatalog) { $skuEntry = $machineCatalog[[string]$vm.sku] }
-        # SCAN-PARTIAL-SUBS-1: its subscription and region were not read.
-        $vmSizesNotRead = [bool]([string]$vm.location -and
-            $catalogKeysNotRead.Contains((Get-VmfCatalogKey -VmId ([string]$vm.id) -Location ([string]$vm.location))))
-        # IMAGE-1: ask Azure whether the image supports NVMe. GEN1-IMAGE-1:
-        # judged against the machine as it is now, so a machine upgraded from
-        # Gen1 to Gen2 is not refused for the Gen1 image it was built from.
-        $imageNvme = Get-VmfMachineImageNvme -Vm $vm -RunPath $OutPath
-        Get-VmfAssessmentRecord -Vm $vm -SkuEntry $skuEntry `
-            -AppGroupTag $AppGroupTag -SapSystemVms $sapSystemVms `
-            -ImageNvmeSupported $imageNvme.Nvme -ImageNvmeNote $imageNvme.Note -NicAcceleratedMap $nicAccelerated `
-            -AvdSessionHosts $avdSessionHosts -ManagedPlatformGroups $managedPlatformGroups `
-            -AvdPoolTypes $avdPoolTypes -SqlVms $sqlVms -DiskShares $diskShares -DiskTypes $diskTypes -SiteRecoveryDisks $siteRecoveryDisks -ResourceGroupOwners $groupOwners `
-            -NicClusterHints $nicClusterHints -SqlAgentVms $sqlAgentVms `
-            -SizesNotRead:$vmSizesNotRead
+        try {
+            $skuEntry = $null
+            $machineCatalog = Get-VmfMachineCatalog -Catalogs $catalogs -VmId ([string]$vm.id) -Location ([string]$vm.location)
+            if ($machineCatalog) { $skuEntry = $machineCatalog[[string]$vm.sku] }
+            # SCAN-PARTIAL-SUBS-1: its subscription and region were not read.
+            $vmSizesNotRead = [bool]([string]$vm.location -and
+                $catalogKeysNotRead.Contains((Get-VmfCatalogKey -VmId ([string]$vm.id) -Location ([string]$vm.location))))
+            # IMAGE-1: ask Azure whether the image supports NVMe. GEN1-IMAGE-1:
+            # judged against the machine as it is now, so a machine upgraded from
+            # Gen1 to Gen2 is not refused for the Gen1 image it was built from.
+            $imageNvme = Get-VmfMachineImageNvme -Vm $vm -RunPath $OutPath
+            Get-VmfAssessmentRecord -Vm $vm -SkuEntry $skuEntry `
+                -AppGroupTag $AppGroupTag -SapSystemVms $sapSystemVms `
+                -ImageNvmeSupported $imageNvme.Nvme -ImageNvmeNote $imageNvme.Note -NicAcceleratedMap $nicAccelerated `
+                -AvdSessionHosts $avdSessionHosts -ManagedPlatformGroups $managedPlatformGroups `
+                -AvdPoolTypes $avdPoolTypes -SqlVms $sqlVms -DiskShares $diskShares -DiskTypes $diskTypes -SiteRecoveryDisks $siteRecoveryDisks -ResourceGroupOwners $groupOwners `
+                -NicClusterHints $nicClusterHints -SqlAgentVms $sqlAgentVms `
+                -SizesNotRead:$vmSizesNotRead
+        }
+        catch {
+            $why = [string]$_.Exception.Message
+            # The not-read shape the scan already has: the machine is named in
+            # notRead with what the product said (the report and the page show
+            # it under What this scan could not read), and its record holds it.
+            $notRead.Add([ordered]@{ subject = 'machine'; detail = $why; scope = [string]$vm.id; machineCount = 1 })
+            Write-VmfStepLine -RunPath $OutPath -Step 'assessment' -Outcome warn `
+                -Detail "could not read the facts of machine $([string]$vm.name) ($why) - it is held until a new assessment reads it" `
+                -Data @{ vmId = [string]$vm.id }
+            Get-VmfMachineNotReadRecord -Vm $vm -Detail $why
+        }
     }
 
     # IDENTITY-4: the fleet-wide read of what each system-assigned identity
@@ -364,7 +382,18 @@ function Invoke-VmfAssessment {
         # IDENTITY-3: how far the identity check reached, for the page to say.
         vms           = @($records)
     }
-    Write-VmfStoreJson -RunPath $OutPath -RelPath 'assessment.json' -Document $doc
+    # ASSESS-APPROVAL-HASH-1: create-only. The check at the start of the scan
+    # is not enough: two scans started on one run both pass it, and the one
+    # that finished last replaced the other - also after somebody approved it,
+    # so a migration could be planned from a scan nobody read (Claude
+    # Security scan, F13). The store lets exactly one creator win
+    # (If-None-Match: * on blob storage, CreateNew on the file backend); the
+    # scan saved first stays as it was. -UniqueText: the text holds this
+    # scan's time, so a create whose answer was lost is still known as ours.
+    if (-not (Write-VmfStoreJsonExclusive -RunPath $OutPath -RelPath 'assessment.json' -Document $doc -UniqueText)) {
+        throw ("'$RunId' has another scan, saved while this scan ran. The product keeps that scan and does not save this one. " +
+               'Scan again under a different name to get a new scan.')
+    }
     $assessmentPath = Get-VmfStoreItemHandle -RunPath $OutPath -RelPath 'assessment.json'
 
     Write-VmfStepLine -RunPath $OutPath -Step 'assessment' -Outcome ok `

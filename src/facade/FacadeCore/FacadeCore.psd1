@@ -18,6 +18,9 @@
         'Get-VmfFacadePlanPath',
         # STORE-READ-1: the browser stops reading blob storage directly
         'Resolve-VmfFacadeStoreKey',
+        # RECORDS-VIEWER-READ-1: the folders the product keeps are the Admin's.
+        'Assert-VmfFacadeStoreKeyReadable',
+        'Select-VmfFacadeReadableStoreKeys',
         'ConvertFrom-VmfFacadeBlobListing',
         # PAGE-LOAD-1: one listing for store/list and store/docs, and the
         # documents a page draws, read in one call.

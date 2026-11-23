@@ -19,6 +19,9 @@ try {
     # The caller chooses the prefix, so it is checked before it is used. An
     # EMPTY prefix lists the top of the container, which is a real request.
     $prefix = Resolve-VmfFacadeStoreKey -Path ([string]$Request.Query.prefix) -AllowEmpty
+    # RECORDS-VIEWER-READ-1: the folders the product keeps beside the runs
+    # (the kept migration records, the machine claims) are the Admin's.
+    Assert-VmfFacadeStoreKeyReadable -Principal $principal -Path $prefix
     $delimiter = [string]$Request.Query.delimiter
     if ($delimiter -and $delimiter -ne '/') { throw '400 the only delimiter is /' }
 
@@ -26,7 +29,11 @@ try {
     # lists through too, so the two cannot list two ways. It follows the
     # pages of a listing and says when even that ran out (truncated).
     $listing = Get-VmfFacadeStoreListing -Prefix $prefix -Delimiter $delimiter
-    $body = [pscustomobject]@{ names = @($listing.names); prefixes = @($listing.prefixes); truncated = [bool]$listing.truncated } | ConvertTo-Json -Depth 4
+    # And nobody else is given a name or a folder under them: the top of the
+    # store, and a prefix that is part of a name, list them too.
+    $names = @(Select-VmfFacadeReadableStoreKeys -Principal $principal -Key @($listing.names))
+    $prefixes = @(Select-VmfFacadeReadableStoreKeys -Principal $principal -Key @($listing.prefixes))
+    $body = [pscustomobject]@{ names = $names; prefixes = $prefixes; truncated = [bool]$listing.truncated } | ConvertTo-Json -Depth 4
     Push-OutputBinding -Name Response -Value ([HttpResponseContext]@{ StatusCode = [HttpStatusCode]::OK; Body = $body; ContentType = 'application/json' })
 }
 catch {

@@ -110,7 +110,7 @@ Describe 'TARGET-OPTIONS-WAIT-1: an approval recorded while the options are made
     It 'says the options are being made, and writes no failed start, when the start is refused because one runs' {
         Mock -ModuleName FacadeCore Invoke-VmfFacadeStartEngine { throw '400: The product makes the target options for this assessment now. Wait until the list of machines shows.' }
         Mock -ModuleName FacadeCore Test-VmfFacadeEngineRunning { $true }
-        $r = Invoke-VmfFacadeApproveAssessment -Principal $script:approver -StorePath $script:rp -RunId 'scan-1' -Project 'alpha'
+        $r = Invoke-VmfFacadeApproveAssessment -Principal $script:approver -StorePath $script:rp -AssessmentHash (InModuleScope VmMigrationFactory -Parameters @{ p = $script:rp } { param($p) Get-VmfDocumentVersion -Text (Read-VmfTextDocument -Path (Get-VmfStoreItemHandle -RunPath $p -RelPath 'assessment.json')) }) -RunId 'scan-1' -Project 'alpha'
         Test-Path (Join-Path $script:rp 'approval.json') | Should -BeTrue
         $r.TargetOptions.started | Should -BeTrue -Because 'an advise of this assessment runs, and its options come'
         $r.TargetOptions.error | Should -BeNullOrEmpty
@@ -124,7 +124,7 @@ Describe 'TARGET-OPTIONS-WAIT-1: an approval recorded while the options are made
     It 'still writes the failed start when no advise runs' {
         Mock -ModuleName FacadeCore Invoke-VmfFacadeStartEngine { throw 'the engine job could not be read' }
         Mock -ModuleName FacadeCore Test-VmfFacadeEngineRunning { $false }
-        $r = Invoke-VmfFacadeApproveAssessment -Principal $script:approver -StorePath $script:rp -RunId 'scan-1'
+        $r = Invoke-VmfFacadeApproveAssessment -Principal $script:approver -StorePath $script:rp -AssessmentHash (InModuleScope VmMigrationFactory -Parameters @{ p = $script:rp } { param($p) Get-VmfDocumentVersion -Text (Read-VmfTextDocument -Path (Get-VmfStoreItemHandle -RunPath $p -RelPath 'assessment.json')) }) -RunId 'scan-1'
         $r.TargetOptions.started | Should -BeFalse
         $r.TargetOptions.error | Should -Match 'did not start'
         @(& $script:Events $script:rp | Where-Object { $_.step -eq 'engine:advise' -and $_.outcome -eq 'fail' }).Count | Should -Be 1
@@ -133,7 +133,7 @@ Describe 'TARGET-OPTIONS-WAIT-1: an approval recorded while the options are made
     It 'still writes the failed start when the list of executions cannot be read either' {
         Mock -ModuleName FacadeCore Invoke-VmfFacadeStartEngine { throw 'Could not list engine executions: HTTP 503 busy' }
         Mock -ModuleName FacadeCore Test-VmfFacadeEngineRunning { throw 'Could not list engine executions: HTTP 503 busy' }
-        $r = Invoke-VmfFacadeApproveAssessment -Principal $script:approver -StorePath $script:rp -RunId 'scan-1'
+        $r = Invoke-VmfFacadeApproveAssessment -Principal $script:approver -StorePath $script:rp -AssessmentHash (InModuleScope VmMigrationFactory -Parameters @{ p = $script:rp } { param($p) Get-VmfDocumentVersion -Text (Read-VmfTextDocument -Path (Get-VmfStoreItemHandle -RunPath $p -RelPath 'assessment.json')) }) -RunId 'scan-1'
         $r.TargetOptions.started | Should -BeFalse
         @(& $script:Events $script:rp | Where-Object { $_.step -eq 'engine:advise' -and $_.outcome -eq 'fail' }).Count | Should -Be 1
     }

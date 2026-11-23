@@ -10,18 +10,13 @@ The core image is published to Azure Marketplace with a curated set of base pack
 
 For a single workload, deploy Azure Linux to an individual VM. To scale out automatically based on demand, use virtual machine scale sets instead.
 
-Note
-
-Azure Linux 4.0 is now in **preview** and is strictly limited to evaluation and testing purposes. It's not suitable for production use.
-
 ## Available images
 
-Azure Linux 4.0 images are published to Azure Marketplace under the `microsoftazurelinux` publisher. Use the URN that matches your architecture and VM generation:
+Azure Linux 4.0 images are published to Azure Marketplace under the `microsoftazurelinux` publisher. Azure Linux 4.0 only supports Generation 2 VMs. Use the URN that matches your architecture:
 
 | Architecture | Generation | URN |
 | --- | --- | --- |
 | x86\_64 | Gen2 | `microsoftazurelinux:azurelinux-4:4:latest` |
-| x86\_64 | Gen1 | Not available for Preview |
 | ARM64 | Gen2 | `microsoftazurelinux:azurelinux-4:4-arm64:latest` |
 
 You can browse these images in the Azure portal using the guidance in the [Launch an Azure Linux VM](create-vm-azure-linux-4-0) quickstart or query them programmatically using the following Azure CLI commands:

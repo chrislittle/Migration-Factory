@@ -35,7 +35,12 @@ function Approve-VmfAssessment {
         # The facade approves ON BEHALF OF the validated browser user - its own
         # identity is a managed identity, and stamping that would be a lie.
         # Command-line callers omit this and get their signed-in Azure identity.
-        [Parameter()][hashtable]$OnBehalfOf
+        [Parameter()][hashtable]$OnBehalfOf,
+        # ASSESS-APPROVAL-HASH-1: the version of the assessment the approver
+        # was SHOWN - issued by the service with the document (PLANVER-2,
+        # x-vmf-document-version). The service requires it; a command-line
+        # caller that reads the assessment itself may leave it out.
+        [Parameter()][string]$ExpectedAssessmentHash
     )
 
     $manifest = Read-VmfStoreJson -RunPath $RunPath -RelPath 'run.json' -Depth 6
@@ -59,6 +64,13 @@ function Approve-VmfAssessment {
     # PLANVER-2: one implementation of the hash - the same bytes and algorithm
     # this used to write out here, so no approval already stored changes.
     $hash = Get-VmfDocumentVersion -Text $assessmentText
+    # ASSESS-APPROVAL-HASH-1: the shape of Approve-VmfPlan's check (APPR-2).
+    # Before anything is written, so a refusal records no approval.
+    if ($ExpectedAssessmentHash -and -not [string]::Equals($ExpectedAssessmentHash, $hash, [System.StringComparison]::Ordinal)) {
+        throw ("409: Assessment '$($manifest.runId)' changed after the page showed it, so the product recorded no approval. " +
+            "It now reads $(Get-VmfShortHash $hash) and the caller sent $(Get-VmfShortHash $ExpectedAssessmentHash). " +
+            'Open the assessment again and read the findings before you approve it.')
+    }
 
     $blocked = @($assessment.vms | Where-Object { $_.classification -eq 'Blocked' }).Count
     $who = if ($OnBehalfOf) { $OnBehalfOf } else { Get-VmfSignedInIdentity }

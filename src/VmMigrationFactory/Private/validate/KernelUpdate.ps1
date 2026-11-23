@@ -97,6 +97,11 @@ function Resolve-VmfKernelUpdate {
         return @{ Update = $false; Detail = 'The machine did not report its distribution and kernel, so the product did not update the kernel.' }
     }
     $f = if ($Floors) { $Floors } else { Get-VmfDriverFloors }
+    # LINUX-VERSION-OVERFLOW-1: a release version with a number that does not
+    # fit is never called one Microsoft does not list.
+    if ($kernel -notmatch '(?i)uek' -and $version -match '\d' -and -not (Test-VmfVersionInRange -Version $version)) {
+        return @{ Update = $false; Detail = 'The product cannot read the release version that the machine reported. The product did not update the kernel.' }
+    }
     if (-not (Find-VmfManaTableEntry -DistroId $id -DistroVersion $version -Kernel $kernel -Floors $f)) {
         $detail = "Microsoft does not list $id $version for MANA. A kernel update does not change the release, so the product did not update the kernel."
         # ORACLE-UEK7-KERNEL-STOP-1: a UEK kernel is matched by its series, not
@@ -232,7 +237,8 @@ function Get-VmfKernelUpdateReach {
 
     # Held to a minor release by releasever, below the minor release of its row.
     $lock = if ($Facts.PSObject.Properties['releaseverLock']) { ([string]$Facts.releaseverLock).Trim() } else { '' }
-    if ($lock -match '^\d+\.\d+$' -and @($f.mana.linux.minorReachedByUpdate.ids) -contains $id -and
+    # LINUX-VERSION-OVERFLOW-1: a lock nobody can read refuses nothing.
+    if ($lock -match '^\d+\.\d+$' -and (Test-VmfVersionInRange -Version $lock) -and @($f.mana.linux.minorReachedByUpdate.ids) -contains $id -and
         [string]$row.versionId -match '^\d+\.\d+$' -and ([version][string]$row.versionId) -gt ([version]$lock)) {
         return @{ Kind = 'cannotReach'
             Detail = "The releasever setting holds the machine on $id $lock. The EUS, SAP and HA RHUI clients set this value. Microsoft lists $id $($row.versionId) or later for MANA, with kernel $min or later. An update on $id $lock cannot reach the minimum version. The product did not update the kernel." }

@@ -145,6 +145,46 @@ BeforeAll {
         }
         $rp
     }
+    # A retry: the first capture of the machine (captured.original.vmConfig)
+    # says -First - a group id, 'none', or 'unknown' (no field) - while this
+    # attempt's capture keeps what Global:CrgNewRun wrote.
+    function Global:CrgSetFirst([string]$Rp, [string]$First = 'none') {
+        InModuleScope VmMigrationFactory -Parameters @{ rp = $Rp; id = $script:vmId; g = $First } {
+            param($rp, $id, $g)
+            $doc = Read-VmfStateDoc -RunPath $rp -VmId $id
+            $first = [ordered]@{ size = 'Standard_D2ds_v4'; controller = 'SCSI'; location = 'centralus'; name = 'vm1'; osType = 'Linux'
+                osDisk = [ordered]@{ name = 'vm1-osdisk'; skuName = 'Premium_LRS'; managedDiskId = '/disks/vm1-osdisk' }; dataDisks = @(); nics = @() }
+            if ($g -ne 'unknown') { $first.capacityReservationGroupId = $(if ($g -eq 'none') { $null } else { $g }) }
+            $doc.captured | Add-Member -NotePropertyName original -NotePropertyValue ([pscustomobject]@{
+                    vmConfig = [pscustomobject]$first; extensions = @(); capturedUtc = '2026-11-01T00:00:00.0000000Z' }) -Force
+            $null = Complete-VmfTestCapture $doc
+            # Complete-VmfTestCapture fills a missing group with none; 'unknown' has no field.
+            if ($g -eq 'unknown') { $doc.captured.original.vmConfig.PSObject.Properties.Remove('capacityReservationGroupId') }
+            Write-VmfStateDoc -RunPath $rp -Document $doc
+        }
+    }
+    # An earlier rollback recorded that Azure did not put the machine back in -Group.
+    function Global:CrgOwe([string]$Rp, [string]$Group) {
+        InModuleScope VmMigrationFactory -Parameters @{ rp = $Rp; id = $script:vmId; g = $Group } {
+            param($rp, $id, $g)
+            $doc = Read-VmfStateDoc -RunPath $rp -VmId $id
+            $doc | Add-Member -NotePropertyName rollback -Force -NotePropertyValue ([pscustomobject]@{
+                    rolledBackUtc = '2026-11-02T00:00:00.0000000Z'; path = 'A'; osDisk = $null; dataDisks = @(); keptDataDisks = @()
+                    reservationGroupNotBack = [pscustomobject]@{ groupId = $g; why = 'Capacity Reservation with VM size Standard_D2ds_v4 does not exist.' } })
+            Write-VmfStateDoc -RunPath $rp -Document $doc
+        }
+    }
+    # A person's retry after a finished rollback: this attempt's capture says
+    # -Group ('none' or an id), and the rollback checkpoint of the last one is gone.
+    function Global:CrgNextAttempt([string]$Rp, [string]$Group = 'none') {
+        InModuleScope VmMigrationFactory -Parameters @{ rp = $Rp; id = $script:vmId; g = $Group } {
+            param($rp, $id, $g)
+            $doc = Read-VmfStateDoc -RunPath $rp -VmId $id
+            if ($doc.PSObject.Properties['rollbackPending']) { $doc.PSObject.Properties.Remove('rollbackPending') }
+            $doc.captured.vmConfig | Add-Member -NotePropertyName capacityReservationGroupId -NotePropertyValue $(if ($g -eq 'none') { $null } else { $g }) -Force
+            Write-VmfStateDoc -RunPath $rp -Document $doc
+        }
+    }
     function Global:CrgPlan([string]$Path = 'A') {
         [pscustomobject]@{ schemaVersion = (Get-VmfTestPlanEntryVersion); vmId = $script:vmId; path = $Path; wave = 'w1'
             target = [pscustomobject]@{ size = 'Standard_D2ds_v6'; controller = 'NVMe' } }
@@ -167,7 +207,7 @@ BeforeAll {
     }
 }
 AfterAll {
-    Remove-Item 'function:\CrgReset', 'function:\CrgShort', 'function:\CrgMockAzure', 'function:\CrgNewRun', 'function:\CrgPlan',
+    Remove-Item 'function:\CrgReset', 'function:\CrgShort', 'function:\CrgMockAzure', 'function:\CrgNewRun', 'function:\CrgSetFirst', 'function:\CrgOwe', 'function:\CrgNextAttempt', 'function:\CrgPlan',
         'function:\CrgRollback', 'function:\CrgDoc', 'function:\CrgLines', 'function:\CrgAt' -ErrorAction SilentlyContinue
     Remove-Variable crg -Scope Global -ErrorAction SilentlyContinue
     Remove-VmfTestTemp
@@ -211,15 +251,15 @@ Describe 'ROLLBACK-CRG-1: the capture records the group' {
         }
     }
 
-    It 'a put-back takes the group from the FIRST capture (ROLLBACK-RETRY-CAPTURE-1)' {
+    It 'a put-back takes the group from the FIRST capture when this attempt''s capture names a group of this migration (ROLLBACK-RETRY-CAPTURE-1)' {
         InModuleScope VmMigrationFactory -Parameters @{ theirs = $script:theirs; ours = $script:ours } {
             param($theirs, $ours)
             $doc = [pscustomobject]@{ captured = [pscustomobject]@{
                     vmConfig = [pscustomobject]@{ size = 'Standard_D2ds_v6'; capacityReservationGroupId = $ours; nics = @(); dataDisks = @() }
                     original = [pscustomobject]@{ vmConfig = [pscustomobject]@{ size = 'Standard_D2ds_v4'; capacityReservationGroupId = $theirs } } } }
-            (Get-VmfPutBackCapture -Doc $doc).capacityReservationGroupId | Should -Be $theirs
+            (Get-VmfPutBackCapture -Doc $doc -ProductGroupIds @($ours)).capacityReservationGroupId | Should -Be $theirs
             $doc.captured.original.vmConfig.capacityReservationGroupId = $null
-            $back = Get-VmfPutBackCapture -Doc $doc
+            $back = Get-VmfPutBackCapture -Doc $doc -ProductGroupIds @($ours)
             $back.PSObject.Properties['capacityReservationGroupId'] | Should -Not -BeNullOrEmpty -Because 'none is a value'
             $back.capacityReservationGroupId | Should -BeNullOrEmpty
         }
@@ -236,13 +276,13 @@ Describe 'ROLLBACK-CRG-1: the capture records the group' {
         }
     }
 
-    It 'the put-back group is the first capture''s, never this attempt''s' {
+    It 'a group of this migration in this attempt''s capture is never the put-back group' {
         InModuleScope VmMigrationFactory -Parameters @{ ours = $script:ours } {
             param($ours)
             $doc = [pscustomobject]@{ captured = [pscustomobject]@{
                     vmConfig = [pscustomobject]@{ size = 'Standard_D2ds_v6'; capacityReservationGroupId = $ours; nics = @(); dataDisks = @() }
                     original = [pscustomobject]@{ vmConfig = [pscustomobject]@{ size = 'Standard_D2ds_v4'; capacityReservationGroupId = $null } } } }
-            $back = Get-VmfPutBackCapture -Doc $doc
+            $back = Get-VmfPutBackCapture -Doc $doc -ProductGroupIds @($ours.ToUpperInvariant())
             (Get-VmfCapturedReservationGroup -Capture $back).Known | Should -BeTrue
             (Get-VmfCapturedReservationGroup -Capture $back).GroupId | Should -BeNullOrEmpty
         }
@@ -586,34 +626,21 @@ Describe 'ROLLBACK-CRG-1: the join is asked about before anything changes (NIC-J
     }
 }
 
-Describe 'CRG-JOIN-ATTEMPT-1: on a retry, the group the move acts in is asked about too' {
-    # Found 2026-11-03 by CRG-REBUILD-TARGET-1. The check above read only the
-    # put-back capture's group - the group of the FIRST capture. The move
-    # (CRG-MOVE-1) acts in the group of THIS attempt's capture. On a retry the
-    # two can differ: a machine in no group at its first attempt, which its
-    # owner then put in a group of their own, was checked for no group and
-    # moved in the new one. A missing grant there was found by Azure, inside
-    # the stopped window, not here.
+Describe 'CRG-JOIN-ATTEMPT-1 with CRG-ROLLBACK-ATTEMPT-GROUP-1: Checking asks about the group this attempt returns the machine to' {
+    # CRG-JOIN-ATTEMPT-1 (2026-11-07) asked about two groups on a retry: the
+    # first capture's (the put-back group then) and this attempt's (the group
+    # the move acts in). Since CRG-ROLLBACK-ATTEMPT-GROUP-1 (2026-11-21) a
+    # put-back of an attempt returns the machine to the group of THAT
+    # attempt's capture, unless it is a group of this migration - so the move
+    # and the put-back act in one group, and that group is asked about once.
 
     BeforeAll {
-        # -First is the group of the first capture (captured.original.vmConfig),
-        # -Now the group of this attempt's capture (captured.vmConfig). Each is
-        # a group id, 'none', or 'unknown' (no field). -NoOriginal: a first
-        # attempt, where the first capture is this attempt's capture.
+        # -First is the group of the first capture, -Now the group of this
+        # attempt's capture: a group id, 'none', or 'unknown' (no field).
+        # -NoOriginal: a first attempt, where the two captures are the same.
         function Script:AttemptRun([string]$First = 'none', [string]$Now = 'none', [switch]$NoOriginal, [switch]$Claim) {
             $rp = Global:CrgNewRun -Group $Now -Claim:$Claim
-            InModuleScope VmMigrationFactory -Parameters @{ rp = $rp; id = $script:vmId; g = $First; no = [bool]$NoOriginal } {
-                param($rp, $id, $g, $no)
-                if ($no) { return }
-                $doc = Read-VmfStateDoc -RunPath $rp -VmId $id
-                $first = [ordered]@{ size = 'Standard_D2ds_v4'; controller = 'SCSI'; location = 'centralus'; name = 'vm1'; osType = 'Linux'
-                    osDisk = [ordered]@{ name = 'vm1-osdisk'; skuName = 'Premium_LRS'; managedDiskId = '/disks/vm1-osdisk' }; dataDisks = @(); nics = @() }
-                if ($g -ne 'unknown') { $first.capacityReservationGroupId = $(if ($g -eq 'none') { $null } else { $g }) }
-                $doc.captured | Add-Member -NotePropertyName original -NotePropertyValue ([pscustomobject]@{
-                        vmConfig = [pscustomobject]$first; extensions = @(); capturedUtc = '2026-11-01T00:00:00.0000000Z' }) -Force
-                $null = Complete-VmfTestCapture $doc
-                Write-VmfStateDoc -RunPath $rp -Document $doc
-            }
+            if (-not $NoOriginal) { Global:CrgSetFirst -Rp $rp -First $First }
             $rp
         }
         # -Granted: group id -> the actions this identity holds on it.
@@ -636,9 +663,8 @@ Describe 'CRG-JOIN-ATTEMPT-1: on a retry, the group the move acts in is asked ab
         $r.Next | Should -Be 'NEEDS_DECISION'
         $r.Reason | Should -Be 'permissionMissingReservationGroup'
         $r.Detail | Should -Match ([regex]::Escape("$script:deploy on $script:theirs"))
-        $r.Detail | Should -Match "'contoso-crg'"
-        $r.Detail | Should -Match 'The move keeps this machine in the group'
-        $r.Detail | Should -Not -Match 'returns this machine to the group'
+        $r.Detail | Should -Match 'A rollback or a restore returns this machine to the group'
+        $r.Detail | Should -Match 'missing 1 permission on'
         $r.Detail | Should -Match 'stopped before it changed the machine'
         Should -Invoke -ModuleName VmMigrationFactory Get-VmfEffectivePermissions -Times 1 -Exactly -ParameterFilter { $Scope -eq $script:theirs }
     }
@@ -649,43 +675,20 @@ Describe 'CRG-JOIN-ATTEMPT-1: on a retry, the group the move acts in is asked ab
         Should -Invoke -ModuleName VmMigrationFactory Get-VmfEffectivePermissions -Times 1 -Exactly
     }
 
-    It 'a first capture whose record does not say the group is not a reason to skip the group of this attempt' {
+    It 'a first capture whose record does not say the group stops the check, as every put-back (OLD-VERSION-READERS-REMOVE-4)' {
         $rp = Script:AttemptRun -First 'unknown' -Now $script:theirs
-        $r = Script:AttemptGate -Rp $rp
-        $r.Reason | Should -Be 'permissionMissingReservationGroup'
-        $r.Detail | Should -Match ([regex]::Escape("$script:deploy on $script:theirs"))
+        { Script:AttemptGate -Rp $rp } | Should -Throw '*does not say its capacity reservation group*'
+        Should -Invoke -ModuleName VmMigrationFactory Get-VmfEffectivePermissions -Times 0 -Exactly
     }
 
-    It 'a retry that moved to another group asks both groups, and stops on the one with no grant only' {
+    It 'a retry that moved to another group asks only the group it is in now - the put-back no longer returns it to the first' {
         $rp = Script:AttemptRun -First $script:other -Now $script:theirs
-        $r = Script:AttemptGate -Rp $rp -Granted @{ $script:other = @($script:deploy) }
+        $r = Script:AttemptGate -Rp $rp
         $r.Reason | Should -Be 'permissionMissingReservationGroup'
         $r.Detail | Should -Match ([regex]::Escape("$script:deploy on $script:theirs"))
         $r.Detail | Should -Not -Match 'contoso-other'
-        Should -Invoke -ModuleName VmMigrationFactory Get-VmfEffectivePermissions -Times 1 -Exactly -ParameterFilter { $Scope -eq $script:other }
-        Should -Invoke -ModuleName VmMigrationFactory Get-VmfEffectivePermissions -Times 1 -Exactly -ParameterFilter { $Scope -eq $script:theirs }
-    }
-
-    It 'the put-back group with no grant still stops, with the words for a put-back' {
-        $rp = Script:AttemptRun -First $script:other -Now $script:theirs
-        $r = Script:AttemptGate -Rp $rp -Granted @{ $script:theirs = @($script:deploy) }
-        $r.Reason | Should -Be 'permissionMissingReservationGroup'
-        $r.Detail | Should -Match ([regex]::Escape("$script:deploy on $script:other"))
-        $r.Detail | Should -Match 'A rollback or a restore returns this machine to the group'
-        $r.Detail | Should -Not -Match 'contoso-crg'
-    }
-
-    It 'no grant on either group: ONE stop names both, so one grant round fixes the machine' {
-        $rp = Script:AttemptRun -First $script:other -Now $script:theirs
-        $r = Script:AttemptGate -Rp $rp
-        $r.Reason | Should -Be 'permissionMissingReservationGroup'
-        $r.Detail | Should -Match ([regex]::Escape("$script:deploy on $script:other"))
-        $r.Detail | Should -Match ([regex]::Escape("$script:deploy on $script:theirs"))
-        # Two groups: each sentence names its own group.
-        $r.Detail | Should -Match "returns this machine to the group 'contoso-other'"
-        $r.Detail | Should -Match "keeps this machine in the group 'contoso-crg'"
-        $r.Detail | Should -Match 'missing 2 permissions'
-        $r.Detail | Should -Match 'each capacity reservation group'
+        Should -Invoke -ModuleName VmMigrationFactory Get-VmfEffectivePermissions -Times 0 -Exactly -ParameterFilter { $Scope -eq $script:other }
+        Script:AttemptGate -Rp $rp -Granted @{ $script:theirs = @($script:deploy) } | Should -BeNullOrEmpty
     }
 
     It 'a first attempt is asked once' {
@@ -702,15 +705,30 @@ Describe 'CRG-JOIN-ATTEMPT-1: on a retry, the group the move acts in is asked ab
         Should -Invoke -ModuleName VmMigrationFactory Get-VmfEffectivePermissions -Times 1 -Exactly
     }
 
-    It 'a retry now in a group of this migration is not asked about it' {
+    It 'a retry now in a group of this migration, in no group at first, is not asked about any group' {
         $rp = Script:AttemptRun -First 'none' -Now $script:ours -Claim
         Script:AttemptGate -Rp $rp | Should -BeNullOrEmpty
         Should -Invoke -ModuleName VmMigrationFactory Get-VmfEffectivePermissions -Times 0 -Exactly
     }
 
-    It 'a retry now in no group asks only the put-back group' {
+    It 'a retry now in a group of this migration, in its own group at first, is asked about its own group - the put-back returns it there' {
+        $rp = Script:AttemptRun -First $script:theirs -Now $script:ours -Claim
+        $r = Script:AttemptGate -Rp $rp
+        $r.Detail | Should -Match ([regex]::Escape("$script:deploy on $script:theirs"))
+        Should -Invoke -ModuleName VmMigrationFactory Get-VmfEffectivePermissions -Times 1 -Exactly -ParameterFilter { $Scope -eq $script:theirs }
+        Should -Invoke -ModuleName VmMigrationFactory Get-VmfEffectivePermissions -Times 0 -Exactly -ParameterFilter { $Scope -eq $script:ours }
+    }
+
+    It 'a retry now in no group is asked about the group of the first capture - the put-back returns it there' {
         $rp = Script:AttemptRun -First $script:theirs -Now 'none'
-        Script:AttemptGate -Rp $rp -Granted @{ $script:theirs = @($script:deploy) } | Should -BeNullOrEmpty
+        Script:AttemptGate -Rp $rp | Should -Not -BeNullOrEmpty
+        Should -Invoke -ModuleName VmMigrationFactory Get-VmfEffectivePermissions -Times 1 -Exactly -ParameterFilter { $Scope -eq $script:theirs }
+    }
+
+    It 'REVIEW: a retry now in no group, with a group an earlier rollback still owes, is asked about the owed group' {
+        $rp = Script:AttemptRun -First 'none' -Now 'none'
+        Global:CrgOwe -Rp $rp -Group $script:theirs
+        Script:AttemptGate -Rp $rp | Should -Not -BeNullOrEmpty
         Should -Invoke -ModuleName VmMigrationFactory Get-VmfEffectivePermissions -Times 1 -Exactly -ParameterFilter { $Scope -eq $script:theirs }
     }
 
@@ -722,6 +740,245 @@ Describe 'CRG-JOIN-ATTEMPT-1: on a retry, the group the move acts in is asked ab
         $two.Reason | Should -Be $one.Reason
         $two.Detail | Should -Be $one.Detail
         (Global:CrgDoc $rp | ConvertTo-Json -Depth 30) | Should -Be $docBefore
+    }
+}
+
+Describe 'CRG-ROLLBACK-ATTEMPT-GROUP-1: a put-back of an attempt returns the machine to the group of that attempt' {
+    # Found 2026-11-07 by the review of CRG-JOIN-ATTEMPT-1, seen again
+    # 2026-11-21. The put-back took the group from the FIRST capture, as it
+    # takes the size (ROLLBACK-RETRY-CAPTURE-1). But the size, the controller
+    # and the disk types are what the product changed; a group chosen between
+    # two attempts is not. A machine in no group at first, put in a group of
+    # its own and retried, was taken out of that group by the rollback of the
+    # retry, and its later starts had no capacity guarantee.
+    # THE RULE: a rollback or a restore of attempt N returns the machine to the
+    # group of attempt N's capture (SAFETY-RETRY-1: a retry is a complete new
+    # run), unless that capture does not say, or names a group of this
+    # migration - then the first capture's group stands.
+
+    Context 'the put-back capture' {
+        BeforeAll {
+            # -Owed: an earlier rollback recorded that Azure did not put the
+            # machine back in this group (rollback.reservationGroupNotBack).
+            # -RestoredAfter: a restore ran after that rollback.
+            function Script:BackGroup($First, $Now, [string[]]$Ours = @(), [switch]$NowUnknown, [string]$Owed, [switch]$RestoredAfter) {
+                InModuleScope VmMigrationFactory -Parameters @{ f = $First; n = $Now; o = @($Ours); u = [bool]$NowUnknown; w = $Owed; ra = [bool]$RestoredAfter } {
+                    param($f, $n, $o, $u, $w, $ra)
+                    $attempt = [pscustomobject]@{ size = 'Standard_D2ds_v6'; nics = @(); dataDisks = @() }
+                    if (-not $u) { $attempt | Add-Member -NotePropertyName capacityReservationGroupId -NotePropertyValue $n }
+                    $doc = [pscustomobject]@{ captured = [pscustomobject]@{
+                            vmConfig = $attempt
+                            original = [pscustomobject]@{ vmConfig = [pscustomobject]@{ size = 'Standard_D2ds_v4'; capacityReservationGroupId = $f } } } }
+                    if ($w) {
+                        $doc | Add-Member -NotePropertyName rollback -NotePropertyValue ([pscustomobject]@{ rolledBackUtc = '2026-11-02T00:00:00.0000000Z'; path = 'A'; osDisk = $null; dataDisks = @()
+                                reservationGroupNotBack = [pscustomobject]@{ groupId = $w; why = 'Capacity Reservation with VM size Standard_D2ds_v4 does not exist.' } })
+                    }
+                    if ($ra) { $doc | Add-Member -NotePropertyName restore -NotePropertyValue ([pscustomobject]@{ restoredUtc = '2026-11-03T00:00:00.0000000Z' }) }
+                    $back = Get-VmfPutBackCapture -Doc $doc -ProductGroupIds @($o | Where-Object { $_ })
+                    $back.PSObject.Properties['capacityReservationGroupId'] | Should -Not -BeNullOrEmpty -Because 'the put-back capture always says its group'
+                    $doc.captured.vmConfig.size | Should -Be 'Standard_D2ds_v6' -Because 'the stored capture is evidence and is not changed'
+                    [string]$back.capacityReservationGroupId
+                }
+            }
+        }
+
+        It 'THE CASE: in no group at first, in its own group at this attempt: the put-back group is its own' {
+            Script:BackGroup -First $null -Now $script:theirs -Ours @($script:ours) | Should -Be $script:theirs
+        }
+
+        It 'in one group at first and another of its own at this attempt: the put-back group is the one of this attempt' {
+            Script:BackGroup -First $script:other -Now $script:theirs -Ours @($script:ours) | Should -Be $script:theirs
+        }
+
+        It 'in its own group at first and in no group at this attempt: the put-back group is the first capture''s, as before this rule' {
+            Script:BackGroup -First $script:theirs -Now $null | Should -Be $script:theirs
+        }
+
+        It 'REVIEW: a group an earlier rollback did not put the machine back in is the put-back group of a later attempt in no group' {
+            Script:BackGroup -First $null -Now $null -Owed $script:theirs | Should -Be $script:theirs
+            Script:BackGroup -First $script:other -Now $null -Owed $script:theirs | Should -Be $script:theirs -Because 'the owed group is the one the earlier attempt tried'
+        }
+
+        It 'REVIEW: the owed group stands for a later attempt in a group of this migration too' {
+            Script:BackGroup -First $null -Now $script:ours -Ours @($script:ours) -Owed $script:theirs | Should -Be $script:theirs
+        }
+
+        It 'REVIEW: a group of its own at this attempt wins over the owed group - the machine was moved on purpose' {
+            Script:BackGroup -First $null -Now $script:other -Ours @($script:ours) -Owed $script:theirs | Should -Be $script:other
+        }
+
+        It 'REVIEW: a restore after that rollback ends the owed group - the restore made its own decision' {
+            Script:BackGroup -First $null -Now $null -Owed $script:theirs -RestoredAfter | Should -BeNullOrEmpty
+        }
+
+        It 'REVIEW: a group of this migration is never owed' {
+            Script:BackGroup -First $null -Now $null -Ours @($script:ours) -Owed $script:ours | Should -BeNullOrEmpty
+        }
+
+        It 'a group of this migration in this attempt''s capture: the first capture''s group stands, whatever the letter case' {
+            Script:BackGroup -First $script:theirs -Now $script:ours -Ours @($script:ours.ToUpperInvariant()) | Should -Be $script:theirs
+        }
+
+        It 'this attempt''s capture does not say its group: the first capture''s group stands' {
+            Script:BackGroup -First $script:theirs -Now $null -NowUnknown | Should -Be $script:theirs
+        }
+
+        It 'the size still comes from the first capture' {
+            InModuleScope VmMigrationFactory -Parameters @{ theirs = $script:theirs } {
+                param($theirs)
+                $doc = [pscustomobject]@{ captured = [pscustomobject]@{
+                        vmConfig = [pscustomobject]@{ size = 'Standard_D2ds_v6'; capacityReservationGroupId = $theirs; nics = @(); dataDisks = @() }
+                        original = [pscustomobject]@{ vmConfig = [pscustomobject]@{ size = 'Standard_D2ds_v4'; capacityReservationGroupId = $null } } } }
+                (Get-VmfPutBackCapture -Doc $doc).size | Should -Be 'Standard_D2ds_v4'
+            }
+        }
+    }
+
+    Context 'the rollback' {
+        BeforeEach { Global:CrgReset; Global:CrgMockAzure }
+
+        It 'THE CASE: in no group at first, retried in its own group, which the move kept: the rollback keeps it there' {
+            $global:crg.group = $script:theirs
+            $global:crg.holds[$script:theirs] = @('Standard_D2ds_v4', 'Standard_D2ds_v6')
+            $rp = Global:CrgNewRun -Group $script:theirs
+            Global:CrgSetFirst -Rp $rp -First 'none'
+            Global:CrgRollback $rp
+            $global:crg.group | Should -Be $script:theirs
+            @($global:crg.calls | Where-Object { $_ -eq 'leave' -or $_ -like 'join:*' }).Count | Should -Be 0 -Because "the calls were: $(@($global:crg.calls) -join ', ')"
+            @(Global:CrgLines $rp | Where-Object { $_.step -eq 'rollback' -and $_.outcome -eq 'warn' -and $_.detail -match 'contoso-crg' }).Count | Should -Be 0
+            @($global:crg.calls) | Should -Contain 'start'
+        }
+
+        It 'in another group at first, retried in its own group and moved in the group of the wave: the rollback returns it to its own group, never to the first' {
+            $rp = Global:CrgNewRun -Group $script:theirs -Claim
+            Global:CrgSetFirst -Rp $rp -First $script:other
+            Global:CrgRollback $rp
+            $global:crg.group | Should -Be $script:theirs
+            @($global:crg.calls) | Should -Not -Contain 'join:contoso-other'
+            (Global:CrgAt 'join:contoso-crg') | Should -BeGreaterThan (Global:CrgAt 'size:')
+        }
+
+        It 'in its own group at first, retried while in the group of the wave: the rollback leaves the group of the wave and returns it to its own' {
+            $rp = Global:CrgNewRun -Group $script:ours -Claim
+            Global:CrgSetFirst -Rp $rp -First $script:theirs
+            Global:CrgRollback $rp
+            $global:crg.group | Should -Be $script:theirs
+            (Global:CrgAt 'leave') | Should -BeLessThan (Global:CrgAt 'size:')
+            (Global:CrgAt 'join:contoso-crg') | Should -BeGreaterThan (Global:CrgAt 'size:')
+        }
+
+        It 'in its own group at first, retried in no group with nothing on record: the rollback returns it to its own group, as before this rule' {
+            $rp = Global:CrgNewRun -Group 'none' -Claim
+            Global:CrgSetFirst -Rp $rp -First $script:theirs
+            Global:CrgRollback $rp
+            $global:crg.group | Should -Be $script:theirs
+        }
+
+        It 'REVIEW: Azure refused the group on the first rollback; the rollback of the next attempt tries it again, and then nothing is owed' {
+            # Attempt 1: in no group at first, in its own group at the attempt. The group holds no reservation for D2ds_v4.
+            $global:crg.holds[$script:theirs] = @('Standard_E4s_v4')
+            $rp = Global:CrgNewRun -Group $script:theirs -Claim
+            Global:CrgSetFirst -Rp $rp -First 'none'
+            Global:CrgRollback $rp
+            $global:crg.group | Should -BeNullOrEmpty
+            (Global:CrgDoc $rp).rollback.reservationGroupNotBack.groupId | Should -Be $script:theirs
+            # Attempt 2 starts in no group. The customer adds the reservation; the move joins the group of the wave.
+            Global:CrgNextAttempt -Rp $rp -Group 'none'
+            $global:crg.holds[$script:theirs] = @('Standard_D2ds_v4')
+            $global:crg.group = $script:ours; $global:crg.size = 'Standard_D2ds_v6'; $global:crg.calls.Clear()
+            Global:CrgRollback $rp
+            $global:crg.group | Should -Be $script:theirs -Because "the calls were: $(@($global:crg.calls) -join ', ')"
+            (Global:CrgAt 'join:contoso-crg') | Should -BeGreaterThan (Global:CrgAt 'size:')
+            (Global:CrgDoc $rp).rollback.PSObject.Properties['reservationGroupNotBack'] | Should -BeNullOrEmpty -Because 'the group is back, so nothing is owed'
+        }
+
+        It 'REVIEW: refused again on the next attempt, the group stays owed with the new words' {
+            $global:crg.holds[$script:theirs] = @('Standard_E4s_v4')
+            $rp = Global:CrgNewRun -Group $script:theirs -Claim
+            Global:CrgSetFirst -Rp $rp -First 'none'
+            Global:CrgRollback $rp
+            Global:CrgNextAttempt -Rp $rp -Group 'none'
+            $global:crg.group = $script:ours; $global:crg.size = 'Standard_D2ds_v6'; $global:crg.calls.Clear()
+            Global:CrgRollback $rp
+            @($global:crg.calls) | Should -Contain 'leave'
+            @($global:crg.calls | Where-Object { $_ -like 'join:*' }).Count | Should -Be 0 -Because 'Azure refused the join again'
+            (Global:CrgDoc $rp).rollback.reservationGroupNotBack.groupId | Should -Be $script:theirs
+        }
+
+        It 'REVIEW: a rollback before the move keeps the owed group on record - it does not try any group' {
+            $rp = Global:CrgNewRun -Group 'none'
+            Global:CrgSetFirst -Rp $rp -First 'none'
+            Global:CrgOwe -Rp $rp -Group $script:theirs
+            $global:crg.group = $null; $global:crg.size = 'Standard_D2ds_v4'; $global:crg.controller = 'SCSI'
+            Global:CrgRollback $rp -GuestOnly
+            @($global:crg.calls | Where-Object { $_ -eq 'leave' -or $_ -like 'join:*' }).Count | Should -Be 0
+            (Global:CrgDoc $rp).rollback.reservationGroupNotBack.groupId | Should -Be $script:theirs
+        }
+
+        It 'REVIEW KILL AND RESUME (rule 4): stopped after the leave, before the try, the resume still tries the owed group' {
+            Mock -ModuleName VmMigrationFactory Set-VmfVmSizeAndController {
+                if (-not $global:crg.killedOnce) { $global:crg.killedOnce = $true; throw 'The lease was lost - abandon this VM.' }
+                $global:crg.size = $Size; $global:crg.calls.Add("size:$Size")
+            }
+            $rp = Global:CrgNewRun -Group 'none' -Claim
+            Global:CrgSetFirst -Rp $rp -First 'none'
+            Global:CrgOwe -Rp $rp -Group $script:theirs
+            { Global:CrgRollback $rp } | Should -Throw '*abandon this VM*'
+            (Global:CrgDoc $rp).rollback.reservationGroupNotBack.groupId | Should -Be $script:theirs -Because 'nothing has tried the group yet'
+            Global:CrgRollback $rp
+            $global:crg.group | Should -Be $script:theirs
+            (Global:CrgDoc $rp).rollback.PSObject.Properties['reservationGroupNotBack'] | Should -BeNullOrEmpty
+        }
+
+        It 'REVIEW KILL AND RESUME (rule 4): stopped after the join and the record of the disk swap, the resume joins once and then nothing is owed' {
+            $global:crg.killStartOnce = $true
+            $rp = Global:CrgNewRun -Group 'none' -Claim
+            Global:CrgSetFirst -Rp $rp -First 'none'
+            Global:CrgOwe -Rp $rp -Group $script:theirs
+            { Global:CrgRollback $rp } | Should -Throw '*abandon this VM*'
+            $global:crg.group | Should -Be $script:theirs
+            @($global:crg.calls | Where-Object { $_ -like 'swap:*' }).Count | Should -BeGreaterThan 0 -Because 'the record is written again after the disk swap, before the start'
+            (Global:CrgDoc $rp).rollback.rolledBackUtc | Should -Not -Be ([datetime]'2026-11-02T00:00:00Z').ToUniversalTime() -Because 'the record was written again by this rollback'
+            (Global:CrgDoc $rp).rollback.reservationGroupNotBack.groupId | Should -Be $script:theirs -Because 'a write before the last one carries the group on'
+            Global:CrgRollback $rp
+            $global:crg.group | Should -Be $script:theirs
+            @($global:crg.calls | Where-Object { $_ -like 'join:*' }).Count | Should -Be 1
+            (Global:CrgDoc $rp).rollback.PSObject.Properties['reservationGroupNotBack'] | Should -BeNullOrEmpty
+        }
+
+        It 'KILL AND RESUME (rule 4): a rollback of a retry stopped after the leave, resumed, still returns the machine to the group of this attempt' {
+            Mock -ModuleName VmMigrationFactory Set-VmfVmSizeAndController {
+                if (-not $global:crg.killedOnce) { $global:crg.killedOnce = $true; throw 'The lease was lost - abandon this VM.' }
+                $global:crg.size = $Size; $global:crg.calls.Add("size:$Size")
+            }
+            $rp = Global:CrgNewRun -Group $script:theirs -Claim
+            Global:CrgSetFirst -Rp $rp -First 'none'
+            { Global:CrgRollback $rp } | Should -Throw '*abandon this VM*'
+            $global:crg.group | Should -BeNullOrEmpty -Because 'the worker stopped after it left the group of the wave'
+            Global:CrgRollback $rp
+            $global:crg.group | Should -Be $script:theirs
+            @($global:crg.calls | Where-Object { $_ -like 'join:*' }) | Should -Be @('join:contoso-crg')
+            @($global:crg.calls) | Should -Contain 'start'
+        }
+    }
+
+    Context 'Restore this machine' {
+        BeforeEach { Global:CrgReset; Global:CrgMockAzure }
+
+        It 'in no group at first, retried in its own group: the restore returns the machine to its own group' {
+            $rp = Global:CrgNewRun -Group $script:theirs -Claim -State 'MIGRATED'
+            Global:CrgSetFirst -Rp $rp -First 'none'
+            Restore-VmfVm -RunPath $rp -VmId $script:vmId -From pristine -Confirm:$false | Out-Null
+            $global:crg.group | Should -Be $script:theirs
+            (Global:CrgAt 'join:contoso-crg') | Should -BeGreaterThan (Global:CrgAt 'size:')
+        }
+
+        It 'in its own group at first, retried while in the group of the wave: the restore returns it to its own group' {
+            $rp = Global:CrgNewRun -Group $script:ours -Claim -State 'MIGRATED'
+            Global:CrgSetFirst -Rp $rp -First $script:theirs
+            Restore-VmfVm -RunPath $rp -VmId $script:vmId -From pristine -Confirm:$false | Out-Null
+            $global:crg.group | Should -Be $script:theirs
+        }
     }
 }
 

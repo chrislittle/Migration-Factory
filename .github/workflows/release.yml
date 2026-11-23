@@ -4,13 +4,23 @@ name: Release
 # each push to main this reads the module's version. When that version has
 # no tag yet, it:
 #
-#   1. runs every gate and the unit tests on the merged commit;
+#   1. checks that the job "CI result" of this repository's CI passed on the
+#      push of the merged commit itself (tools/Wait-VmfCiResult.ps1). That
+#      push CI runs every gate and the unit tests in four jobs at once; this
+#      job waits for it, up to two hours, and refuses unless it passed. It
+#      does not run the suite again: that took about an hour in one job
+#      (RELEASE-NO-SECOND-SUITE-1);
 #   2. makes the bill of materials (tools/New-VmfSbom.ps1: an SPDX 2.3
 #      document of what the release contains and what the install pulls in);
 #   3. tags the commit v<version> and pushes the tag;
 #   4. publishes the GitHub Release with the bill of materials attached
-#      (tools/Publish-VmfRelease.ps1: a draft first, published only when the
-#      attachment is read back). Below 1.0.0 it is a pre-release.
+#      (tools/Publish-VmfRelease.ps1: it refuses a tag that already has a
+#      release, makes a draft, and publishes it only when the attachment is
+#      read back). Below 1.0.0 it is a pre-release.
+#
+# When the CI of the merged commit fails, nothing is tagged. Make CI pass on
+# that commit (run its failed jobs again), then run this workflow's failed job
+# again: it checks the same commit.
 #
 # A push whose version already has a tag fails before anything: a released
 # version is never released again, and this repository receives only release
@@ -35,9 +45,12 @@ jobs:
   release:
     name: Tag and publish the release
     runs-on: windows-latest
-    timeout-minutes: 180
-    # Pushing the tag and making the release write to the repository.
+    # The CI check waits up to 120 minutes for the CI of the merged commit.
+    timeout-minutes: 150
+    # Pushing the tag and making the release write to the repository. The CI
+    # check reads the Actions runs of this repository.
     permissions:
+      actions: read
       contents: write
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -64,42 +77,16 @@ jobs:
           "number=$number" >> $env:GITHUB_OUTPUT
           "tag=$tag" >> $env:GITHUB_OUTPUT
 
-      - name: Bicep at the pinned version
+      # RELEASE-NO-SECOND-SUITE-1: the push CI of THIS commit, not a pull
+      # request run (that tests the pull request merged into its base, which
+      # is another commit), and not the newest commit of main.
+      - name: CI passed on the merged commit
         shell: pwsh
-        run: |
-          ./tools/Sync-VmfBicepVersion.ps1
-
-      - name: Ensure Pester + PSScriptAnalyzer are present, at the pinned versions
-        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           $ErrorActionPreference = 'Stop'
-          function Install-WithRetry {
-              param([string]$Name, [string]$Version)
-              for ($attempt = 1; $attempt -le 4; $attempt++) {
-                  try {
-                      Install-Module $Name -RequiredVersion $Version -Force -Scope CurrentUser -SkipPublisherCheck
-                      return
-                  }
-                  catch {
-                      if ($attempt -eq 4) { throw }
-                      $wait = [math]::Pow(2, $attempt) * 5
-                      Write-Host "::warning::$Name $Version install attempt $attempt failed ($($_.Exception.Message.Split([char]10)[0])) - retrying in $wait s"
-                      Start-Sleep -Seconds $wait
-                  }
-              }
-          }
-          foreach ($m in @(@('Pester', '5.9.1'), @('PSScriptAnalyzer', '1.25.0'))) {
-              if (Get-Module -ListAvailable $m[0] | Where-Object { $_.Version -eq $m[1] }) {
-                  Write-Host "$($m[0]) $($m[1]) already present"
-                  continue
-              }
-              Install-WithRetry -Name $m[0] -Version $m[1]
-          }
-
-      - name: The checks must pass on the merged commit
-        shell: pwsh
-        run: |
-          ./tools/Invoke-VmfTests.ps1
+          ./tools/Wait-VmfCiResult.ps1 -Repository $env:GITHUB_REPOSITORY -Sha $env:GITHUB_SHA -Event push
 
       - name: Make the bill of materials
         shell: pwsh

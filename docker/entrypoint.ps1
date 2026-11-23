@@ -110,6 +110,21 @@ $runPrefix = if ($env:VMF_PROJECT) { "$($env:VMF_PROJECT)/$($env:VMF_RUN_ID)" } 
 $runPath = "azblob://$($env:VMF_STORE_ACCOUNT)/$($env:VMF_STORE_CONTAINER)/$runPrefix"
 Write-Host "engine: operation=$($env:VMF_OPERATION) run=$runPath"
 
+# STORE-RESERVED-NAMES-1: the engine refuses an address that is not a run even
+# when the service forgets to: a folder the product keeps (vmf-records,
+# vmf-claims, logs) or a project's root. Asked before the first write into the
+# run (the version line below), so a refused start leaves nothing there.
+try {
+    & (Get-Module VmMigrationFactory) { param($rp)
+        Assert-VmfRunNames -RunPath $rp
+        Assert-VmfNotProject -RunPath $rp
+    } $runPath
+}
+catch {
+    Write-Host "engine: operation=$($env:VMF_OPERATION) REFUSED before it started: $($_.Exception.Message)"
+    throw
+}
+
 # VERSION-1: which build is doing this. Into the container log AND the run's
 # activity log, BEFORE the operation - so a refused operation has a version in
 # its log too, and a support bundle can say which code ran the migration it

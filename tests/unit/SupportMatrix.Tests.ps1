@@ -414,12 +414,16 @@ Describe 'SUPPORT-MATRIX-1: the machines the product does not move are the data'
     It 'SCAN-PARTIAL-SUBS-1: a scan that could not read the sizes is not a row - it is no limit of the product' {
         @($script:outRows | Where-Object { $_[0] -eq [string]$script:reasons.blockers.'sizes-not-read'.title }).Count | Should -Be 0
     }
+    It 'LINUX-VERSION-OVERFLOW-1: a machine whose facts were not read is not a row - it is no limit of the product' {
+        @($script:outRows | Where-Object { $_[0] -eq [string]$script:reasons.blockers.'machine-not-read'.title }).Count | Should -Be 0
+    }
     It 'every finding that closes every size series has a row, with its route and page' {
         $all = @('v5', 'v6', 'v7')
         $codes = @($script:reasons.blockers.PSObject.Properties | Where-Object {
                 $applies = @($_.Value.appliesTo)
                 # SCAN-PARTIAL-SUBS-1: sizes-not-read is a scan that could not read, not a limit of the product.
-                $_.Name -notin @('image-not-supported', 'sizes-not-read') -and @($all | Where-Object { $applies -notcontains $_ }).Count -eq 0
+                # LINUX-VERSION-OVERFLOW-1: and machine-not-read is a machine the scan could not read.
+                $_.Name -notin @('image-not-supported', 'sizes-not-read', 'machine-not-read') -and @($all | Where-Object { $applies -notcontains $_ }).Count -eq 0
             })
         $codes.Count | Should -BeGreaterThan 10
         foreach ($p in $codes) {

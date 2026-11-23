@@ -678,7 +678,11 @@ function Update-VmfVmWhileBusy {
             return
         }
         catch {
-            $busy = $_.Exception.Message -match '(?i)\b(429|TooManyRequests|throttl|ServerTimeout|InternalServerError|ServiceUnavailable|timed? ?out)\b'
+            # AZOP-SWAP-RETRY-MATCH-1: decided as Invoke-VmfAzOperation decides.
+            # The status code on the error, or in its inner exception, is read
+            # first; a number inside a disk or machine name is never Azure
+            # saying it is busy.
+            $busy = (Get-VmfTransientVerdict -ErrorInfo (Resolve-VmfOperationError -ErrorRecord $_)).Transient
             if (-not $busy -or $try -ge 3) { throw }
             Start-Sleep -Seconds (5 * $try)
         }

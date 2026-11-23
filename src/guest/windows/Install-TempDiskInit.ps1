@@ -39,6 +39,17 @@
     owner who is not an administrator - that owner is the attack the move
     exists to stop.
 
+    WHERE THE BOOT TASK WRITES ITS LOG (BOOT-LOG-LINK-1). The initializer used
+    to log to C:\Windows\Temp and rotate the log there with Move-Item -Force,
+    as SYSTEM. Any local user can make files, folders and junctions in that
+    folder, so a user could make SYSTEM move their files into a protected
+    folder. The log is now NVMeTempDiskInit.log next to the initializer, in the
+    install folder above; every file made there inherits its protected DACL.
+    Nothing the boot task does acts on a name a standard user can create.
+    A log an earlier version left in C:\Windows\Temp is LEFT ALONE: removing it
+    is a SYSTEM delete of a name any user can replace with a link, which is the
+    same shape as the defect. Nothing reads or writes that name now.
+
     Output contract: schemas/guest-output.schema.json. result: FIXED | BLOCKED
 #>
 
@@ -48,7 +59,7 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
-$script:VERSION = '1.1.0'
+$script:VERSION = '1.2.0'
 $script:checks = [System.Collections.Generic.List[object]]::new()
 $script:warnings = [System.Collections.Generic.List[string]]::new()
 $script:osCaption = ''
@@ -362,12 +373,17 @@ function Remove-LegacyInstall {
 $initializerContent = @'
 # NVMeTempDiskInit.ps1 - installed by VmMigrationFactory (Install-TempDiskInit.ps1)
 # Initializes the raw Azure NVMe temp disk(s) as D:\ at every boot. Safe: only touches RAW disks.
-$logFile = "C:\Windows\Temp\NVMeTempDiskInit.log"
-if ((Test-Path $logFile) -and ((Get-Item $logFile).Length -ge 500KB)) {
-    for ($i = 3; $i -ge 1; $i--) { if (Test-Path "$logFile.$i") { Move-Item "$logFile.$i" "$logFile.$($i+1)" -Force } }
-    Move-Item $logFile "$logFile.1" -Force
+# The log stays in this script's own folder, which the installer protects:
+# only SYSTEM and Administrators can write there. Never a shared folder such as
+# the Windows temporary folder: a standard user can make files, folders and
+# junctions there, and this task renames log files as SYSTEM (BOOT-LOG-LINK-1).
+$logFile = $null
+if ($PSScriptRoot) { $logFile = Join-Path $PSScriptRoot 'NVMeTempDiskInit.log' }
+if ($logFile -and (Test-Path -LiteralPath $logFile) -and ((Get-Item -LiteralPath $logFile).Length -ge 500KB)) {
+    for ($i = 3; $i -ge 1; $i--) { if (Test-Path -LiteralPath "$logFile.$i") { Move-Item -LiteralPath "$logFile.$i" -Destination "$logFile.$($i+1)" -Force } }
+    Move-Item -LiteralPath $logFile -Destination "$logFile.1" -Force
 }
-function Log { param($m) "$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')  $m" | Out-File $logFile -Append }
+function Log { param($m) if ($logFile) { "$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')  $m" | Out-File -LiteralPath $logFile -Append } }
 Log "NVMe temp disk initializer started."
 
 $physDisks = @(Get-PhysicalDisk | Where-Object { $_.FriendlyName -like "*NVMe Direct Disk*" })

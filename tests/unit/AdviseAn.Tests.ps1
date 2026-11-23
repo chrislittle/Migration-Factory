@@ -403,10 +403,10 @@ Describe 'ADVISE-AN-1: the option a machine starts on keeps accelerated networki
     }
 
     It 'the version is 21 (18 was this rule; 19 is DETECT-PATTERNS-1; 20 is HDD-OS-1; 21 is IDENTITY-LOSS-1): a v17 file picks without this rule, so it is refused and made again' {
-        InModuleScope VmMigrationFactory { Get-VmfTargetAdviceSchemaVersion | Should -Be 33 }
+        InModuleScope VmMigrationFactory { Get-VmfTargetAdviceSchemaVersion | Should -Be 34 }
         $s = Get-Content (Join-Path $script:repoRoot 'schemas' 'target-advice.schema.json') -Raw | ConvertFrom-Json -Depth 30
-        $s.properties.schemaVersion.const | Should -Be 33
-        ((Get-VmfPageSource -Path (Join-Path $script:repoRoot 'src' 'dashboard' 'wizard.html'))) | Should -Match 'const TARGET_ADVICE_VERSION = 33;'
+        $s.properties.schemaVersion.const | Should -Be 34
+        ((Get-VmfPageSource -Path (Join-Path $script:repoRoot 'src' 'dashboard' 'wizard.html'))) | Should -Match 'const TARGET_ADVICE_VERSION = 34;'
     }
 }
 

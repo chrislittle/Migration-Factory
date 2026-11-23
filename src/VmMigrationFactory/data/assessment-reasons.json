@@ -246,6 +246,13 @@
       "whatToDo": "Read why the list was not read under What this scan could not read. Correct the cause, then start a new assessment.",
       "docs": { "url": "https://learn.microsoft.com/en-us/rest/api/compute/resource-skus/list", "label": "Microsoft: Resource Skus - List" },
       "appliesTo": [ "v5", "v6", "v7" ]
+    },
+    "machine-not-read": {
+      "title": "Facts of this machine not read",
+      "meaning": "The product could not read the facts of this machine. The product cannot tell which sizes this machine can use. The other machines are not affected.",
+      "whatToDo": "Read what the product said under What this scan could not read. Then start a new assessment.",
+      "docs": { "url": "https://learn.microsoft.com/en-us/azure/governance/resource-graph/overview", "label": "Microsoft: Azure Resource Graph" },
+      "appliesTo": [ "v5", "v6", "v7" ]
     }
   },
   "prep": {

@@ -27,6 +27,15 @@ $ErrorActionPreference = 'Stop'
 
 $subscription = Get-AzdValue -Name 'AZURE_SUBSCRIPTION_ID'
 
+# AZD-DOWN-RG-RECHECK-1: RECORD THE NAME OF THE RESOURCE GROUP FIRST.
+# MEASURED 2026-11-20, azd 1.39.1: a successful azd down clears
+# AZURE_RESOURCE_GROUP (a deployment output) before postdown runs, and keeps a
+# value written here. postdown reads the group by this name before it removes
+# the registrations. With no AZURE_RESOURCE_GROUP, a name an earlier removal
+# recorded stays: only a finished removal clears it.
+$rgNow = Get-AzdValue -Name 'AZURE_RESOURCE_GROUP'
+if ($rgNow) { Set-AzdValue -Name 'VMF_DOWN_RESOURCE_GROUP' -Value $rgNow }
+$downGroup = Get-VmfDownResourceGroupName
 Write-Step 'Safety copies'
 # FIND-COPY-1: THIS TELLS YOU. IT DOES NOT STOP YOU.
 #
@@ -195,5 +204,40 @@ Write-Host ''
 # told the operator the removal works in a way it does not. It is also the
 # wrong way round: the resource group is the thing deleted, and Azure orders
 # what is inside it - which is the whole reason NO-STACKS-1 dropped stacks.
+# AZD-DOWN-RG-RECHECK-1: A RESOURCE GROUP THAT IS ALREADY GONE.
+#
+# FOUND 2026-11-19: an azd down stopped on "context canceled" while Azure went
+# on and deleted the group. The next azd down ran this hook, then stopped on
+# "404 ResourceGroupNotFound" and never ran postdown (MEASURED again
+# 2026-11-20, azd 1.39.1). So no azd down could remove the registrations.
+#
+# When Azure says the group is gone, the platform is gone, and the reason
+# TEARDOWN-1 waits for postdown is met. postdown runs from here, and reads the
+# group again itself before it removes anything. A group Azure is still
+# deleting is read again, for a fixed time. A group that is there, or a read
+# that fails, leaves the removal as it was: azd deletes the group, and postdown
+# follows. This hook deletes nothing itself.
+Write-Step 'The resource group'
+$groupState = Wait-VmfResourceGroupGone -Name $downGroup -Subscription $subscription -PresentSeconds 0
+if ($groupState.State -eq 'gone') {
+    Write-Host "   The resource group $downGroup is already gone. The removal now does the last step: the two Entra registrations."
+    # postdown ends with exit 1 when it removes nothing, so its exit code says
+    # whether it got as far as the registrations.
+    $global:LASTEXITCODE = 0
+    & (Join-Path $PSScriptRoot 'postdown.ps1')
+    if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+    Write-Host ''
+    Write-Host '   azd can stop next with the error ResourceGroupNotFound, because the resource group is already gone.'
+    Write-Host '   The lines above tell what happened to each registration. You do not have to do this step again.'
+    return
+}
+if ($groupState.State -eq 'deleting') {
+    Write-Host "   Azure is still deleting the resource group $downGroup. azd now tries to delete it."
+}
+elseif ($groupState.State -eq 'unknown') {
+    if ($downGroup) { Write-Host "   The removal could not read the resource group ${downGroup}: $($groupState.Detail)" }
+    else { Write-Host '   The name of the resource group is not recorded.' }
+}
+
 Write-Host ''
 Write-Host 'azd now deletes the resource group, and everything in it goes with it.'

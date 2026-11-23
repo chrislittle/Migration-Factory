@@ -299,8 +299,8 @@ Describe 'REBUILD-REMOVE-PLAN-1: the target advice offers no rebuild (v28)' {
         $script:m = @{}; foreach ($x in @($script:doc.machines)) { $script:m[$x.name] = $x }
     }
     It 'is version 29 (SIZE-FALLTHROUGH-NOTE-1 added sizesNotTaken after this item made it 28) and passes its schema' {
-        InModuleScope VmMigrationFactory { Get-VmfTargetAdviceSchemaVersion | Should -Be 33 }
-        $script:doc.schemaVersion | Should -Be 33
+        InModuleScope VmMigrationFactory { Get-VmfTargetAdviceSchemaVersion | Should -Be 34 }
+        $script:doc.schemaVersion | Should -Be 34
         ($script:doc | ConvertTo-Json -Depth 40) | Test-Json -SchemaFile (Join-Path $script:repoRoot 'schemas' 'target-advice.schema.json') | Should -BeTrue
     }
     It 'no option and no size choice carries rebuild or identity, and no machine carries identityPrincipalId or decide' {
@@ -347,7 +347,7 @@ Describe 'REBUILD-REMOVE-PLAN-1: the target advice offers no rebuild (v28)' {
     It 'the schema has no rebuild, no identity and no path B, and the sample passes it' {
         $schema = Get-Content (Join-Path $script:repoRoot 'schemas' 'target-advice.schema.json') -Raw
         $s = $schema | ConvertFrom-Json -Depth 40
-        $s.properties.schemaVersion.const | Should -Be 33
+        $s.properties.schemaVersion.const | Should -Be 34
         $schema | Should -Not -Match '"rebuild"'
         $schema | Should -Not -Match '"identityPrincipalId"'
         $reasons = @($s.'$defs'.reason.enum)

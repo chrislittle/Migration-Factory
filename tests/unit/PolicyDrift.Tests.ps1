@@ -180,23 +180,38 @@ Describe 'UPST-4: the drift issue must not claim a change nobody measured' -Skip
         $script:wf4 | Should -Match "if \('\$\{\{ steps\.check\.outputs\.changed \}\}' -ne '0'\)"
     }
 
-    It 'still fails the run when nothing could be checked' {
+    It 'still fails the run when an item could not be checked' {
         # The whole point of the original rule. A quiet pass here is the
         # failure mode that made this check exist.
-        $script:wf4 | Should -Match "steps\.check\.outputs\.drifted != '0'"
+        $script:wf4 | Should -Match "steps\.check\.outputs\.unreachable != '0'"
     }
 
     It 'and says so even when raising the issue failed first' {
         # REPORT-1, measured 2026-09-19: the report step died, so this step was
-        # SKIPPED and the run's only error named a missing tool. Nine changed
-        # pages never reached the run's error line.
-        $script:wf4 | Should -Match "if: always\(\) && steps\.check\.outputs\.drifted != '' && steps\.check\.outputs\.drifted != '0'"
+        # SKIPPED and the run's only error named a missing tool.
+        $script:wf4 | Should -Match "if: always\(\) && steps\.check\.outputs\.unreachable != '' && steps\.check\.outputs\.unreachable != '0'"
     }
 
     It 'but stays quiet when the check measured nothing at all' {
-        # An empty count is not a drift of zero. If the check itself failed,
-        # this must not announce a number nobody counted.
-        $script:wf4 | Should -Match "steps\.check\.outputs\.drifted != ''"
+        # An empty count is not zero. If the check itself failed, this must
+        # not announce a number nobody counted (the failed step fails the run).
+        $script:wf4 | Should -Match "steps\.check\.outputs\.unreachable != ''"
+    }
+
+    It 'DRIFT-GREEN-1: a changed item alone does not fail the run - the drift issue reports it' {
+        # 2026-11-20: the daily red run and its email looked like a
+        # broken build. No step may fail the run on the CHANGED count.
+        # Every step that ends the run red ("exit 1") must be gated on the
+        # unreachable count, never on the changed or drifted count. The step
+        # that raises the issue may run on drift: it does not fail the run.
+        $steps = $script:wf4 -split '(?m)^      - name: '
+        $failing = @($steps | Where-Object { $_ -match '(?m)^\s*exit 1\s*$' })
+        $failing.Count | Should -BeGreaterThan 0
+        foreach ($s in $failing) {
+            $gate = [regex]::Match($s, '(?m)^\s*if:(.*)$').Groups[1].Value
+            $gate | Should -Not -Match 'outputs\.(drifted|changed)' -Because "a changed item must not fail the run: $($s.Split([char]10)[0])"
+        }
+        $script:wf4 | Should -Not -Match 'Fail the run when anything drifted'
     }
 
     It 'tells the reader an unreachable item was NOT checked, and offers nothing to re-pin' {

@@ -211,12 +211,26 @@ function Test-VmfFacadeRunFolder {
         cases they are both held to.
 
         The folder NAME is matched whole. `logs-of-war` is a run.
+
+        STORE-RESERVED-NAMES-1: the names come from the engine's one list
+        (Get-VmfNotARunFolders), which the refusals to create or delete a
+        project or a run read too - read once, then kept for the process.
     #>
     [CmdletBinding()]
     [OutputType([bool])]
     param([Parameter(Mandatory)][AllowEmptyString()][string]$Path)
     $leaf = ($Path -split '/')[-1]
-    $leaf -notin @('vmf-claims', 'logs', 'vmf-records')
+    $leaf -notin @(Get-VmfFacadeNotRunFolders)
+}
+$script:VmfFacadeNotRuns = $null
+function Get-VmfFacadeNotRunFolders {
+    # STORE-RESERVED-NAMES-1: the engine's one list of the folders that are not
+    # runs (Get-VmfNotARunFolders), read once, then kept for the process.
+    [CmdletBinding()]
+    [OutputType([string[]])]
+    param()
+    if (-not $script:VmfFacadeNotRuns) { $script:VmfFacadeNotRuns = @(& (Get-Module VmMigrationFactory) { Get-VmfNotARunFolders }) }
+    $script:VmfFacadeNotRuns
 }
 function Get-VmfFacadeRunIds {
     <#
@@ -374,6 +388,13 @@ function Get-VmfFacadeStorePath {
     param([Parameter()][AllowEmptyString()][string]$RunId = '')
     # AllowEmpty: no run id is a real request - it names the whole store.
     $RunId = Resolve-VmfFacadeStoreKey -Path $RunId -AllowEmpty
+    # STORE-RESERVED-NAMES-1: a run, or the project it is in, is never a
+    # folder the product keeps. Every run route resolves its path here, so a
+    # run called vmf-records is refused before it is read, written or deleted.
+    # Pure: the engine's one list, no store call.
+    if ($RunId) {
+        & (Get-Module VmMigrationFactory) { param($k) foreach ($s in ($k -split '/')) { Assert-VmfStoreNameAllowed -Name $s } } $RunId
+    }
     if ($env:VMF_STORE_PATH) {
         return $(if ($RunId) { Join-Path $env:VMF_STORE_PATH $RunId } else { $env:VMF_STORE_PATH })
     }
@@ -442,6 +463,85 @@ function Resolve-VmfFacadeStoreKey {
         if ($segment -eq '..') { throw '400 the path must not go up a level' }
     }
     return $value
+}
+
+function Test-VmfFacadeKeptFolderKey {
+    <#
+    .SYNOPSIS
+        RECORDS-VIEWER-READ-1: is the FIRST folder of this store key one the
+        product keeps beside the runs (Get-VmfNotARunFolders)?
+    .DESCRIPTION
+        Those folders hold `vmf-records` (the kept migration records, which
+        /api/records gives only to Vmf.Admin, and which stay 90 days after a
+        delete), `vmf-claims` (the machine claims and deletions.jsonl, who
+        deleted which migration) and `logs`. The store endpoints read with the
+        service's own identity, which sees the whole container, so they ask
+        this before they answer anyone who is not an Admin.
+
+        Only the first folder counts: a run's own `<run>/logs` is the run's.
+        Letter case is ignored, as the file store ignores it, and a '.' folder,
+        an empty folder and a trailing dot or space are passed over: on the
+        file store `vmf-records./x` and `./vmf-records/x` both open
+        `vmf-records/x`, and an HTTP client takes `./` out of an address.
+        A refusal costs nothing, so the doubt goes to the refusal.
+    #>
+    [CmdletBinding()]
+    [OutputType([bool])]
+    param([Parameter()][AllowEmptyString()][AllowNull()][string]$Path)
+    foreach ($segment in ([string]$Path -split '/')) {
+        if ($segment -eq '' -or $segment -eq '.') { continue }
+        return ($segment.TrimEnd([char]0x2E, [char]0x20) -in @(Get-VmfFacadeNotRunFolders))
+    }
+    $false
+}
+
+function Assert-VmfFacadeStoreKeyReadable {
+    <#
+    .SYNOPSIS
+        RECORDS-VIEWER-READ-1: throws 403 when a caller who does not hold
+        Vmf.Admin names a key or a prefix under a folder the product keeps.
+    .DESCRIPTION
+        store/blob, store/list and store/docs ask this after
+        Resolve-VmfFacadeStoreKey, so the three cannot answer two ways. No
+        page reads these folders through them: the machines other migrations
+        hold come from the run summary, and the records from /api/records.
+    #>
+    [CmdletBinding()]
+    param([Parameter()][AllowNull()]$Principal, [Parameter()][AllowEmptyString()][AllowNull()][string]$Path)
+    if (-not (Test-VmfFacadeKeptFolderKey -Path $Path)) { return }
+    if (Test-VmfFacadeRole -Principal $Principal -AnyOf @('Vmf.Admin')) { return }
+    throw '403: Only a user with the Vmf.Admin role can read the folders that the product keeps beside the runs.'
+}
+
+function Select-VmfFacadeReadableStoreKeys {
+    <#
+    .SYNOPSIS
+        RECORDS-VIEWER-READ-1: the keys of a listing this caller may see - all
+        of them for Vmf.Admin; for anyone else, none under a folder the
+        product keeps.
+    .DESCRIPTION
+        A listing is filtered on what it GIVES, not only on the prefix asked
+        for: the top of the store, and a prefix that is part of a name
+        ('vmf-rec'), list the kept folders too.
+    #>
+    [CmdletBinding()]
+    [OutputType([string[]])]
+    param([Parameter()][AllowNull()]$Principal, [Parameter()][AllowEmptyCollection()][AllowNull()][string[]]$Key)
+    if (Test-VmfFacadeRole -Principal $Principal -AnyOf @('Vmf.Admin')) { return @($Key) }
+    # Every page load lists the whole store, so the plain case - a first
+    # folder with no '.' or space at its end - is one set lookup; any other
+    # key goes to Test-VmfFacadeKeptFolderKey, which holds the whole rule.
+    $kept = [System.Collections.Generic.HashSet[string]]::new([string[]]@(Get-VmfFacadeNotRunFolders), [System.StringComparer]::OrdinalIgnoreCase)
+    $out = [System.Collections.Generic.List[string]]::new()
+    foreach ($k in @($Key)) {
+        $text = [string]$k
+        $cut = $text.IndexOf('/')
+        $first = if ($cut -lt 0) { $text } else { $text.Substring(0, $cut) }
+        $plain = $first.Length -gt 0 -and -not $first.EndsWith('.') -and -not $first.EndsWith(' ')
+        $isKept = if ($plain) { $kept.Contains($first) } else { Test-VmfFacadeKeptFolderKey -Path $text }
+        if (-not $isKept) { $out.Add($text) }
+    }
+    @($out)
 }
 
 function ConvertFrom-VmfFacadeBlobListing {
@@ -628,10 +728,11 @@ function Get-VmfFacadeStoreDocs {
         cannot tell what the listing is missing, so it asks for each document
         itself (unknown means ask).
 
-        ROLES: exactly the set store/blob and store/list check. Every blob in
-        the container is readable through store/blob by the same roles, so
-        this returns nothing a caller could not already read - only in one
-        call instead of two hundred.
+        ROLES: exactly the set store/blob and store/list check, and the same
+        rule for the folders the product keeps beside the runs: only Vmf.Admin
+        names them or is given anything under them (RECORDS-VIEWER-READ-1). So
+        this returns nothing a caller could not already read through
+        store/blob - only in one call instead of two hundred.
 
         NO DOCUMENT VERSION. A page that saves a document reads it through
         store/blob, which issues its version in a header beside the text
@@ -662,6 +763,8 @@ function Get-VmfFacadeStoreDocs {
     # Everything the caller names is checked before it is used.
     $Prefix = Resolve-VmfFacadeStoreKey -Path $Prefix -AllowEmpty
     if ($Prefix -and -not $Prefix.EndsWith('/')) { throw '400 the prefix must be a folder, ending in /' }
+    # RECORDS-VIEWER-READ-1: the folders the product keeps are the Admin's.
+    Assert-VmfFacadeStoreKeyReadable -Principal $Principal -Path $Prefix
     if ($Depth -lt 1 -or $Depth -gt 6) { throw '400 the depth is 1 to 6' }
     $patterns = @($Read)
     if ($patterns.Count -eq 0) { throw '400 name at least one document to read' }
@@ -685,7 +788,10 @@ function Get-VmfFacadeStoreDocs {
     $names = [System.Collections.Generic.List[string]]::new()
     $folders = [System.Collections.Generic.SortedSet[string]]::new([System.StringComparer]::Ordinal)
     $wanted = [System.Collections.Generic.List[string]]::new()
-    $sorted = [string[]]@($listing.names)
+    # RECORDS-VIEWER-READ-1: and nobody else is given a name under them - the
+    # walk from the top of the store, which every page makes, lists them too.
+    # The folders are made from these names, so they go with them.
+    $sorted = [string[]]@(Select-VmfFacadeReadableStoreKeys -Principal $Principal -Key @($listing.names))
     [System.Array]::Sort($sorted, [System.StringComparer]::Ordinal)
     foreach ($name in $sorted) {
         if (-not $name.StartsWith($Prefix, [System.StringComparison]::Ordinal)) { continue }
@@ -1202,6 +1308,9 @@ function Invoke-VmfFacadeDiscardRun {
         # DISCARD-ENGINE-1 before an engine is started for a delete the engine
         # would refuse. Returns how many safety copies the run still holds.
         $copies = & (Get-Module VmMigrationFactory) { param($rp)
+            # STORE-RESERVED-NAMES-1: one run, never a project or a folder of
+            # runs - before "discarded by" goes into the log of what is not a run.
+            Assert-VmfRunPrefixDeletable -RunPath $rp
             $m = Read-VmfStoreJson -RunPath $rp -RelPath 'run.json' -Depth 6
             if ($m) { Assert-VmfAssessmentUnused -RunPath $rp -Manifest $m }
             Assert-VmfNoBillingReservation -RunPath $rp
@@ -1234,7 +1343,10 @@ function Invoke-VmfFacadeDiscardRun {
         # RESTORE-EARLIER-DELETE-1: and Delete these disks, which writes each
         # disk it deletes into the record of the machine.
         # MADE-DISK-DELETE-1: and Delete these disks now, which does the same.
-        if ($busyRunId -and (Test-VmfFacadeEngineRunning -Operation @('wave', 'restore', 'finish', 'deleteearlier', 'deletemade', 'checkvolumes') -RunId $busyRunId -Project $busyProject)) {
+        # DISCARD-BUSY-JOBS-1: every job that writes the records of this
+        # migration, from the one table - with a reservation, which bills and
+        # whose only record the delete removes, and a power return.
+        if ($busyRunId -and (Test-VmfFacadeEngineRunning -Operation (Get-VmfFacadeEngineOperation -Kind 'changes', 'records') -RunId $busyRunId -Project $busyProject)) {
             throw '400: The engine works on this migration now. Delete it when that job ends.'
         }
 
@@ -2599,6 +2711,50 @@ function Test-VmfFacadeConsumptionOnly {
     [string]::IsNullOrWhiteSpace($name)
 }
 
+# DISCARD-BUSY-JOBS-1: what each engine operation does to a migration, in ONE
+# place. The delete of a migration refused a written-out list of jobs that had
+# no reserve and no powerback, so a migration could be deleted while a
+# capacity reservation or a power return ran for it. A new operation gets a
+# decision here: DiscardBusyJobs.Tests.ps1 fails when the start route or the
+# engine has an operation this table does not name.
+#   assessment - runs on an assessment, never on a migration's records.
+#   changes    - changes a machine or spends money, and writes the records of
+#                the migration. Refused on a migration the engine deletes, and
+#                holds the delete of the migration while it runs.
+#   records    - writes the records of the migration and changes no machine.
+#                Holds the delete of the migration while it runs.
+#   delete     - the delete itself, with its own one-at-a-time check.
+$script:VmfEngineOperationKind = [ordered]@{
+    assess        = 'assessment'
+    advise        = 'assessment'
+    plan          = 'assessment'
+    wave          = 'changes'
+    restore       = 'changes'
+    finish        = 'changes'
+    powerback     = 'changes'
+    reserve       = 'changes'
+    deleteearlier = 'changes'
+    deletemade    = 'changes'
+    checkvolumes  = 'changes'
+    release       = 'records'
+    quota         = 'records'
+    quotacheck    = 'records'
+    retention     = 'records'
+    discard       = 'delete'
+}
+
+function Get-VmfFacadeEngineOperation {
+    <#
+    .SYNOPSIS
+        DISCARD-BUSY-JOBS-1: the engine operations of the given kinds, from
+        the one table ($script:VmfEngineOperationKind).
+    #>
+    [CmdletBinding()]
+    [OutputType([string[]])]
+    param([Parameter(Mandatory)][ValidateSet('assessment', 'changes', 'records', 'delete')][string[]]$Kind)
+    @($script:VmfEngineOperationKind.Keys | Where-Object { $script:VmfEngineOperationKind[$_] -in $Kind })
+}
+
 function Invoke-VmfFacadeStartEngine {
     <#
     .SYNOPSIS
@@ -2704,6 +2860,9 @@ function Invoke-VmfFacadeStartEngine {
     # the run id in VMF_RUN_ID, which the ENGINE CONTAINER then builds its own
     # store path from. A guard on one of those two is a guard on neither.
     $RunId = Resolve-VmfFacadeStoreKey -Path $RunId
+    if ($Project -and $Project -cnotmatch '^[a-z0-9][a-z0-9-]{1,62}[a-z0-9]$') {
+        throw '400: that is not a project id - lower-case letters, numbers and hyphens'
+    }
     # SCOPE-SUBS-GUID-1: a scan scope subscription goes into a request path
     # (/subscriptions/<id>/providers/...), so only a subscription id passes - a
     # GUID, or /subscriptions/<GUID>, which goes on as the GUID alone, the form
@@ -2826,6 +2985,15 @@ function Invoke-VmfFacadeStartEngine {
     # read the job definition and merge our parameters over its env.
     $job = Get-VmfFacadeEngineJob
     $jobId = $env:VMF_ENGINE_JOB_ID
+    # STORE-RESERVED-NAMES-1: the address the engine will work on, asked
+    # BEFORE Azure is asked to start it and before run.json is written: never
+    # a folder the product keeps, never a project's root (a run id with no
+    # project that is the id of a project), and never inside another run (a
+    # project id that is the id of a run). Each of those is a run whose delete
+    # takes the kept records or a whole project. The engine asks the same
+    # (Initialize-VmfRun, Remove-VmfRun); this refuses before a job starts.
+    # After the job is read, so a request the job cannot serve fails as before.
+    & (Get-Module VmMigrationFactory) { param($rp, $inProject) Assert-VmfRunAddress -RunPath $rp -HasProject:$inProject } (Get-VmfFacadeStorePath -RunId $(if ($Project) { "$Project/$RunId" } else { $RunId })) ([bool]$Project)
     # TIMER-EXEC-LIST-1: every guard below reads Azure itself. Inside the
     # five-minute pass a list of the executions is kept for the pass; it is
     # emptied here, so this start never acts on it.
@@ -2834,7 +3002,8 @@ function Invoke-VmfFacadeStartEngine {
     # migration the engine is deleting.
     # Review 2 item 2: reserving bills from the moment it exists, and the delete
     # would remove the only record of it.
-    if ($Operation -in @('wave', 'restore', 'finish', 'reserve', 'powerback', 'deleteearlier', 'deletemade', 'checkvolumes')) {
+    # DISCARD-BUSY-JOBS-1: the operations of the kind 'changes', from the one table.
+    if ($Operation -in (Get-VmfFacadeEngineOperation -Kind 'changes')) {
         Assert-VmfFacadeNotBeingDeleted -StorePath (Get-VmfFacadeStorePath -RunId $(if ($Project) { "$Project/$RunId" } else { $RunId }))
     }
     # ENGINE-START-PART-1: one engine run of a wave at a time. The page hides
@@ -2854,6 +3023,17 @@ function Invoke-VmfFacadeStartEngine {
     # Azure, as a wave asks; a list Azure does not give refuses the start.
     if ($Operation -eq 'advise' -and (Test-VmfFacadeEngineRunning -Operation 'advise' -RunId $RunId -Project $Project)) {
         throw '400: The product makes the target options for this assessment now. Wait until the list of machines shows.'
+    }
+    # ASSESS-APPROVAL-HASH-1: one scan of a run at a time. Back, then Start
+    # looking, on the wizard's wait starts a second scan in the same run; the
+    # scan that finished second used to replace the first, also after it was
+    # approved. The engine now saves only the scan that finishes first
+    # (Invoke-VmfAssessment writes assessment.json create-only), so this is
+    # the early answer: a second scan does not read the estate for minutes
+    # and then fail. Asked of Azure, as an advise asks; a list Azure does not
+    # give refuses the start.
+    if ($Operation -eq 'assess' -and (Test-VmfFacadeEngineRunning -Operation 'assess' -RunId $RunId -Project $Project)) {
+        throw '400: The product scans the machines of this assessment now. Wait until the scan ends.'
     }
 
     # POWER-ONLY-CHANGED-1: a machine a wave or a restore holds now
@@ -2975,12 +3155,8 @@ function Invoke-VmfFacadeStartEngine {
     # the wave is the version sent, and puts it back to pending when not.
     if ($Operation -eq 'wave' -and $script:VmfScheduleStartId) { $overrides += @{ name = 'VMF_SCHEDULE_START'; value = [string]$script:VmfScheduleStartId } }
     if ($migrationId) { $overrides += @{ name = 'VMF_MIGRATION_ID'; value = $migrationId } }
-    if ($Project) {
-        if ($Project -cnotmatch '^[a-z0-9][a-z0-9-]{1,62}[a-z0-9]$') {
-            throw '400: that is not a project id - lower-case letters, numbers and hyphens'
-        }
-        $overrides += @{ name = 'VMF_PROJECT'; value = $Project }
-    }
+    # The project id was checked with the run address, above.
+    if ($Project) { $overrides += @{ name = 'VMF_PROJECT'; value = $Project } }
     if ($TargetGeneration) { $overrides += @{ name = 'VMF_TARGET_GENERATION'; value = $TargetGeneration } }
     # SCOPE-RG-LIST-1: one or many, joined the way the subscriptions are.
     if ($ScopeRg) { $overrides += @{ name = 'VMF_SCOPE_RG'; value = ((@($ScopeRg) | Where-Object { $_ }) -join ',') } }
@@ -4266,6 +4442,11 @@ function Invoke-VmfFacadeApproveAssessment {
         [Parameter()][AllowNull()]$Principal,
         [Parameter(Mandatory)][string]$StorePath,
         [Parameter()][AllowEmptyString()][string]$Note = '',
+        # ASSESS-APPROVAL-HASH-1: the version of the assessment the approver's
+        # browser showed (PLANVER-2: the service issued it with the document).
+        # Mandatory here, as the plan version is for a sign-off (APPR-2): the
+        # approval names the scan that was read, and planning holds to it.
+        [Parameter(Mandatory)][string]$AssessmentHash,
         # ADVISOR-1: with the run id, the target options are started as soon
         # as the review is recorded.
         [Parameter()][string]$RunId,
@@ -4278,9 +4459,9 @@ function Invoke-VmfFacadeApproveAssessment {
     $identity = [string]$Principal.Identity
     if (-not $identity) { throw '401: the approval must name the signed-in person' }
 
-    $result = & (Get-Module VmMigrationFactory) { param($rp, $why, $who, $tid)
-        Approve-VmfAssessment -RunPath $rp -Note $why -OnBehalfOf @{ Identity = $who; TenantId = $tid }
-    } $StorePath $Note $identity ([string]$Principal.TenantId)
+    $result = & (Get-Module VmMigrationFactory) { param($rp, $why, $who, $tid, $shown)
+        Approve-VmfAssessment -RunPath $rp -Note $why -OnBehalfOf @{ Identity = $who; TenantId = $tid } -ExpectedAssessmentHash $shown
+    } $StorePath $Note $identity ([string]$Principal.TenantId) $AssessmentHash
 
     # ADVISOR-1: the next step is choosing each machine's target, and its
     # options come from the engine. Started here so nobody has to ask for

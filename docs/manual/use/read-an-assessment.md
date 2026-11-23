@@ -112,6 +112,15 @@ The report then shows one card for each subscription and region that it could no
 
 Then start a new assessment of the same place. See [Assess again](#assess-again).
 
+The scan can also fail to read the facts of one machine. Then the scan does not stop. It finishes for every other machine, and the report shows one card for that machine:
+
+- **Which.** The name of the machine. The machine shows the finding **Facts of this machine not read** under **What is holding machines back**, and counts under **Cannot yet**. The product does not move it.
+- **Why.** What the product said.
+
+Start a new assessment of the same place. On the **Choose each target** step, no size series is supported for this machine until a new assessment reads it.
+
+A number that the product cannot read is not known. For example, the Azure Linux Agent of a machine can report a version number with too many digits. The product then reads the Linux release from the image of the machine. The product never reads such a number as a pass or a fail.
+
 ## Findings and size series
 
 A finding can apply to every size series, or to some of them. Generation 1 is the usual example. It closes v6 and v7, and v5 takes the machine with a resize.
@@ -147,6 +156,8 @@ The wizard shows the assessment at its **Review it** step, so you do not have to
 The report shows **Reviewed** with your name and the time. The row on the Assessments page shows **Accepted**. Now a migration can be planned from it. The acceptance also starts the target options. The **Choose the machines** step and the **Choose each target** step use them.
 
 You need the approver role to accept an assessment.
+
+The acceptance names the scan that the report shows. A migration is planned only from that scan. If the assessment changes after the report opens, the product records no acceptance. Open the report again and read it.
 
 ## Next: choose the machines that move
 

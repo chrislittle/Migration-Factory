@@ -506,11 +506,11 @@ Describe 'HDD-OS-1: the targets step offers Standard SSD for the OS disk' {
         $raw = Get-Content (Join-Path $script:rp 'target-advice.json') -Raw
         $raw | Test-Json -SchemaFile (Join-Path $script:repoRoot 'schemas' 'target-advice.schema.json') | Should -BeTrue
         $a = $raw | ConvertFrom-Json -Depth 30
-        $a.schemaVersion | Should -Be 33
+        $a.schemaVersion | Should -Be 34
         (@($a.machines) | Where-Object name -EQ 'old-01').osDiskType | Should -Be 'Standard_LRS'
         (@($a.machines) | Where-Object name -EQ 'ssd-01').osDiskType | Should -Be 'StandardSSD_LRS'
         (@($a.machines) | Where-Object name -EQ 'unread-01').osDiskType | Should -BeNullOrEmpty
-        InModuleScope VmMigrationFactory { Get-VmfTargetAdviceSchemaVersion | Should -Be 33 }
+        InModuleScope VmMigrationFactory { Get-VmfTargetAdviceSchemaVersion | Should -Be 34 }
     }
 
     It 'THE CASE, first area: Standard SSD for the OS disk is saved, planned into the policy, and the plan says the type now' {

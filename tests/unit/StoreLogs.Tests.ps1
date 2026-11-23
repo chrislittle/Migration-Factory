@@ -13,7 +13,7 @@
 # perimeter refused the service's Application Insights data even when the
 # service signed it with its managed identity. So the Log Analytics workspace
 # came out of the perimeter, and the run store request log was dropped for
-# 1.0: a setting to a workspace outside the perimeter sends nothing. After 1.0 it goes to a small
+# 1.0: a setting to a workspace outside the perimeter sends nothing. Later it goes to a small
 # log storage account inside the perimeter (STORE-LOGS-REQUEST-LOG-2).
 BeforeAll {
     $script:repoRoot = [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..' '..'))

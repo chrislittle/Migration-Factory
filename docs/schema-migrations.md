@@ -1,5 +1,35 @@
 # Schema migration notes
 
+## target-advice v33 -> v34 (2026-11-22, LINUX-VERSION-OVERFLOW-1)
+
+**Change.** The reason `machine-not-read`. `Get-VmfTargetAdvice` makes the
+options of each machine on its own: a machine whose options cannot be made
+gets the three options, none supported, each with `notSupported`
+`machine-not-read`, no start, and a Linux release that is unknown
+(`Get-VmfAdviceNotReadMachine`); the other machines get theirs. The scan does
+the same for a machine whose assessment record cannot be made
+(`Invoke-VmfAssessment`): its record is held - Blocked, with the blocker
+`machine-not-read` and a note of what the product said
+(`Get-VmfMachineNotReadRecord`) - and `notRead` gains one entry for it with
+`subject: 'machine'`, `detail` (what the product said), `scope` (the
+machine's resource ID) and `machineCount` 1. The target options copy each
+blocker of the scan as a reason, so the reason reaches `target-advice` from
+both places. The assessment keeps version 17: `notRead` takes any subject and
+`blockers` any code, and no field or rule of its schema changes (as for the
+blocker `linux-release-not-on-nvme-list`, target-advice v32).
+
+**Why.** Root inside one Linux machine can make the VM agent report a release
+with too many digits (`22.99999999999`). Four readers cast it with `[int]`,
+which threw, and the module stops on any error: the scan saved no assessment,
+or the advise operation made no options, for every machine in scope. Each
+reader now asks `Test-VmfVersionInRange` and reads such a release as unknown;
+the catch is for any other machine whose record or options cannot be made.
+
+**Migrating.** Nothing is rewritten. A v33 `target-advice.json` is refused by
+name and made again, as for every earlier version (the targets step and
+`Set-VmfTargetChoice`); nothing is converted. Nothing is public before 1.0, so
+no store holds one. The tests are `tests/unit/LinuxVersionOverflow.Tests.ps1`,
+with the version pins updated in the files that hold them.
 ## run-stop v1 new (2026-11-17, STOP-STATE-SHOWN-1)
 
 **Change.** Stop this migration (`Stop-VmfRun`) writes a new record at the

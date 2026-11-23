@@ -291,8 +291,8 @@ Describe 'TARGET-CAPABILITY-PRECHECK-1: the target advice does not offer such a 
         $s = Get-Content (Join-Path $script:repoRoot 'schemas' 'target-advice.schema.json') -Raw | ConvertFrom-Json -Depth 40
         $s.'$defs'.reason.enum | Should -Contain 'no-encryption-at-host'
         $s.'$defs'.reason.enum | Should -Contain 'no-ultra-disk'
-        $s.properties.schemaVersion.const | Should -Be 33
-        InModuleScope VmMigrationFactory { Get-VmfTargetAdviceSchemaVersion | Should -Be 33 }
+        $s.properties.schemaVersion.const | Should -Be 34
+        InModuleScope VmMigrationFactory { Get-VmfTargetAdviceSchemaVersion | Should -Be 34 }
         $js = Get-Content (Join-Path $script:repoRoot 'src' 'dashboard' 'wizard.js') -Raw
         $js | Should -Match "'no-encryption-at-host': '"
         $js | Should -Match "'no-ultra-disk': '"

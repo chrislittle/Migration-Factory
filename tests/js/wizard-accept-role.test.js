@@ -95,8 +95,10 @@ test('WIZARD-ROLES-2: each step draws its action on the role the service asks fo
     ['m-continue', 'UX.mContinue', 'canOperate', 'UX.stepNeedsOperator'],
     ['t-save', 'UX.tSave', 'canOperate', 'UX.stepNeedsOperator'],
     ['go3', 'UX.s3Go', 'canOperate', 'UX.stepNeedsOperator'],
-    ['rev', 'UX.aReviewBtn', 'canApprove', 'UX.reviewNeedsApprover'],
+    // ASSESS-APPROVAL-HASH-1: drawn through reviewAction, which the review step asks with canApprove.
+    ['rev', 'UX.aReviewBtn', 'allowed', 'UX.reviewNeedsApprover'],
   ];
+  ok(page.includes('${reviewAction(canApprove, assessmentVersion)}'), 'rev is drawn on canApprove');
   for (const [id, label, role, why] of want) {
     ok(page.includes(`roleAction('${id}', ${label}, ${role}, ${why})`), `${id} is drawn on ${role}`);
     ok(!new RegExp(`<button[^>]*id="${id}"`).test(page), `and ${id} has no button of its own`);

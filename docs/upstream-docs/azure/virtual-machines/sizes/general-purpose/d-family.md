@@ -20,6 +20,86 @@ The 'D' family of VM sizes are one of Azure's general purpose VM sizes. They're 
 
 ## Series in family
 
+### Dpsv7 and Dpdsv7-series
+
+# [Dpsv7-series](#tab/dpsv7)
+The Dpsv7-series virtual machines are powered by Azure's second-generation Cobalt 200 processor, designed for general-purpose workloads. The Azure Cobalt 200 processor is based on the Arm Neoverse V3 architecture and provides an entire physical core for each virtual machine vCPU. Cobalt 200 supports the [Processor Mode](../../vm-processor-mode) feature, running at up to 3.6 GHz in Opportunistic mode and at 3.2 GHz in Deterministic mode. These virtual machines offer 4 GiB of memory per vCPU and a wide range of vCPU sizes.
+
+These VMs are suited for scale-out enterprise workloads such as web and application servers, small to medium databases, and caches. Dpsv7-series virtual machines offer up to 128 vCPUs and 512 GiB of RAM. These VMs come without local disk, providing a better value proposition for workloads that don't require local temporary storage.
+
+Dpsv7-series virtual machines support Standard SSD, Standard HDD, and Premium SSD types. You can also attach Premium SSD v2 and Ultra Disk storage. Disk storage is billed separately from virtual machines. For more information, see [pricing for disks](https://azure.microsoft.com/pricing/details/managed-disks/).
+
+[View the full Dpsv7-series page](dpsv7-series).
+
+| Part | Quantity^Count Units^ | Specs^SKU ID, Performance Units, etc.^ |
+| --- | --- | --- |
+| Processor | 1 - 128 vCPUs | Azure Cobalt 200 [Arm64] |
+| Memory | 4 - 512 GiB |  |
+| Local Storage | None |  |
+| Remote Storage | 4 - 64 Disks | 2,000 - 320,000 IOPS 60 - 8,770 MBps Disk Types: [Standard SSD/HDD](../../disks-types#standard-ssds), [Premium SSD](../../disks-types#premium-ssds), [Premium SSD v2](../../disks-types#premium-ssd-v2), [Ultra Disk](../../disks-types#ultra-disks) |
+| Network | 2 - 15 NICs | 12,500 - 85,000 Mbps Interfaces: NetVSC, [MANA](https://aka.ms/ManaFAQ1) |
+| Accelerators | None |  |
+
+# [Dpdsv7-series](#tab/dpdsv7)
+The Dpdsv7-series virtual machines are powered by Azure's second-generation Cobalt 200 processor, designed for general-purpose workloads. The Azure Cobalt 200 processor is based on the Arm Neoverse V3 architecture and provides an entire physical core for each virtual machine vCPU. Cobalt 200 supports the [Processor Mode](../../vm-processor-mode) feature, running at up to 3.6 GHz in Opportunistic mode and at 3.2 GHz in Deterministic mode. These virtual machines offer 4 GiB of memory per vCPU and a wide range of vCPU sizes.
+
+These VMs are suited for scale-out enterprise workloads such as web and application servers, small to medium databases, and caches. Dpdsv7-series virtual machines offer up to 128 vCPUs, 512 GiB of RAM, and 7,040 GiB of local NVMe temporary storage.
+
+Dpdsv7-series virtual machines support Standard SSD, Standard HDD, and Premium SSD types. You can also attach Premium SSD v2 and Ultra Disk storage. Disk storage is billed separately from virtual machines. For more information, see [pricing for disks](https://azure.microsoft.com/pricing/details/managed-disks/).
+
+[View the full Dpdsv7-series page](dpdsv7-series).
+
+| Part | Quantity^Count Units^ | Specs^SKU ID, Performance Units, etc.^ |
+| --- | --- | --- |
+| Processor | 1 - 128 vCPUs | Azure Cobalt 200 [Arm64] |
+| Memory | 4 - 512 GiB |  |
+| Local Storage | 1 - 6 Disks | 55 - 1,760 GiB 25,000 - 3,200,000 IOPS 180 - 23,040 MBps |
+| Remote Storage | 4 - 64 Disks | 2,000 - 320,000 IOPS 60 - 8,770 MBps Disk Types: [Standard SSD/HDD](../../disks-types#standard-ssds), [Premium SSD](../../disks-types#premium-ssds), [Premium SSD v2](../../disks-types#premium-ssd-v2), [Ultra Disk](../../disks-types#ultra-disks) |
+| Network | 2 - 15 NICs | 12,500 - 85,000 Mbps Interfaces: NetVSC, [MANA](https://aka.ms/ManaFAQ1) |
+| Accelerators | None |  |
+
+---
+
+### Dplsv7 and Dpldsv7-series
+
+# [Dplsv7-series](#tab/dplsv7)
+The Dplsv7-series virtual machines are powered by Azure's second-generation Cobalt 200 processor, designed for general-purpose workloads. The Azure Cobalt 200 processor is based on the Arm Neoverse V3 architecture and provides an entire physical core for each virtual machine vCPU. Cobalt 200 supports the [Processor Mode](../../vm-processor-mode) feature, running at up to 3.6 GHz in Opportunistic mode and at 3.2 GHz in Deterministic mode. These virtual machines offer 2 GiB of memory per vCPU for workloads that need less memory relative to their compute requirements.
+
+These VMs are suited for non-memory-intensive and scale-out workloads such as microservices, small databases, caches, and gaming servers. Dplsv7-series virtual machines offer up to 128 vCPUs and 256 GiB of RAM. These VMs come without local disk, providing a better value proposition for workloads that don't require local temporary storage.
+
+Dplsv7-series virtual machines support Standard SSD, Standard HDD, and Premium SSD types. You can also attach Premium SSD v2 and Ultra Disk storage. Disk storage is billed separately from virtual machines. For more information, see [pricing for disks](https://azure.microsoft.com/pricing/details/managed-disks/).
+
+[View the full Dplsv7-series page](dplsv7-series).
+
+| Part | Quantity^Count Units^ | Specs^SKU ID, Performance Units, etc.^ |
+| --- | --- | --- |
+| Processor | 1 - 128 vCPUs | Azure Cobalt 200 [Arm64] |
+| Memory | 2 - 256 GiB |  |
+| Local Storage | None |  |
+| Remote Storage | 4 - 64 Disks | 2,000 - 320,000 IOPS 60 - 8,770 MBps Disk Types: [Standard SSD/HDD](../../disks-types#standard-ssds), [Premium SSD](../../disks-types#premium-ssds), [Premium SSD v2](../../disks-types#premium-ssd-v2), [Ultra Disk](../../disks-types#ultra-disks) |
+| Network | 2 - 15 NICs | 12,500 - 85,000 Mbps Interfaces: NetVSC, [MANA](https://aka.ms/ManaFAQ1) |
+| Accelerators | None |  |
+
+# [Dpldsv7-series](#tab/dpldsv7)
+The Dpldsv7-series virtual machines are powered by Azure's second-generation Cobalt 200 processor, designed for general-purpose workloads. The Azure Cobalt 200 processor is based on the Arm Neoverse V3 architecture and provides an entire physical core for each virtual machine vCPU. Cobalt 200 supports the [Processor Mode](../../vm-processor-mode) feature, running at up to 3.6 GHz in Opportunistic mode and at 3.2 GHz in Deterministic mode. These virtual machines offer 2 GiB of memory per vCPU for workloads that need less memory relative to their compute requirements.
+
+These VMs are suited for non-memory-intensive and scale-out workloads such as microservices, small databases, caches, and gaming servers. Dpldsv7-series virtual machines offer up to 128 vCPUs, 256 GiB of RAM, and 7,040 GiB of local NVMe temporary storage.
+
+Dpldsv7-series virtual machines support Standard SSD, Standard HDD, and Premium SSD types. You can also attach Premium SSD v2 and Ultra Disk storage. Disk storage is billed separately from virtual machines. For more information, see [pricing for disks](https://azure.microsoft.com/pricing/details/managed-disks/).
+
+[View the full Dpldsv7-series page](dpldsv7-series).
+
+| Part | Quantity^Count Units^ | Specs^SKU ID, Performance Units, etc.^ |
+| --- | --- | --- |
+| Processor | 1 - 128 vCPUs | Azure Cobalt 200 [Arm64] |
+| Memory | 2 - 256 GiB |  |
+| Local Storage | 1 - 6 Disks | 55 - 1,760 GiB 25,000 - 3,200,000 IOPS 180 - 23,040 MBps |
+| Remote Storage | 4 - 64 Disks | 2,000 - 320,000 IOPS 60 - 8,770 MBps Disk Types: [Standard SSD/HDD](../../disks-types#standard-ssds), [Premium SSD](../../disks-types#premium-ssds), [Premium SSD v2](../../disks-types#premium-ssd-v2), [Ultra Disk](../../disks-types#ultra-disks) |
+| Network | 2 - 15 NICs | 12,500 - 85,000 Mbps Interfaces: NetVSC, [MANA](https://aka.ms/ManaFAQ1) |
+| Accelerators | None |  |
+
+---
+
 ### Dsv7 series and Ddsv7 series
 
 # [Dsv7 series](#tab/dsv7)

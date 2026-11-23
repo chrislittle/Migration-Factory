@@ -113,6 +113,9 @@ test('the stage is the scan\'s: a record with no stage is never Current, whateve
 
 // ---------- the Assessments page ----------
 const reportHtml = lift('assessments.html', 'reportHtml');
+// ASSESS-APPROVAL-HASH-1: Approve is off until the version is read, except in the demo.
+globalThis.DEMO_MODE = false;
+globalThis.approveWhy = lift('assessments.html', 'approveWhy');
 const AUX = liftConst('assessments.html', 'UX');
 // PAGE-SCALE-ASSESSMENTS-1: the list has two counts now, Machines found and
 // Can migrate (the approved design); the Current machines are

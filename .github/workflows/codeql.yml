@@ -2,7 +2,7 @@ name: CodeQL
 
 # Code scanning of the dashboard and the manual's JavaScript, on every pull
 # request and every push to main. The results go to the repository's
-# Security tab.
+# Security tab. The tests are not scanned: .github/codeql/codeql-config.yml.
 #
 # Code scanning on a private repository needs GitHub Advanced Security. This
 # repository stays private until the release day, so the job runs only once
@@ -33,12 +33,15 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
-      # The JavaScript is read as it is: nothing is built.
-      - uses: github/codeql-action/init@33d7b85da1a04171e211befe2c739303b9a4c066 # v4.39.3
+      # The JavaScript is read as it is: nothing is built. The settings file
+      # leaves the tests out, so the scan reads only code that ships
+      # (CODEQL-SHIPPED-ONLY-1).
+      - uses: github/codeql-action/init@1bd86f2fdb4b86187fa4059f16f31a3202acc9ea # v4.39.4
         with:
           languages: javascript-typescript
           build-mode: none
+          config-file: ./.github/codeql/codeql-config.yml
 
-      - uses: github/codeql-action/analyze@33d7b85da1a04171e211befe2c739303b9a4c066 # v4.39.3
+      - uses: github/codeql-action/analyze@1bd86f2fdb4b86187fa4059f16f31a3202acc9ea # v4.39.4
         with:
           category: /language:javascript-typescript

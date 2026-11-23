@@ -17,8 +17,8 @@
     {
       "name": "Install-TempDiskInit.ps1",
       "os": "windows",
-      "version": "1.1.0",
-      "sha256": "13d786386e545f7f87b66fb2ed29446d1619290cde8a135af43e549ebe2ec690"
+      "version": "1.2.0",
+      "sha256": "3bac55695cdf70ba873273ed93c40f82329117a1bf43317f6068d97737c1b69f"
     },
     {
       "name": "Move-Pagefile.ps1",

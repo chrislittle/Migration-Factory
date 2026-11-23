@@ -151,8 +151,67 @@ function Clear-VmfStoreLinePart {
 # A held file is tried again for up to this long. The pause is the thread's own
 # sleep: a test's guard turns Start-Sleep into no wait, which made every retry
 # run in the same instant.
-$script:VmfFileWaitMilliseconds = 1000
+# FILE-RACE-LOAD-1: the wait was 1 second, and a busy computer outlasted it -
+# twice in this repository's suites, once in CI on a GitHub runner. MEASURED
+# 2026-11-20 (16 processors, 48 busy threads, 4 disk writers): the store's own
+# create, renew and delete kept a shared reader out for 82 ms at most. The I/O
+# is short; the risk is a holder or a reader that the computer does not run.
+# So the wait is 10 seconds, the wait of the lock a version-checked writer
+# takes, and a held file is tried at least VmfFileMinAttempts times however
+# late the thread runs: a clock-only bound gave a thread that missed it ONE try.
+$script:VmfFileWaitMilliseconds = 10000
 $script:VmfFileRetryMilliseconds = 25
+$script:VmfFileMinAttempts = 20
+
+function Test-VmfFileRetryLeft {
+    <#
+    .SYNOPSIS
+        FILE-RACE-LOAD-1: may a file-store loop try a held file again? Yes
+        while it has made fewer than VmfFileMinAttempts tries, or the clock
+        has not reached its deadline. Every file-store retry loop asks this.
+    #>
+    [CmdletBinding()]
+    [OutputType([bool])]
+    param(
+        [Parameter(Mandatory)][DateTime]$Deadline,
+        [Parameter(Mandatory)][int]$Attempt
+    )
+    ($Attempt -lt $script:VmfFileMinAttempts) -or ([DateTime]::UtcNow -lt $Deadline)
+}
+
+function Wait-VmfFileRetry {
+    <#
+    .SYNOPSIS
+        FILE-RACE-LOAD-1: the pause between two tries of a held file. The
+        thread's own sleep, not Start-Sleep, which a test's guard makes no
+        wait. A test replaces this to let go of a file after a set number of
+        tries, so it does not depend on the speed of the computer.
+    #>
+    [CmdletBinding()]
+    param([Parameter()][int]$Milliseconds = $script:VmfFileRetryMilliseconds)
+    [System.Threading.Thread]::Sleep($Milliseconds)
+}
+
+function New-VmfFileHeldError {
+    <#
+    .SYNOPSIS
+        FILE-RACE-LOAD-1: the error when a held file stays held after every
+        try. An IOException (so Get-VmfFileErrorKind still says 'held') that
+        names the file, the tries and the time, with the last error inside.
+    #>
+    [CmdletBinding()]
+    [OutputType([System.IO.IOException])]
+    param(
+        [Parameter(Mandatory)][string]$Path,
+        [Parameter(Mandatory)][int]$Attempt,
+        [Parameter(Mandatory)][DateTime]$Started,
+        [Parameter(Mandatory)][System.Exception]$Exception
+    )
+    $e = $Exception
+    while ($e -is [System.Management.Automation.MethodInvocationException] -and $e.InnerException) { $e = $e.InnerException }
+    $ms = [int]([DateTime]::UtcNow - $Started).TotalMilliseconds
+    [System.IO.IOException]::new("The file store tried $Attempt times in $ms ms to use '$Path', but another process kept the file open. $($e.Message)", $e)
+}
 
 function Get-VmfFileErrorKind {
     <#
@@ -179,14 +238,18 @@ function Read-VmfFileTextShared {
         FILE-BACKEND-RACE-1: the text of a file, read with sharing that a
         writer, a replace or a delete allows. $null when the file is not
         there (or is empty, as Get-Content -Raw gives). Tries again while the
-        file is held exclusively or mid-replace; throws after about a second.
+        file is held exclusively or mid-replace; throws after the wait
+        (Test-VmfFileRetryLeft, FILE-RACE-LOAD-1).
     #>
     [CmdletBinding()]
     [OutputType([string])]
     param([Parameter(Mandatory)][string]$Path)
     $share = [System.IO.FileShare]::ReadWrite -bor [System.IO.FileShare]::Delete
-    $deadline = [DateTime]::UtcNow.AddMilliseconds($script:VmfFileWaitMilliseconds)
+    $started = [DateTime]::UtcNow
+    $deadline = $started.AddMilliseconds($script:VmfFileWaitMilliseconds)
+    $attempt = 0
     while ($true) {
+        $attempt++
         try {
             $fs = [System.IO.FileStream]::new($Path, [System.IO.FileMode]::Open, [System.IO.FileAccess]::Read, $share)
             try {
@@ -204,9 +267,11 @@ function Read-VmfFileTextShared {
             # A file whose delete is pending answers "access denied" until it
             # is gone; a file that stays held is a real refusal.
             if (-not [System.IO.File]::Exists($Path)) { return $null }
-            if ([DateTime]::UtcNow -ge $deadline) { throw }
+            if (-not (Test-VmfFileRetryLeft -Deadline $deadline -Attempt $attempt)) {
+                throw (New-VmfFileHeldError -Path $Path -Attempt $attempt -Started $started -Exception $_.Exception)
+            }
         }
-        [System.Threading.Thread]::Sleep($script:VmfFileRetryMilliseconds)
+        Wait-VmfFileRetry
     }
 }
 
@@ -223,16 +288,24 @@ function Move-VmfFileReplace {
         [Parameter(Mandatory)][string]$Source,
         [Parameter(Mandatory)][string]$Destination
     )
-    $deadline = [DateTime]::UtcNow.AddMilliseconds($script:VmfFileWaitMilliseconds)
+    $started = [DateTime]::UtcNow
+    $deadline = $started.AddMilliseconds($script:VmfFileWaitMilliseconds)
+    $attempt = 0
     while ($true) {
+        $attempt++
         try { [System.IO.File]::Move($Source, $Destination, $true); return }
         catch {
-            if ((Get-VmfFileErrorKind -Exception $_.Exception) -ne 'held' -or [DateTime]::UtcNow -ge $deadline) {
+            $failure = $_
+            if ((Get-VmfFileErrorKind -Exception $failure.Exception) -ne 'held') {
                 Remove-Item -LiteralPath $Source -Force -ErrorAction SilentlyContinue
-                throw
+                throw $failure
+            }
+            if (-not (Test-VmfFileRetryLeft -Deadline $deadline -Attempt $attempt)) {
+                Remove-Item -LiteralPath $Source -Force -ErrorAction SilentlyContinue
+                throw (New-VmfFileHeldError -Path $Destination -Attempt $attempt -Started $started -Exception $failure.Exception)
             }
         }
-        [System.Threading.Thread]::Sleep($script:VmfFileRetryMilliseconds)
+        Wait-VmfFileRetry
     }
 }
 
@@ -244,15 +317,21 @@ function Remove-VmfFileShared {
     #>
     [CmdletBinding()]
     param([Parameter(Mandatory)][string]$Path)
-    $deadline = [DateTime]::UtcNow.AddMilliseconds($script:VmfFileWaitMilliseconds)
+    $started = [DateTime]::UtcNow
+    $deadline = $started.AddMilliseconds($script:VmfFileWaitMilliseconds)
+    $attempt = 0
     while ($true) {
+        $attempt++
         try { [System.IO.File]::Delete($Path); return }
         catch {
             $kind = Get-VmfFileErrorKind -Exception $_.Exception
             if ($kind -eq 'gone') { return }
-            if ($kind -ne 'held' -or [DateTime]::UtcNow -ge $deadline) { throw }
+            if ($kind -ne 'held') { throw }
+            if (-not (Test-VmfFileRetryLeft -Deadline $deadline -Attempt $attempt)) {
+                throw (New-VmfFileHeldError -Path $Path -Attempt $attempt -Started $started -Exception $_.Exception)
+            }
         }
-        [System.Threading.Thread]::Sleep($script:VmfFileRetryMilliseconds)
+        Wait-VmfFileRetry
     }
 }
 function Read-VmfStoreText {
@@ -790,15 +869,21 @@ function Remove-VmfStoreItemIfVersion {
             # The name ends in no store extension, so no listing of the folder
             # finds it while it is aside.
             $aside = "$path.removing-$([DateTime]::UtcNow.Ticks)-$([System.Guid]::NewGuid().ToString('N'))"
-            $deadline = [DateTime]::UtcNow.AddMilliseconds($script:VmfFileWaitMilliseconds)
+            $started = [DateTime]::UtcNow
+            $deadline = $started.AddMilliseconds($script:VmfFileWaitMilliseconds)
+            $attempt = 0
             while ($true) {
+                $attempt++
                 try { [System.IO.File]::Move($path, $aside); break }
                 catch {
                     $kind = Get-VmfFileErrorKind -Exception $_.Exception
                     if ($kind -eq 'gone') { return $false }
-                    if ($kind -ne 'held' -or [DateTime]::UtcNow -ge $deadline) { throw }
+                    if ($kind -ne 'held') { throw }
+                    if (-not (Test-VmfFileRetryLeft -Deadline $deadline -Attempt $attempt)) {
+                        throw (New-VmfFileHeldError -Path $path -Attempt $attempt -Started $started -Exception $_.Exception)
+                    }
                 }
-                [System.Threading.Thread]::Sleep($script:VmfFileRetryMilliseconds)
+                Wait-VmfFileRetry
             }
             $text = Read-VmfFileTextShared -Path $aside
             if ([string]::Equals((Get-VmfDocumentVersion -Text ([string]$text)), $ExpectedVersion, [System.StringComparison]::Ordinal)) {
@@ -807,10 +892,25 @@ function Remove-VmfStoreItemIfVersion {
             }
             # Another text: written after the judgement. Back in its place - and
             # if a newer one is there already, that one stays.
-            try { [System.IO.File]::Move($aside, $path) }
-            catch {
-                if (-not [System.IO.File]::Exists($path)) { throw }
-                Remove-VmfFileShared -Path $aside
+            # ASIDE-PUTBACK-ONE-TRY-1: the put-back waits for a held file as
+            # every other step does. One try left the text under the aside
+            # name, which no listing finds, when another handle held it. A
+            # rename is safe to try again (hard rule 4).
+            $started = [DateTime]::UtcNow
+            $deadline = $started.AddMilliseconds($script:VmfFileWaitMilliseconds)
+            $attempt = 0
+            while ($true) {
+                $attempt++
+                try { [System.IO.File]::Move($aside, $path); break }
+                catch {
+                    if ([System.IO.File]::Exists($path)) { Remove-VmfFileShared -Path $aside; break }
+                    $kind = Get-VmfFileErrorKind -Exception $_.Exception
+                    if ($kind -ne 'held' -or -not (Test-VmfFileRetryLeft -Deadline $deadline -Attempt $attempt)) {
+                        $cause = if ($kind -eq 'held') { New-VmfFileHeldError -Path $aside -Attempt $attempt -Started $started -Exception $_.Exception } else { $_.Exception }
+                        throw [System.IO.IOException]::new("The file store did not move the document to its name again. Rename '$aside' to '$path'. $($cause.Message)", $cause)
+                    }
+                }
+                Wait-VmfFileRetry
             }
             return $false
         }
@@ -1007,30 +1107,53 @@ function Remove-VmfStorePrefix {
     <#
     .SYNOPSIS
         RUN-LIFECYCLE-1: delete an entire run - every document under its
-        prefix. The only bulk delete in the store API, and the only caller is
-        Remove-VmfRun, which decides whether that is allowed.
+        prefix. The only bulk delete in the store API. Its callers are
+        Remove-VmfRun (-Kind run) and Remove-VmfProject (-Kind project), which
+        decide whether that is allowed.
+    .DESCRIPTION
+        STORE-RESERVED-NAMES-1: and it refuses anything wider than what it
+        was asked to delete, whatever the caller decided. A folder the product
+        keeps (vmf-records, vmf-claims, logs) is refused before the store is
+        read. Then EVERY document is listed before ANY is deleted, and the
+        delete is refused when the documents say the prefix is more than one
+        run (a project.json, or another run.json below its own) or more than
+        one empty project (anything but project.json and the parts of the
+        project's own event log in logs, PROJECT-LOGS-DELETE-1) - see
+        Get-VmfPrefixDeleteRefusal. The same rule on both backends.
     .OUTPUTS
         [int] how many documents were deleted.
     #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'High')]
     [OutputType([int])]
-    param([Parameter(Mandatory)][string]$RunPath)
+    param(
+        [Parameter(Mandatory)][string]$RunPath,
+        [Parameter(Mandatory)][ValidateSet('run', 'project')][string]$Kind
+    )
 
+    foreach ($n in @(Get-VmfStoreAddressNames -RunPath $RunPath)) { Assert-VmfStoreNameAllowed -Name $n }
     $ctx = Get-VmfStoreContext -RunPath $RunPath
-    # EVENTLOG-1: the parts are going with the run.
-    Clear-VmfStoreLinePart -Ctx $ctx
+    $id = Get-VmfStoreLeaf -RunPath $RunPath
     if ($ctx.Backend -eq 'file') {
         if (-not (Test-Path $ctx.Root)) { return 0 }
-        $count = @(Get-ChildItem $ctx.Root -Recurse -File -ErrorAction SilentlyContinue).Count
+        # Through the provider, not [IO.Path]: a relative root is relative to
+        # the shell's location, which .NET does not know.
+        $rootFull = (Get-Item -LiteralPath $ctx.Root).FullName.TrimEnd([char]0x2F, [char]0x5C)
+        $files = @(Get-ChildItem $ctx.Root -Recurse -File -ErrorAction SilentlyContinue)
+        $rel = @($files | ForEach-Object { $_.FullName.Substring($rootFull.Length + 1).Replace([char]0x5C, [char]0x2F) })
+        $refusal = Get-VmfPrefixDeleteRefusal -Id $id -Kind $Kind -Names $rel
+        if ($refusal) { throw $refusal }
+        # EVENTLOG-1: the parts are going with the run.
+        Clear-VmfStoreLinePart -Ctx $ctx
         if ($PSCmdlet.ShouldProcess($ctx.Root, 'Delete every document in this run')) {
             Remove-Item $ctx.Root -Recurse -Force
         }
-        return $count
+        return $files.Count
     }
 
-    # Blob: enumerate the whole prefix (paged) and delete each one. Listing
-    # returns full blob names, so they are used as-is rather than re-derived.
-    $deleted = 0
+    # Blob: enumerate the whole prefix (paged) FIRST, then check, then delete
+    # each one. Listing returns full blob names, so they are used as-is rather
+    # than re-derived.
+    $all = [System.Collections.Generic.List[string]]::new()
     $marker = ''
     $pages = 0
     do {
@@ -1038,21 +1161,28 @@ function Remove-VmfStorePrefix {
         if ($marker) { $uri += "&marker=$([uri]::EscapeDataString($marker))" }
         $resp = Invoke-VmfStorageRequest -Method GET -Uri $uri
         if ($resp.StatusCode -ne 200) { throw "Store list for delete failed: HTTP $($resp.StatusCode) $($resp.Content)" }
-        $names = [regex]::Matches($resp.Content, '<Name>([^<]+)</Name>') | ForEach-Object { $_.Groups[1].Value }
-        foreach ($n in $names) {
-            if ($PSCmdlet.ShouldProcess($n, 'Delete document')) {
-                # RUNID-1: escaped like every other document address. A name that
-                # came back from a listing is still a name, and a delete that misses
-                # is what leaves a run half-removed.
-                $del = Invoke-VmfStorageRequest -Method DELETE -Uri "$($ctx.ContainerUri)/$(Get-VmfStoreBlobPath $n)"
-                if ($del.StatusCode -in @(202, 404)) { $deleted++ }
-                else { throw "Delete '$n' failed: HTTP $($del.StatusCode) $($del.Content)" }
-            }
-        }
+        foreach ($m in [regex]::Matches($resp.Content, '<Name>([^<]+)</Name>')) { $all.Add($m.Groups[1].Value) }
         $marker = ([regex]::Match($resp.Content, '<NextMarker>([^<]*)</NextMarker>')).Groups[1].Value
         $pages++
         if ($pages -gt 100) { throw 'Refusing to page for ever while deleting a run - something is wrong with the listing.' }
     } while ($marker)
+    $start = $ctx.Prefix.Length + 1
+    $refusal = Get-VmfPrefixDeleteRefusal -Id $id -Kind $Kind -Names @($all | ForEach-Object { if ($_.Length -gt $start) { $_.Substring($start) } else { $_ } })
+    if ($refusal) { throw $refusal }
+
+    # EVENTLOG-1: the parts are going with the run.
+    Clear-VmfStoreLinePart -Ctx $ctx
+    $deleted = 0
+    foreach ($n in $all) {
+        if ($PSCmdlet.ShouldProcess($n, 'Delete document')) {
+            # RUNID-1: escaped like every other document address. A name that
+            # came back from a listing is still a name, and a delete that misses
+            # is what leaves a run half-removed.
+            $del = Invoke-VmfStorageRequest -Method DELETE -Uri "$($ctx.ContainerUri)/$(Get-VmfStoreBlobPath $n)"
+            if ($del.StatusCode -in @(202, 404)) { $deleted++ }
+            else { throw "Delete '$n' failed: HTTP $($del.StatusCode) $($del.Content)" }
+        }
+    }
 
     # Check that it is actually gone. Observed on a real store: a run was
     # deleted and its events log was still there afterwards - something wrote
@@ -1064,6 +1194,11 @@ function Remove-VmfStorePrefix {
         $left = if ($check.StatusCode -eq 200) {
             @([regex]::Matches($check.Content, '<Name>([^<]+)</Name>') | ForEach-Object { $_.Groups[1].Value })
         } else { @() }
+        # STORE-RESERVED-NAMES-1: and a straggler is held to the same rule. A
+        # project or another run made under this prefix since the first listing
+        # is not this run's, so the sweep deletes none of it.
+        $lateRefusal = Get-VmfPrefixDeleteRefusal -Id $id -Kind $Kind -Names @($left | ForEach-Object { if ($_.Length -gt $start) { $_.Substring($start) } else { $_ } })
+        if ($lateRefusal) { throw $lateRefusal }
         foreach ($n in $left) {
             $again = Invoke-VmfStorageRequest -Method DELETE -Uri "$($ctx.ContainerUri)/$(Get-VmfStoreBlobPath $n)"
             if ($again.StatusCode -in @(202, 404)) { $deleted++ }
@@ -1092,19 +1227,28 @@ function Add-VmfStoreLine {
         $dir = Split-Path $path -Parent
         if (-not (Test-Path $dir)) { New-Item -ItemType Directory -Path $dir -Force | Out-Null }
         $bytes = [System.Text.UTF8Encoding]::new($false).GetBytes($Line + "`n")
-        for ($attempt = 1; $attempt -le 5; $attempt++) {
+        # FILE-RACE-LOAD-1: the same wait as every other file-store loop. It
+        # was 5 tries with Start-Sleep between them, which a test's guard makes
+        # no wait, so under test the 5 tries ran in the same instant.
+        $started = [DateTime]::UtcNow
+        $deadline = $started.AddMilliseconds($script:VmfFileWaitMilliseconds)
+        $attempt = 0
+        while ($true) {
+            $attempt++
             try {
                 $fs = [System.IO.File]::Open($path, [System.IO.FileMode]::Append,
                     [System.IO.FileAccess]::Write, [System.IO.FileShare]::ReadWrite)
                 try { $fs.Write($bytes, 0, $bytes.Length) } finally { $fs.Dispose() }
                 return
             }
-            catch [System.IO.IOException] {
-                if ($attempt -eq 5) { throw }
-                Start-Sleep -Milliseconds (10 * $attempt)
+            catch {
+                if ((Get-VmfFileErrorKind -Exception $_.Exception) -ne 'held') { throw }
+                if (-not (Test-VmfFileRetryLeft -Deadline $deadline -Attempt $attempt)) {
+                    throw (New-VmfFileHeldError -Path $path -Attempt $attempt -Started $started -Exception $_.Exception)
+                }
             }
+            Wait-VmfFileRetry
         }
-        return
     }
     # EVENTLOG-1: WHICH PART OF THIS LOG IS BEING WRITTEN NOW.
     #
@@ -1352,7 +1496,9 @@ function Enter-VmfDocumentFileLock {
     $lock = "$Path.lock"
     $token = [System.Guid]::NewGuid().ToString('N')
     $deadline = [DateTime]::UtcNow.AddMilliseconds($WaitMilliseconds)
+    $attempt = 0
     while ($true) {
+        $attempt++
         try {
             $fs = [System.IO.File]::Open($lock, [System.IO.FileMode]::CreateNew, [System.IO.FileAccess]::Write, [System.IO.FileShare]::None)
             try { $bytes = [System.Text.Encoding]::ASCII.GetBytes($token); $fs.Write($bytes, 0, $bytes.Length) }
@@ -1363,8 +1509,9 @@ function Enter-VmfDocumentFileLock {
         catch [System.IO.IOException] {
             # Asked first, on every pass: a stale lock that cannot be taken
             # over (the mutation run found this spinning for ever) must still
-            # end in an answer.
-            if ([DateTime]::UtcNow -gt $deadline) { return [pscustomobject]@{ Outcome = 'busy'; Path = $lock; Token = $null } }
+            # end in an answer. FILE-RACE-LOAD-1: after the tries AND the
+            # wait, as every file-store loop (Test-VmfFileRetryLeft).
+            if (-not (Test-VmfFileRetryLeft -Deadline $deadline -Attempt $attempt)) { return [pscustomobject]@{ Outcome = 'busy'; Path = $lock; Token = $null } }
             $held = Get-Item -LiteralPath $lock -ErrorAction SilentlyContinue
             if ($held -and $held.LastWriteTimeUtc -lt [DateTime]::UtcNow.AddMinutes(-1)) {
                 $was = Get-Content -LiteralPath $lock -Raw -ErrorAction SilentlyContinue
@@ -1375,10 +1522,10 @@ function Enter-VmfDocumentFileLock {
                     if ($got -ne $was) { try { [System.IO.File]::Move($grave, $lock) } catch { } }
                     else { Remove-Item -LiteralPath $grave -Force -ErrorAction SilentlyContinue }
                 }
-                catch { Start-Sleep -Milliseconds 50 }
+                catch { Wait-VmfFileRetry -Milliseconds 50 }
                 continue
             }
-            Start-Sleep -Milliseconds 50
+            Wait-VmfFileRetry -Milliseconds 50
         }
     }
 }

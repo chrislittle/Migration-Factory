@@ -291,7 +291,9 @@ function Restore-VmfVm {
     # its size, controller, accelerated networking and disk types - on this
     # attempt's disks. A retry after a rebuild as the target captured the
     # machine on the target size.
-    $capturedVm = Get-VmfPutBackCapture -Doc $doc
+    # CRG-ROLLBACK-ATTEMPT-GROUP-1: the group of this attempt, unless it is a
+    # group of this migration.
+    $capturedVm = Get-VmfPutBackCapture -Doc $doc -ProductGroupIds @(Get-VmfProductReservationGroupIds -RunPath $RunPath)
     # ROLLBACK-SIZE-REFUSED-SERIES-1: the size the first copy goes back on.
     $backSize = if ($onto) { [string]$onto.Size } else { [string]$capturedVm.size }
     $inUse =@(@([string]$current.id) + @($liveData | Where-Object { $_.id } | ForEach-Object { [string]$_.id }))

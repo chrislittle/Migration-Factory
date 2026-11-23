@@ -77,6 +77,9 @@ for (const { c, v } of CASES) {
 
 // ---------- the Assessments page ----------
 const reportHtml = lift('assessments.html', 'reportHtml');
+// ASSESS-APPROVAL-HASH-1: Approve is off until the version is read, except in the demo.
+globalThis.DEMO_MODE = false;
+globalThis.approveWhy = lift('assessments.html', 'approveWhy');
 const AUX = liftConst('assessments.html', 'UX');
 test('the assessment report: the machines that can migrate have one count', () => {
   global.UX = AUX;

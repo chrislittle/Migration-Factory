@@ -82,7 +82,7 @@
           "machineCount": { "type": "integer", "minimum": 0, "description": "SCAN-PARTIAL-SUBS-1 (v14): the machines of that subscription and region, each held with the blocker sizes-not-read." },
           "requiredRole": { "type": ["string", "null"], "description": "SCAN-PARTIAL-SUBS-1 (v14): the role that holds the read, from the permission map (data/rbac-actions.json)." },
           "requiredAction": { "type": ["string", "null"], "description": "SCAN-PARTIAL-SUBS-1 (v14): the action the read needs, from the permission map." },
-          "scope": { "type": ["string", "null"], "description": "SCAN-PARTIAL-SUBS-1 (v14): where the read is made - the subscription." }
+          "scope": { "type": ["string", "null"], "description": "Where the read is made. Subject sizes (SCAN-PARTIAL-SUBS-1, v14): the subscription. Subject machine (LINUX-VERSION-OVERFLOW-1): the resource ID of the machine whose record the scan could not make; detail is what the product said, and machineCount is 1." }
         }
       }
     },

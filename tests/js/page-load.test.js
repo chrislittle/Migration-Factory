@@ -603,9 +603,14 @@ test('no page takes a version from the one call: a save reads its document throu
   const docs = HELP.slice(HELP.indexOf('async function storeDocs('), HELP.indexOf('function heldDepth('));
   ok(docs.length > 0, 'storeDocs is in help.js');
   ok(!/version/i.test(docs.replace(/\/\*[\s\S]*?\*\//g, '')), 'storeDocs keeps no version');
-  for (const file of ['index.html', 'assessments.html', 'projects.html', 'reports.html']) {
+  for (const file of ['index.html', 'projects.html', 'reports.html']) {
     ok(!/asVersioned/.test(codeOf(file)), `${file} saves no document read with a version`);
   }
+  // ASSESS-APPROVAL-HASH-1: the Assessments page quotes back the version of the
+  // ONE document its approval names, and reads it through store/blob - never
+  // from the one call (assess-approval-hash.test.js runs the read).
+  const versioned = codeOf('assessments.html').match(/storeBlob\([^;]*asVersioned: true \}\)/g) || [];
+  eq(versioned, ['storeBlob(() => getToken(), cfg.apiUrl, `${id}/assessment.json`, { asVersioned: true })'], 'assessments.html: the scan an approval names');
 });
 
 /* ================= PAGE-LOAD-2: the Migrations page and the support bundle =================
@@ -1078,7 +1083,7 @@ test('THE DEFECT, support bundle from Waves: one run is ONE call', async () => {
 
 let wiz = null;
 try {
-  wiz = liftAll('wizard.html', ['blobJson', 'blobVersioned', 'blobList', 'readDoc', 'readNames', 'readVersionedDoc', 'readRun', 'ackGiven', 'runFullId', 'runPrefix']);
+  wiz = liftAll('wizard.html', ['blobJson', 'blobVersioned', 'blobList', 'readDoc', 'readNames', 'readVersionedDoc', 'reviewedScan', 'readRun', 'ackGiven', 'runFullId', 'runPrefix']);
   wiz.helpAdapter = liftAll('wizard.html', ['helpAdapter']).helpAdapter;
 } catch (e) { wiz = { missing: e.message }; }
 const WIZ_SRC = pageSource(path.join(DASH, 'wizard.html'));
@@ -1098,14 +1103,14 @@ function wizardStore() {
 function wizardPage(s, run) {
   commonGlobals(s);
   globalThis.RUN_READS = readsOf('wizard.html', 'RUN_READS');
-  for (const k of ['blobJson', 'blobVersioned', 'blobList', 'readDoc', 'readNames', 'readVersionedDoc', 'runFullId', 'runPrefix']) {
+  for (const k of ['blobJson', 'blobVersioned', 'blobList', 'readDoc', 'readNames', 'readVersionedDoc', 'reviewedScan', 'runFullId', 'runPrefix']) {
     globalThis[k] = wiz[k];
   }
   Object.assign(globalThis, {
     runId: run, projectId: 'proj1', DEMO: {}, msalApp: null, runKinds: new Map(), TARGET_ADVICE_VERSION: ADVICE_VERSION,
     readFailed: null, runExists: false, manifest: null, approval: null, assessment: null, plan: null, planSignoff: null,
     planSignoffCurrent: false, acknowledged: false, states: new Map(), approvals: new Map(), acceptances: new Map(),
-    targetAdvice: null, adviceVersion: '', adviceOld: false, targetChoices: null, choicesVersion: '', machineChoices: null, machinesVersion: '',
+    targetAdvice: null, adviceVersion: '', adviceOld: false, targetChoices: null, choicesVersion: '', machineChoices: null, machinesVersion: '', assessmentVersion: '',
     nameMachines() { },
   });
 }
@@ -1118,6 +1123,7 @@ function wizardHeld() {
     states: sorted(globalThis.states), approvals: sorted(globalThis.approvals), acceptances: sorted(globalThis.acceptances),
     targetAdvice: globalThis.targetAdvice, adviceVersion: globalThis.adviceVersion, adviceOld: globalThis.adviceOld, targetChoices: globalThis.targetChoices,
     choicesVersion: globalThis.choicesVersion, machineChoices: globalThis.machineChoices, machinesVersion: globalThis.machinesVersion,
+    assessmentVersion: globalThis.assessmentVersion,
   };
 }
 

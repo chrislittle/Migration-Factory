@@ -5,7 +5,7 @@
     {
       "key": "npm:@azure/msal-browser",
       "name": "Sign-in library (MSAL for the browser)",
-      "version": "5.29.0",
+      "version": "5.30.0",
       "latest": {
         "source": "npm",
         "package": "@azure/msal-browser"
@@ -16,18 +16,18 @@
       },
       "releaseNotes": "https://github.com/AzureAD/microsoft-authentication-library-for-js/releases",
       "license": "MIT",
-      "source": "https://registry.npmjs.org/@azure/msal-browser/-/msal-browser-5.29.0.tgz",
+      "source": "https://registry.npmjs.org/@azure/msal-browser/-/msal-browser-5.30.0.tgz",
       "files": [
         {
           "path": "src/dashboard/msal-browser.min.js",
           "from": "lib/msal-browser.min.js",
-          "sha256": "1b20f9bfbabb2e33801042563761794b7818aa774606e4ed1ccb1ada6a18ce03",
+          "sha256": "1115b080498b79b0b4b621dd3df478b0a9b1035f5d076d5741d1888f06923b84",
           "contains": [
             {
               "name": "@azure/msal-common",
-              "version": "16.16.1",
+              "version": "16.17.0",
               "license": "MIT",
-              "evidence": "\"@azure/msal-common\",Jn=\"16.16.1\"",
+              "evidence": "\"@azure/msal-common\",Vn=\"16.17.0\"",
               "why": "SBOM-1: the library is built with msal-common inside it, and the file names it and its version (the npm registry gives that version the licence MIT). The evidence text changes with each release of the library: read it from the new file."
             }
           ]
@@ -473,7 +473,7 @@
     {
       "key": "image:mcr.microsoft.com/azure-powershell",
       "name": "Engine base image",
-      "version": "16.5.0",
+      "version": "17.0.0",
       "tag": "{version}-ubuntu-24.04",
       "latest": {
         "source": "mcr",
@@ -485,7 +485,7 @@
     {
       "key": "bicep:mcr.microsoft.com/bicep/avm/res/operational-insights/workspace",
       "name": "Install template module avm/res/operational-insights/workspace",
-      "version": "0.16.1",
+      "version": "0.16.2",
       "latest": {
         "source": "mcr",
         "repository": "bicep/avm/res/operational-insights/workspace"
@@ -518,7 +518,7 @@
     {
       "key": "bicep:mcr.microsoft.com/bicep/avm/res/storage/storage-account",
       "name": "Install template module avm/res/storage/storage-account",
-      "version": "0.33.1",
+      "version": "0.33.2",
       "latest": {
         "source": "mcr",
         "repository": "bicep/avm/res/storage/storage-account"
@@ -540,7 +540,7 @@
     {
       "key": "bicep:mcr.microsoft.com/bicep/avm/res/container-registry/registry",
       "name": "Install template module avm/res/container-registry/registry",
-      "version": "0.13.1",
+      "version": "0.13.2",
       "latest": {
         "source": "mcr",
         "repository": "bicep/avm/res/container-registry/registry"
@@ -551,7 +551,7 @@
     {
       "key": "bicep:mcr.microsoft.com/bicep/avm/res/app/managed-environment",
       "name": "Install template module avm/res/app/managed-environment",
-      "version": "0.16.0",
+      "version": "0.17.0",
       "latest": {
         "source": "mcr",
         "repository": "bicep/avm/res/app/managed-environment"
@@ -562,7 +562,7 @@
     {
       "key": "bicep:mcr.microsoft.com/bicep/avm/res/web/serverfarm",
       "name": "Install template module avm/res/web/serverfarm",
-      "version": "0.7.0",
+      "version": "0.7.1",
       "latest": {
         "source": "mcr",
         "repository": "bicep/avm/res/web/serverfarm"
@@ -677,7 +677,7 @@
     {
       "key": "psgallery:Az.Accounts",
       "name": "Test tool Az.Accounts",
-      "version": "5.5.4",
+      "version": "5.5.5",
       "latest": {
         "source": "psgallery",
         "id": "Az.Accounts"
@@ -689,19 +689,19 @@
           "text": "'Az.Accounts' = '{version}'"
         }
       ],
-      "why": "Not shipped: the CI runner installs it so the unit tests can mock the Az.Accounts commands the engine calls (Pester mocks only a command that exists, and a mock's parameter filter names the command's parameters), and the tests that run the real module (StoreAzTelemetry.Tests.ps1) use it. 5.5.4 is the version Az 16.5.0 ships, so the version in the engine image. FACADE-SIGNIN-COLD-1 and PERF-AZ-LOAD-1 (2026-11-12): the web service no longer loads it. It takes its tokens from the managed identity endpoint (IDENTITY_ENDPOINT, Microsoft's 'Managed identities - Azure App Service'), so it has no requirements.psd1, host.json turns managed dependencies off, and this was psmodule:Az.Accounts, the service's module, until then. PIN-RUNTIME-1 had pinned it there because managed dependencies took each new 5.x by themselves."
+      "why": "Not shipped: the CI runner installs it so the unit tests can mock the Az.Accounts commands the engine calls (Pester mocks only a command that exists, and a mock's parameter filter names the command's parameters), and the tests that run the real module (StoreAzTelemetry.Tests.ps1) use it. 5.5.5 is the version Az 17.0.0 ships, so the version in the engine image (PARTS-1120). FACADE-SIGNIN-COLD-1 and PERF-AZ-LOAD-1 (2026-11-12): the web service no longer loads it. It takes its tokens from the managed identity endpoint (IDENTITY_ENDPOINT, Microsoft's 'Managed identities - Azure App Service'), so it has no requirements.psd1, host.json turns managed dependencies off, and this was psmodule:Az.Accounts, the service's module, until then. PIN-RUNTIME-1 had pinned it there because managed dependencies took each new 5.x by themselves."
     },
     {
       "key": "bundle:Microsoft.Azure.Functions.ExtensionBundle",
       "name": "Service Functions extension bundle",
-      "version": "4.39.1",
+      "version": "4.41.2",
       "tag": "[{version}]",
       "latest": {
         "source": "functions-cdn",
         "id": "Microsoft.Azure.Functions.ExtensionBundle"
       },
       "releaseNotes": "https://github.com/Azure/azure-functions-extension-bundles/releases",
-      "why": "PIN-RUNTIME-1: the extension bundle the service (src/facade/app/host.json) and the CI starter function (infra/ci-schedule/starter-function/host.json) name. With the range [4.*, 5.0.0) the Functions host took the newest 4.x it could find (Microsoft's extension bundles page: the runtime always chooses the maximum version the range allows). [4.39.1] is NuGet's exact version (Microsoft's NuGet version reference: [1.0] is x == 1.0). 4.39.1 is the newest bundle on the Functions bundle index (cdn.functions.azure.com, read 2026-11-03), the last release on GitHub not marked in progress, and installed on the lab install's worker (read 2026-11-03, with 4.40.0, which the index does not list). Both apps use only HTTP and timer triggers, which the Functions host carries itself: the lab service process loaded no file from a bundle. A move is a service update: read the bundle's release notes, run the full suite, then the install test."
+      "why": "PIN-RUNTIME-1: the extension bundle the service (src/facade/app/host.json) and the CI starter function (infra/ci-schedule/starter-function/host.json) name. With the range [4.*, 5.0.0) the Functions host took the newest 4.x it could find (Microsoft's extension bundles page: the runtime always chooses the maximum version the range allows). [4.41.2] is NuGet's exact version (Microsoft's NuGet version reference: [1.0] is x == 1.0). 4.41.2 is the newest bundle on the Functions bundle index (cdn.functions.azure.com, read 2026-11-20, which lists 4.39.1, 4.40.0 and 4.41.2) and the last release on GitHub not marked in progress or abandoned (4.41.0 and 4.41.1 are marked abandoned, 4.42.0 in progress; PARTS-1120). Both apps use only HTTP and timer triggers, which the Functions host carries itself: the lab service process loaded no file from a bundle. A move is a service update: read the bundle's release notes, run the full suite, then the install test."
     },
     {
       "key": "action:actions/checkout",
@@ -718,8 +718,8 @@
     {
       "key": "action:github/codeql-action/init",
       "name": "GitHub Action github/codeql-action/init",
-      "version": "4.39.3",
-      "commit": "33d7b85da1a04171e211befe2c739303b9a4c066",
+      "version": "4.39.4",
+      "commit": "1bd86f2fdb4b86187fa4059f16f31a3202acc9ea",
       "latest": {
         "source": "github",
         "repository": "github/codeql-action"
@@ -730,8 +730,8 @@
     {
       "key": "action:github/codeql-action/analyze",
       "name": "GitHub Action github/codeql-action/analyze",
-      "version": "4.39.3",
-      "commit": "33d7b85da1a04171e211befe2c739303b9a4c066",
+      "version": "4.39.4",
+      "commit": "1bd86f2fdb4b86187fa4059f16f31a3202acc9ea",
       "latest": {
         "source": "github",
         "repository": "github/codeql-action"
@@ -742,8 +742,8 @@
     {
       "key": "action:actions/dependency-review-action",
       "name": "GitHub Action actions/dependency-review-action",
-      "version": "5.0.0",
-      "commit": "a1d282b36b6f3519aa1f3fc636f609c47dddb294",
+      "version": "5.0.1",
+      "commit": "bbc44d14a204704ccc493733616cd1e93a0321ec",
       "latest": {
         "source": "github",
         "repository": "actions/dependency-review-action"

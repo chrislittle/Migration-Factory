@@ -139,7 +139,7 @@ Describe 'GEN1-ROUTE-GONE-1: the engine writes no Generation 1 route' {
         $opts = @($advice.machines | ForEach-Object { @($_.options) })
         @($opts | Where-Object { $_.move -eq 'gen1-route' }).Count | Should -Be 0
         @($opts | Where-Object { @($_.notSupported) -contains 'not-built-yet' }).Count | Should -Be 0
-        $advice.schemaVersion | Should -Be 33
+        $advice.schemaVersion | Should -Be 34
         $advice | ConvertTo-Json -Depth 30 | Test-Json -SchemaFile $script:schemaFile | Should -BeTrue
     }
 }
@@ -152,10 +152,10 @@ Describe 'GEN1-ROUTE-GONE-1: target-advice v22 does not allow the route' {
     }
 
     It 'the version is the one in use (24), in the engine, the schema and the page' {
-        InModuleScope VmMigrationFactory { Get-VmfTargetAdviceSchemaVersion | Should -Be 33 }
-        $script:schema.properties.schemaVersion.const | Should -Be 33
+        InModuleScope VmMigrationFactory { Get-VmfTargetAdviceSchemaVersion | Should -Be 34 }
+        $script:schema.properties.schemaVersion.const | Should -Be 34
         $script:schema.properties.schemaVersion.description | Should -Match '\b22 \(GEN1-ROUTE-GONE-1' -Because 'REBUILD-PICKER-1 put v23 first, and TEMP-DISK-PREVIEW-1 v24'
-        ((Get-VmfPageSource -Path (Join-Path $script:repoRoot 'src' 'dashboard' 'wizard.html'))) | Should -Match 'const TARGET_ADVICE_VERSION = 33;'
+        ((Get-VmfPageSource -Path (Join-Path $script:repoRoot 'src' 'dashboard' 'wizard.html'))) | Should -Match 'const TARGET_ADVICE_VERSION = 34;'
     }
 
     It 'the series are v5, v6 and v7 only' {
@@ -212,7 +212,7 @@ Describe 'GEN1-ROUTE-GONE-1: a v21 file that holds the route is refused by name 
         Mock -ModuleName VmMigrationFactory Get-VmfSkuCatalog { @((GrCatalog).Values) }
         New-VmfTargetAdvice -AssessmentPath (Join-Path $script:rp 'assessment.json') | Out-Null
         $text = Get-Content (Join-Path $script:rp 'target-advice.json') -Raw
-        ($text | ConvertFrom-Json).schemaVersion | Should -Be 33
+        ($text | ConvertFrom-Json).schemaVersion | Should -Be 34
         $text | Should -Not -Match 'gen1Route|gen1-route|not-built-yet'
     }
 

@@ -111,7 +111,7 @@ The product migrates a Linux machine when Microsoft publishes or endorses its im
 | Data Science Virtual Machine | microsoft-dsvm | Supported | Microsoft publishes this image. |
 | CBL-Mariner | MicrosoftCBLMariner | Not supported | This image is on the list as not supported. The product does not move this machine. |
 | Azure Linux 3.0 | MicrosoftCBLMariner | Not supported | This image is on the list as not supported. The product does not move this machine. |
-| Azure Linux 4.0 (preview) | microsoftazurelinux | Not supported | This image is on the list as not supported. The product does not move this machine. |
+| Azure Linux 4.0 | microsoftazurelinux | Not supported | This image is on the list as not supported. The product does not move this machine. |
 | Ubuntu | Canonical | Supported | Microsoft endorses this distribution on Azure. |
 | Red Hat Enterprise Linux | RedHat | Supported | Microsoft endorses this distribution on Azure. |
 | SUSE Linux Enterprise Server | SUSE | Supported | Microsoft endorses this distribution on Azure. |
