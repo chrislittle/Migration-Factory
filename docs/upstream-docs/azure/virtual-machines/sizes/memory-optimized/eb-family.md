@@ -23,7 +23,7 @@ The 'Eb' family of VM size series are one of Azure's memory-optimized VM instanc
 ### Ebsv6 and Ebdsv6-series
 
 # [Ebsv6-series](#tab/ebsv6)
-The Ebsv6-series virtual machines run on the fifth Generation Intel® Xeon® Platinum 8573C (Emerald Rapids) processor and deliver higher remote storage performance compared to the previous generation. The Ebsv6-series is ideal for storage throughput intensive workloads. These virtual machines offer up to 800,000 IOPS and 14,000 MBps of remote disk storage performance. Additionally, the Ebsv6 VM series offer up to 192vCPU and 1,832 GiB of RAM providing larger processing power to consolidate workloads. Refer to the Premium SSD, Premium SSD v2, and Ultra Disks to attain published disk performance.
+The Ebsv6-series virtual machines run on the fifth Generation Intel® Xeon® Platinum 8573C (Emerald Rapids) processor and deliver higher remote storage performance compared to the previous generation. The Ebsv6-series is ideal for storage throughput intensive workloads. These virtual machines offer up to 800,000 IOPS and 12,500 MBps of remote disk storage performance. Additionally, the Ebsv6 VM series offer up to 192vCPU and 1,832 GiB of RAM providing larger processing power to consolidate workloads. Refer to the Premium SSD, Premium SSD v2, and Ultra Disks to attain published disk performance.
 
 [View the full Ebsv6-series page](ebsv6-series).
 
@@ -32,12 +32,12 @@ The Ebsv6-series virtual machines run on the fifth Generation Intel® Xeon® Pla
 | Processor | 2 - 192 vCPUs | Intel Xeon Platinum 8573C (Emerald Rapids) [x86-64] |
 | Memory | 16 - 1832 GiB |  |
 | Local Storage | None |  |
-| Remote Storage | 8 - 64 Disks | 8800 - 800000 IOPS  253 - 14000 MBps |
+| Remote Storage | 8 - 64 Disks | 8800 - 800000 IOPS  253 - 12500 MBps |
 | Network | 2 - 8 NICs | 12500 - 200000 Mbps Interfaces: NetVSC, [MANA](https://aka.ms/ManaFAQ1) |
 | Accelerators | None |  |
 
 # [Ebdsv6-series](#tab/ebdsv6)
-The Ebdsv6-series virtual machines run on the fifth Generation Intel® Xeon® Platinum 8573C (Emerald Rapids) processor and deliver higher remote storage performance compared to the previous generation. The Ebdsv6-series is ideal for storage throughput intensive workloads. These virtual machines offer up to 800,000 IOPS and 14,000 MBps of remote disk storage performance. Additionally, the Ebsv6 VM series offer up to 192vCPU and 1,832 GiB of RAM providing larger processing power to consolidate workloads. Refer to the Premium SSD, Premium SSD v2, and Ultra Disks to attain published disk performance.
+The Ebdsv6-series virtual machines run on the fifth Generation Intel® Xeon® Platinum 8573C (Emerald Rapids) processor and deliver higher remote storage performance compared to the previous generation. The Ebdsv6-series is ideal for storage throughput intensive workloads. These virtual machines offer up to 800,000 IOPS and 12,500 MBps of remote disk storage performance. Additionally, the Ebdsv6 VM series offer up to 192vCPU and 1,832 GiB of RAM providing larger processing power to consolidate workloads. Refer to the Premium SSD, Premium SSD v2, and Ultra Disks to attain published disk performance.
 
 [View the full Ebdsv6-series page](ebdsv6-series).
 
@@ -46,7 +46,7 @@ The Ebdsv6-series virtual machines run on the fifth Generation Intel® Xeon® Pl
 | Processor | 2 - 192 vCPUs | Intel Xeon Platinum 8573C (Emerald Rapids) [x86-64] |
 | Memory | 16 - 1832 GiB |  |
 | Local Storage | 1 - 6 Disks | 110 - 1760 GiB  37500 - 3600000 IOPS 180 - 17280 MBps |
-| Remote Storage | 8 - 64 Disks | 8800 - 800000 IOPS  253 - 14000 MBps |
+| Remote Storage | 8 - 64 Disks | 8800 - 800000 IOPS  253 - 12500 MBps |
 | Network | 2 - 8 NICs | 12500 - 200000 Mbps Interfaces: NetVSC, [MANA](https://aka.ms/ManaFAQ1) |
 | Accelerators | None |  |
 

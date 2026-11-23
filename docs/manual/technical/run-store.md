@@ -16,10 +16,12 @@ vmf-runs/
     <project>--<run>.json      kept 90 days, also after you delete the migration
   <project>/
     project.json               the project's name and description
+    logs/
+      events.jsonl             events that the product recorded for the project and not for a run
     <run>/
       run.json                 the manifest: what kind of run, when, by whom
       assessment.json          what the assessment found, machine by machine
-      approval.json            who accepted the assessment, and their note
+      approval.json            who accepted the assessment, their note, and the version of the scan they accepted
       machine-choices.json     the machines a person chose for a migration (beside an assessment)
       target-advice.json       the size series that each machine can move to
       target-choices.json      the target that a person saved for each machine
@@ -58,7 +60,21 @@ vmf-runs/
                                finishes and when a machine is restored
 ```
 
+The product keeps its own records in the folders `vmf-claims`, `vmf-records` and `logs`. A project or a run cannot use one of these names. The service and the engine refuse the name before they write or delete a document.
+
+A delete removes one assessment, one migration or one empty project. The product refuses a delete when the folder holds more:
+
+- A migration or an assessment that holds a project document or another run is not deleted.
+- A project that holds a document other than `project.json` and its event log is not deleted. The event log is the `.jsonl` files directly in the `logs` folder of the project. Nothing reads this log, so the delete of the project also deletes it.
+- A run is not started at the root of a project, or inside another run.
+
 In the name of an acceptance, `<wave>` is the wave name in lower case. Each character that is not a letter, a number or a dash becomes a dash. `<code>` is 12 characters that the product calculates from the wave name. Thus waves `wave_1` and `wave-1` have different files.
+
+## The acceptance of an assessment
+
+Each scan saves its result in `assessment.json`, and no later scan writes it again. The store creates the document only if it is not there, so a second scan of the same run cannot replace it.
+
+An approver accepts the assessment, and the service writes `approval.json`. The field `assessmentHash` holds the version of the scan that the approver saw. The service refuses an acceptance when the scan in the store has a different version. The target options and the plan refuse an acceptance whose `assessmentHash` is not the version of the scan they read.
 
 ## The approval of each wave
 

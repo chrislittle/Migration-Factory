@@ -9,7 +9,7 @@
 # the operator to do something the product gives no way to do.
 #
 # The blocking stays exactly as it was: an unknown publisher, an unknown
-# offer, an image on the list as unsupported (Azure Linux 4.0 in preview
+# offer, an image on the list as unsupported (Azure Linux 4.0
 # among them) and a custom or gallery image all keep the blocker
 # image-not-supported. What goes is the override, and every word about it.
 # The assessment format goes to version 16 (contract-first: its scope no
@@ -114,7 +114,7 @@ Describe 'DRIFT-12: each image reason states the fact and the result' {
     }
 
     It 'an image on the list as unsupported: <Publisher>' -ForEach @(
-        @{ Publisher = 'microsoftazurelinux'; Offer = 'azurelinux-4'; Words = 'Microsoft says that Azure Linux 4.0 is in preview, for evaluation and testing only, and not for production use. The product does not move this machine.' }
+        @{ Publisher = 'microsoftazurelinux'; Offer = 'azurelinux-4'; Words = 'The scripts that the product runs in the machine do not support Azure Linux 4.0. The product does not move this machine.' }
         @{ Publisher = 'OpenLogic'; Offer = 'CentOS'; Words = 'CentOS reached end of life, and no one releases fixes for it. The image still reports NVMe support. The product does not move this machine.' }
         @{ Publisher = 'center-for-internet-security-inc'; Offer = 'cis-ubuntu'; Words = 'This is a hardened image from a third party. Microsoft does not support its guest agent and drivers. The product does not move this machine.' }
     ) {

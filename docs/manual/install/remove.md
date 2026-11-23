@@ -101,7 +101,7 @@ The command first counts the safety copies and the capacity reservation groups, 
 
 Then it deletes every resource and the resource group. **This takes about 35 minutes.** The Container Apps environment takes most of this time. Let the command run.
 
-Last, it asks whether to remove the two application registrations from your directory. **Yes** is the default: press Enter to remove them. Answer **No** to keep them for a later install with the same environment name. This question comes after the resources are gone: a removal that stops part way leaves a product you can still sign in to.
+Last, it reads the resource group again. When Azure says that the group is gone, it asks whether to remove the two application registrations from your directory. **Yes** is the default: press Enter to remove them. Answer **No** to keep them. A later install with the same environment name then stops, until an administrator removes them. To install again, you can also use a different environment name. This question comes after the resources are gone: a removal that stops part way leaves a product you can still sign in to.
 
 ## Check that the resource group is gone
 
@@ -123,7 +123,7 @@ The answer you want is `ResourceGroupNotFound`. If the group is still there, see
 
 The removal deletes the resources first. It asks about the two application registrations only after the resources are gone. If you stop it part way, some resources can stay and still cost money.
 
-If that happens, run the removal again. It finishes what it started.
+If that happens, run the removal again. It finishes what it started. If `azd down` stops with an error, see [If the install fails](if-it-fails.md#the-removal-stops-with-an-error).
 
 ## If you install again
 
@@ -131,16 +131,17 @@ The removal also clears the two choices you made. The install asks them again.
 
 If an attempt fails part way, type `azd up` again. The install adopts every resource the first attempt created and continues. See [If the install fails](if-it-fails.md).
 
-Microsoft Entra keeps a deleted application registration for 30 days, and it keeps the name with it. The two registrations this product creates are named after your environment, so installing again with the **same environment name** meets those kept names. The install gives the new registrations a new unique name. The names you see in the portal do not change.
+Microsoft Entra keeps a deleted application registration for 30 days, and it keeps its unique name with it. Each new install gives its two registrations a new unique name. So when you install again with the **same environment name**, the kept names do not stop the install. The names you see in the portal do not change.
 
-The install removes the deleted registrations that hold the names, and says so:
+If you delete one of the two registrations in the Azure portal, the next `azd up` makes it again with the same unique name. Then the install removes the deleted registration permanently, and says so:
 
 ```
-removing a deleted registration still holding the name 'vmf-api-<your environment>'
+removing the deleted registration 'vmf-api-<your environment>' (object ID <object ID>) permanently. It holds the unique name vmf-api-<your environment>-<key>, which this install gives its registration. Entra keeps that name 30 days.
 ```
 
-If your account may not remove them permanently, the install stops and gives you the command to send to a directory administrator. You can also install with a different environment name, which gives every registration a different name.
+The install removes only a deleted registration that has this unique name. It does not remove a deleted registration that has only the same name in the portal.
 
+If your account may not remove it permanently, the install stops and gives you the command to send to a directory administrator. You can also install with a different environment name, which gives every registration a different name.
 <!-- next:begin -->
 
 ---

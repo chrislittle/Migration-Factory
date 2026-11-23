@@ -209,7 +209,7 @@ Describe 'KERNEL-OFFER-EDGES-1 (review): the targets step bars nothing it cannot
             Test-VmfKernelUpdateOfferedForEntry -PlanEntry (& $entry $eus) | Should -BeTrue
             Test-VmfKernelUpdateOfferedForEntry -PlanEntry (& $entry $deb) | Should -BeTrue
             Get-Command Get-VmfKernelUpdateBar -ErrorAction SilentlyContinue | Should -BeNullOrEmpty
-            Get-VmfTargetAdviceSchemaVersion | Should -Be 33   # IMAGE-SCRIPT-MATCH-1 v32, TARGET-CAPABILITY-PRECHECK-1 v33 (main)
+            Get-VmfTargetAdviceSchemaVersion | Should -Be 34   # IMAGE-SCRIPT-MATCH-1 v32, TARGET-CAPABILITY-PRECHECK-1 v33 (main)
         }
     }
 }

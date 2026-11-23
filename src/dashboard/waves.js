@@ -377,6 +377,10 @@ const UX = {
   newWaveName: 'new-wave',
   nameChanged: 'A wave name becomes a file name, so it can hold only letters, numbers, dots, dashes and underscores. "{typed}" is saved as "{used}".',
   nameReserved: 'The product uses the name "{typed}" for the machines that are not in a wave. Use a different name.',
+  // WAVE-CASE-1: the engine compares wave names without letter case.
+  nameTaken: 'Another wave has the name "{typed}". Use a different name.',
+  nameCase: 'The names "{typed}" and "{other}" are different only in letter case. The engine reads them as one wave. Use a different name.',
+  nameCaseSaved: 'The name "{typed}" is different from the saved wave "{other}" only in letter case. The product cannot change only the letter case of a wave name. Use a different name.',
   saveNoPlan: 'This page could not read the plan again. Load the page again, then save the waves.',
   filterTitle: 'Find machines to add',
   filterAll: 'Everything',
@@ -481,7 +485,12 @@ async function readLeases(held) {
   const docs = await VmfHelp.mapLimited(names, async (n) => {
     const known = VmfHelp.heldJson(held, n);
     if (known) { return known.value; }
-    try { return await blobFetch(n); } catch { return null; }
+    // LEASE-UNREAD-PAGE-1: a lease its job removed after the listing is gone,
+    // and blobFetch reads that 404 as null. A read the store REFUSES is not
+    // "no lease": the machine ID is inside the lease, so no wave can be judged,
+    // and the page stops with the words of a failed listing.
+    try { return await blobFetch(n); }
+    catch (e) { throw new Error(UX.leasesUnread.replace('{reason}', VmfHelp.explain(e))); }
   });
   return VmfHelp.leasesByMachine(docs);
 }
@@ -1236,6 +1245,56 @@ function reservedWaveName(name) {
   return RESERVED_WAVE_NAMES.includes(String(name == null ? '' : name).toLowerCase());
 }
 
+/* WAVE-CASE-1: the first wave name the engine cannot tell apart from another.
+ *
+ * The engine compares wave names without letter case (-eq, Group-Object), and
+ * blob names keep it: approvals/Wave1.json and approvals/wave1.json are two
+ * files. So the editor refuses, as it is typed, a name that is the name of
+ * another wave (same), that differs from another wave's name only in letter
+ * case (case), or that differs from a saved wave's name only in letter case
+ * (stored) - a rename the service cannot make. Set-VmfWavePlan asks the same
+ * rule at save (Find-VmfWaveNameClash), and tests/fixtures/wave-name-clash.json
+ * holds both. Returns null, or { name, other, kind }. */
+function findWaveNameClash(names, storedNames) {
+  const isWave = (n) => n != null && String(n) !== '' && String(n) !== 'unscheduled';
+  const stored = (storedNames ?? []).filter(isWave).map(String);
+  const seen = new Map();
+  for (const raw of names ?? []) {
+    if (!isWave(raw)) continue;
+    const name = String(raw);
+    const key = name.toLowerCase();
+    if (seen.has(key)) {
+      const other = seen.get(key);
+      return { name, other, kind: other === name ? 'same' : 'case' };
+    }
+    seen.set(key, name);
+    if (!stored.includes(name)) {
+      const storedOther = stored.find(s => s.toLowerCase() === key);
+      if (storedOther) return { name, other: storedOther, kind: 'stored' };
+    }
+  }
+  return null;
+}
+
+/* WAVE-CASE-1: the clash of ONE typed name with the other waves on the page
+ * and the saved waves. Only the typed name is judged, so a plan that holds
+ * such names never stops a rename or a new wave. */
+function waveNameClashFor(name, others, storedNames) {
+  for (const other of others ?? []) {
+    const clash = findWaveNameClash([other, name], []);
+    if (clash) return clash;
+  }
+  return findWaveNameClash([name], storedNames);
+}
+
+/* WAVE-CASE-1: what the editor says about a clash, in the page's own words. */
+function waveNameClashNote(clash, typed) {
+  if (!clash) return '';
+  const other = clash.name === typed ? clash.other : clash.name;
+  const words = clash.kind === 'same' ? UX.nameTaken : clash.kind === 'case' ? UX.nameCase : UX.nameCaseSaved;
+  return words.replace('{typed}', typed).replace('{other}', other);
+}
+
 // A wave name is operator-typed, so it is not safe to drop into a selector.
 const cssEscape = (v) => (window.CSS && CSS.escape) ? CSS.escape(String(v))
   : String(v).replace(/["\\]/g, '\\$&');
@@ -1500,9 +1559,19 @@ function wireRows() {
       // Say what happened, once, and only when the text actually changed.
       const note = to === typed ? '' : UX.nameChanged.replace('{typed}', typed).replace('{used}', to);
       i.value = to;
-      if (to === from || layout.has(to)) {
+      if (to === from) {
         render();
         if (note) { $('#warnbar').textContent = note; $('#warnbar').style.display = 'block'; }
+        return;
+      }
+      // WAVE-CASE-1: a name the engine cannot tell apart from another wave's
+      // name - keep the name it had, and say why.
+      const clash = waveNameClashFor(to, [...layout.keys()].filter(n => n !== from), entries.map(e => e.wave));
+      if (clash) {
+        i.value = from;
+        render();
+        $('#warnbar').textContent = waveNameClashNote(clash, to);
+        $('#warnbar').style.display = 'block';
         return;
       }
       const rebuilt = new Map();
@@ -2935,7 +3004,9 @@ async function start() {
 
   $('#add-wave').addEventListener('click', () => {
     let n = UX.newWaveName, i = 2;
-    while (layout.has(n)) { n = `${UX.newWaveName}-${i++}`; }
+    // WAVE-CASE-1: never a name the engine cannot tell apart from another.
+    const storedNames = entries.map(e => e.wave);
+    while (waveNameClashFor(n, [...layout.keys()], storedNames)) { n = `${UX.newWaveName}-${i++}`; }
     layout.set(n, { capacityGate: 'BestEffort', requireApproval: true, onDDataFound: 'stop',
                     keepSnapshotDays: 7, throttle: VmfHelp.WAVE_DEFAULT_WORKERS, vmIds: [] });
     render();

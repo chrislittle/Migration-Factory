@@ -4,7 +4,7 @@
 # credentials in the image, ever.
 # Build cloud-side (no local Docker needed):
 #   az acr build -r vmfacr<suffix> -t vmf-engine:dev -f docker/Dockerfile .
-FROM mcr.microsoft.com/azure-powershell:16.5.0-ubuntu-24.04
+FROM mcr.microsoft.com/azure-powershell:17.0.0-ubuntu-24.04
 
 # Layout mirrors the repo so module-relative guest-script resolution works.
 COPY src/VmMigrationFactory /app/src/VmMigrationFactory

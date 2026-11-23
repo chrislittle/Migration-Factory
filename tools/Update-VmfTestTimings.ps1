@@ -20,7 +20,7 @@
     even.
 .PARAMETER RunId
     A GitHub Actions run of ci.yml. The tool reads the log of each of its
-    "Pester n of m" jobs with gh.
+    "Gates and unit tests n of m" jobs with gh (CI-FOUR-SHARES-1 named them so).
 .PARAMETER LogPath
     Saved output of tools/Invoke-VmfPesterParallel.ps1 (or saved CI job
     logs), instead of -RunId.
@@ -68,13 +68,13 @@ function Get-VmfTimingLines {
 function Get-VmfRunPesterLogs {
     <#
     .SYNOPSIS
-        The log text of each "Pester n of m" job of one CI run, read with gh.
+        The log text of each "Gates and unit tests n of m" job of one CI run, read with gh.
     #>
     param([Parameter(Mandatory)][long]$Id)
     $jobs = & gh run view $Id --json jobs | ConvertFrom-Json
     if ($LASTEXITCODE -ne 0) { throw "gh could not read run $Id (exit $LASTEXITCODE)." }
-    $pester = @($jobs.jobs | Where-Object { $_.name -match '^Pester \d+ of \d+' })
-    if (-not $pester.Count) { throw "Run $Id has no 'Pester n of m' job." }
+    $pester = @($jobs.jobs | Where-Object { $_.name -match '^Gates and unit tests \d+ of \d+' })
+    if (-not $pester.Count) { throw "Run $Id has no 'Gates and unit tests n of m' job." }
     foreach ($job in $pester) {
         if ($job.status -ne 'completed' -or ($job.conclusion -ne 'success' -and $job.conclusion -ne 'failure')) {
             throw "The job '$($job.name)' of run $Id is '$($job.status) $($job.conclusion)': read a run whose Pester jobs ended."

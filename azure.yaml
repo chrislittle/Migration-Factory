@@ -22,8 +22,15 @@
 #                   front door.
 #   predown       - says what safety copies the removal leaves behind, and the
 #                   command that finds them afterwards. It stops nothing.
+#                   It records the resource group's name, and when Azure says
+#                   the group is ALREADY gone it runs postdown itself, because
+#                   azd then stops on ResourceGroupNotFound before postdown
+#                   (AZD-DOWN-RG-RECHECK-1, measured on azd 1.39.1).
 #   postdown      - removes the Entra registrations, AFTER the platform is
-#                   gone, because it runs only when the removal succeeded.
+#                   gone, because it runs only when the removal succeeded. It
+#                   reads the resource group back first and removes nothing
+#                   while the group is there. `azd hooks run postdown` runs it
+#                   to finish a removal azd stopped.
 #
 # Of the three decisions made on 2026-09-05, one stands and two are
 # reversed. The hosting plan is still a parameter, default Free (A):

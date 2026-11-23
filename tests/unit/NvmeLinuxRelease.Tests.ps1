@@ -277,8 +277,8 @@ Describe 'IMAGE-SCRIPT-MATCH-1: the reason closes v6 and v7, and v5 stays' {
     It 'the target options may carry it as a reason, and their format moved to version 32' {
         $schema = Get-Content (Join-Path $script:repoRoot 'schemas' 'target-advice.schema.json') -Raw | ConvertFrom-Json
         @($schema.'$defs'.reason.enum) | Should -Contain 'linux-release-not-on-nvme-list'
-        $schema.properties.schemaVersion.const | Should -Be 33
-        InModuleScope VmMigrationFactory { Get-VmfTargetAdviceSchemaVersion | Should -Be 33 }
+        $schema.properties.schemaVersion.const | Should -Be 34
+        InModuleScope VmMigrationFactory { Get-VmfTargetAdviceSchemaVersion | Should -Be 34 }
         (Get-Content (Join-Path $script:repoRoot 'docs' 'schema-migrations.md') -Raw) | Should -Match 'linux-release-not-on-nvme-list'
     }
 }

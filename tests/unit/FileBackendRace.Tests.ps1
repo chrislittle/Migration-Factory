@@ -36,6 +36,9 @@ BeforeAll {
         Remove-Item -LiteralPath $flag -Force -ErrorAction SilentlyContinue
         $job
     }
+    # FILE-RACE-LOAD-1: the wait as the module sets it, put back after a test changes it.
+    $script:fbrWait = InModuleScope VmMigrationFactory { $script:VmfFileWaitMilliseconds }
+    $script:fbrTries = InModuleScope VmMigrationFactory { $script:VmfFileMinAttempts }
     function Global:FbrRun {
         $rp = Join-Path ([System.IO.Path]::GetTempPath()) "vmf-fbr-$([guid]::NewGuid().ToString('N').Substring(0,8))"
         New-Item -ItemType Directory -Path (Join-Path $rp 'leases') -Force | Out-Null
@@ -48,7 +51,7 @@ Describe 'FILE-BACKEND-RACE-1: a file in the middle of a change is waited for, n
     BeforeEach { $script:rp = FbrRun }
     AfterEach {
         Get-Job -Name 'vmf-fbr-hold' -ErrorAction SilentlyContinue | Wait-Job -Timeout 10 | Remove-Job -Force -ErrorAction SilentlyContinue
-        InModuleScope VmMigrationFactory { $script:VmfFileWaitMilliseconds = 1000 }
+        InModuleScope VmMigrationFactory -Parameters @{ w = $script:fbrWait; t = $script:fbrTries } { param($w, $t) $script:VmfFileWaitMilliseconds = $w; $script:VmfFileMinAttempts = $t }
         Remove-Item $script:rp -Recurse -Force -ErrorAction SilentlyContinue
     }
 
@@ -156,7 +159,7 @@ Describe 'FILE-BACKEND-RACE-1: a file in the middle of a change is waited for, n
     It 'a file that stays held is still an error, after the retries' {
         $file = Join-Path $script:rp 'leases' 'stuck.lease'
         [System.IO.File]::WriteAllText($file, '{}')
-        InModuleScope VmMigrationFactory { $script:VmfFileWaitMilliseconds = 100 }
+        InModuleScope VmMigrationFactory { $script:VmfFileWaitMilliseconds = 100; $script:VmfFileMinAttempts = 1 }
         $job = FbrHold $file 'None' 'ReadWrite' 2000
         { InModuleScope VmMigrationFactory -Parameters @{ rp = $script:rp } { param($rp) Read-VmfStoreText -RunPath $rp -RelPath 'leases/stuck.lease' } } |
             Should -Throw -Because 'a file nobody lets go of is not "not there"'

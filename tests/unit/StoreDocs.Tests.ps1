@@ -65,8 +65,12 @@ BeforeAll {
 
     $script:Principal = { param([string[]]$roles) [pscustomobject]@{ Identity = 'viewer@example.com'; Roles = @($roles) } }
     $script:viewer = & $script:Principal @('Vmf.Viewer')
+    # RECORDS-VIEWER-READ-1: the fixture is the answer an Admin gets - the
+    # whole store. Every other role gets it less the folders the product keeps
+    # beside the runs (vmf-claims here); see 'the answer to every other role'.
+    $script:admin = & $script:Principal @('Vmf.Admin')
     $script:Docs = { param($query, [hashtable]$more = @{})
-        $args2 = @{ Principal = $script:viewer; Depth = [int]$query.depth; Read = @($query.read) }
+        $args2 = @{ Principal = $script:admin; Depth = [int]$query.depth; Read = @($query.read) }
         foreach ($k in $more.Keys) { $args2[$k] = $more[$k] }
         Get-VmfFacadeStoreDocs @args2
     }
@@ -157,6 +161,25 @@ Describe 'PAGE-LOAD-1: the answer, held to the fixture (file store)' {
             ($out | ConvertTo-Json -Depth 6 -Compress) | Should -Match '"docs":\[\]'
         }
         finally { $env:VMF_STORE_PATH = $script:root }
+    }
+}
+
+Describe 'RECORDS-VIEWER-READ-1: the answer to every other role' {
+    BeforeAll {
+        $env:VMF_STORE_PATH = $script:root
+        $script:kept = @(& (Get-Module VmMigrationFactory) { Get-VmfNotARunFolders })
+        $script:Less = { param($list) @($list | Where-Object { (($_ -split '/')[0]) -notin $script:kept }) }
+    }
+
+    It '<name>: a <role> gets the fixture answer less the folders the product keeps' -ForEach @(
+        foreach ($role in 'Vmf.Viewer', 'Vmf.Approver', 'Vmf.Operator') {
+            foreach ($c in $script:fixture.cases) { @{ name = $c.name; case = $c; role = $role } }
+        }) {
+        $out = & $script:Docs $case.query @{ Principal = (& $script:Principal @($role)) }
+        @($out.names) | Should -BeExactly @(& $script:Less $case.names)
+        @($out.folders) | Should -BeExactly @(& $script:Less $case.folders)
+        @($out.docs | ForEach-Object path) | Should -BeExactly @(& $script:Less $case.docs)
+        @($case.folders | Where-Object { (($_ -split '/')[0]) -in $script:kept }).Count | Should -BeGreaterThan 0 -Because 'the fixture holds a kept folder, so the test can fail'
     }
 }
 
@@ -317,7 +340,7 @@ Describe 'PAGE-LOAD-1: the endpoint itself' {
     }
     It 'answers 200 with the fixture answer' {
         $case = $script:fixture.cases[0]
-        $r = & $script:Call @{ depth = '3'; read = ($case.query.read -join ',') } @('Vmf.Viewer')
+        $r = & $script:Call @{ depth = '3'; read = ($case.query.read -join ',') } @('Vmf.Admin')
         [int]$r.StatusCode | Should -Be 200
         $body = $r.Body | ConvertFrom-Json -Depth 6
         @($body.docs | ForEach-Object path) | Should -BeExactly @($case.docs)

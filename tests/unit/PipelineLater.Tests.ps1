@@ -201,18 +201,18 @@ Describe 'PIPELINE-LATER-1: DIST-2 and CD-2 stage B wait until after 1.0' -Skip:
         }
     }
 
-    It 'DIST-2 is on the After 1.0 board, naming the decision and where the page is kept' {
+    It 'DIST-2 is on the group 5 board, naming the decision and where the page is kept' {
         $row = @($script:boardRows | Where-Object Label -eq '**DIST-2**')
         $row.Count | Should -Be 1
-        $row[0].Section | Should -Be 'After 1.0'
+        $row[0].Section | Should -Be 'Group 5: our tools, CI and tests'
         $row[0].Text | Should -Match 'PIPELINE-LATER-1'
         $row[0].Text | Should -Match 'docs/later/pipeline'
     }
 
-    It 'CD-2 stage B is on the After 1.0 board, naming the decision' {
+    It 'CD-2 stage B is on the group 5 board, naming the decision' {
         $row = @($script:boardRows | Where-Object Label -eq '**CD-2 stage B**')
         $row.Count | Should -Be 1
-        $row[0].Section | Should -Be 'After 1.0'
+        $row[0].Section | Should -Be 'Group 5: our tools, CI and tests'
         $row[0].Text | Should -Match 'PIPELINE-LATER-1'
     }
 }

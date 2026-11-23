@@ -42,6 +42,11 @@ function Remove-VmfProject {
         [Parameter()][string]$RemovedBy
     )
 
+    # STORE-RESERVED-NAMES-1: never a folder the product keeps, asked before
+    # the store is read. vmf-records and vmf-claims are flat, so the sub-folder
+    # count below found nothing in them, and the delete took every record.
+    Assert-VmfStoreNameAllowed -Name $ProjectId
+
     $projectPath = "$($StorePath.TrimEnd('/', '\'))/$ProjectId"
 
     if (-not (Test-VmfStoreItem -RunPath $projectPath -RelPath 'project.json')) {
@@ -52,7 +57,11 @@ function Remove-VmfProject {
     # What is still inside. Read from the store rather than from a count kept
     # somewhere, because a count that can be wrong is worse than no count when
     # the question is "may I delete this".
-    $members = @(Get-VmfStorePrefixes -StorePath $projectPath)
+    # PROJECT-LOGS-DELETE-1: a folder the product keeps is not an assessment or
+    # a migration (the one list, Get-VmfNotARunFolders). The project's own
+    # `logs` is its event log and goes with it; anything else in a kept folder
+    # is refused by the delete below, which holds every document to the rule.
+    $members = @(Get-VmfStorePrefixes -StorePath $projectPath | Where-Object { -not (Test-VmfReservedStoreName -Name $_) })
     if ($members.Count) {
         $shown = ($members | Select-Object -First 5) -join ', '
         $more = if ($members.Count -gt 5) { " and $($members.Count - 5) more" } else { '' }
@@ -65,7 +74,10 @@ function Remove-VmfProject {
 
     # -Confirm:$false because THIS cmdlet already asked; the helper asking again
     # is the same question twice. Same call shape as Remove-VmfRun.
-    $docs = Remove-VmfStorePrefix -RunPath $projectPath -Confirm:$false
+    # STORE-RESERVED-NAMES-1: -Kind project - the delete refuses any document
+    # but project.json, not only a sub-folder (a run.json at the root has none).
+    # PROJECT-LOGS-DELETE-1: and the parts of the project's own event log.
+    $docs = Remove-VmfStorePrefix -RunPath $projectPath -Kind project -Confirm:$false
 
     [pscustomobject]@{
         ProjectId = $ProjectId

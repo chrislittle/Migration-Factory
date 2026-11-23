@@ -208,16 +208,14 @@ test('Migrations: the open run\'s ONE call reads the leases, with at most 12 nam
  * offered its controls - the defect, in its failure mode. The refresh fails
  * and says so, and draws nothing from that read; the wave editor does the
  * same (readLeases below). */
-test('Migrations: a leases listing that fails draws no wave as free, and the page says it could not read the holds', async () => {
+/* Run the Migrations page's refresh against a stand-in store, and say what it
+ * drew and what its error line holds. */
+async function refreshWith(fakeSrc) {
   const { lift } = require('./_harness');
   const refreshRun = lift('migrations.html', 'refreshRun');
   const drawn = [];
   const el = () => ({ textContent: '', className: '', title: '', style: { display: 'none' } });
   const els = { '#err': el(), '#live-ind': el() };
-  const fakeSrc = {
-    listRun: async () => null, readLines: async () => [], readJson: async () => null, readRoot: async () => null,
-    listFolder: async (run, name) => { if (name === 'leases') { throw new Error('HTTP 503'); } return []; },
-  };
   const saved = { $: globalThis.$, VmfHelp: globalThis.VmfHelp };
   Object.assign(globalThis, {
     $: (s) => els[s] ?? null, runRegions: () => [], currentRun: 'p/mig-1', showingRun: 'p/mig-1', source: fakeSrc, DEMO_MODE: false,
@@ -234,10 +232,49 @@ test('Migrations: a leases listing that fails draws no wave as free, and the pag
   });
   try {
     await refreshRun({ status: async () => null, plan: async () => ({ pv: null, doc: null }), run: async () => null });
-    eq(drawn, [], 'no wave is drawn from a read that does not know the holds');
-    eq(els['#err'].style.display, 'block', 'the page says it');
-    ok(els['#err'].textContent.includes(M.leasesUnread.replace('{reason}', 'HTTP 503')), els['#err'].textContent);
+    return { drawn, err: els['#err'], leases: globalThis.latestLeases };
   } finally { Object.assign(globalThis, saved); }
+}
+
+test('Migrations: a leases listing that fails draws no wave as free, and the page says it could not read the holds', async () => {
+  const got = await refreshWith({
+    listRun: async () => null, readLines: async () => [], readJson: async () => null, readRoot: async () => null,
+    listFolder: async (run, name) => { if (name === 'leases') { throw new Error('HTTP 503'); } return []; },
+  });
+  eq(got.drawn, [], 'no wave is drawn from a read that does not know the holds');
+  eq(got.err.style.display, 'block', 'the page says it');
+  ok(got.err.textContent.includes(M.leasesUnread.replace('{reason}', 'HTTP 503')), got.err.textContent);
+});
+
+/* LEASE-UNREAD-PAGE-1: a lease the listing names and the store REFUSES to
+ * read (an error, not "not found") is not "no lease". The machine ID is
+ * inside the lease, so the page cannot say which machine it holds: it can
+ * judge no wave, and the refresh fails with the words of a failed listing. */
+const leaseListed = (readLease) => ({
+  listRun: async () => null, readLines: async () => [], readRoot: async () => null,
+  readJson: async (run, rel) => (rel === 'leases/a.lease' ? readLease() : null),
+  listFolder: async (run, name) => (name === 'leases' ? ['leases/a.lease'] : []),
+});
+
+test('THE DEFECT, Migrations: a listed lease the store refuses to read draws no wave as free', async () => {
+  const got = await refreshWith(leaseListed(async () => { throw new Error('HTTP 500'); }));
+  eq(got.drawn, [], 'no wave is drawn from a read that does not know the holds');
+  eq(got.err.style.display, 'block', 'the page says it');
+  ok(got.err.textContent.includes(M.leasesUnread.replace('{reason}', 'HTTP 500')), got.err.textContent);
+});
+
+test('Migrations: a listed lease that is not there now (its job removed it) is no lease, and the page draws', async () => {
+  // VmfHelp.storeBlob reads a 404 as null: the lease is gone.
+  const got = await refreshWith(leaseListed(async () => null));
+  eq(got.err.style.display, 'none', got.err.textContent);
+  ok(got.drawn.includes('waves'), 'the waves are drawn');
+  eq(got.leases.size, 0, 'no lease');
+});
+
+test('Migrations: a listed lease that reads is kept for its machine', async () => {
+  const got = await refreshWith(leaseListed(async () => fresh()));
+  eq(got.err.style.display, 'none', got.err.textContent);
+  eq(got.leases.get('a').workerId, 'w1-worker-0');
 });
 
 const EDITOR = pageSource(path.join(REPO, 'src', 'dashboard', 'waves.html'));
@@ -337,6 +374,54 @@ test('wave editor: the leases come from ONE call, and each from that call when i
   const again = await readLeases();
   eq(calls, [['list', prefix], ['fetch', `${prefix}a.lease`]], 'the listing and the lease');
   eq(again.get('a').workerId, 'w1-worker-0');
+});
+
+/* LEASE-UNREAD-PAGE-1: the wave editor reads each listed lease itself when
+ * the one call cannot say. A read the store refuses stops the page with the
+ * words of a failed listing; a lease that is not there now is no lease. */
+async function editorLeaseRead(fetchLease) {
+  const prefix = 'proj/run-1/leases/';
+  const realHelp = liftAll('help.js', ['heldDepth', 'heldList', 'heldText', 'heldJson']);
+  globalThis.UX = WUX;
+  globalThis.cfg = { apiUrl: 'https://svc.example.com' };
+  globalThis.runPrefix = () => 'proj/run-1';
+  globalThis.getToken = async () => 't';
+  globalThis.blobList = async () => [`${prefix}a.lease`];
+  globalThis.blobFetch = async () => fetchLease();
+  const saved = globalThis.VmfHelp;
+  globalThis.VmfHelp = Object.assign({}, saved, realHelp, {
+    mapLimited: async (xs, fn) => Promise.all(xs.map(fn)), explain: (e) => String(e.message),
+    storeDocs: async () => { throw new Error('down'); },
+  });
+  try {
+    const { readLeases } = liftAll('waves.html', ['readLeases']);
+    try { return { leases: await readLeases(), thrown: null }; } catch (e) { return { leases: null, thrown: e }; }
+  } finally { globalThis.VmfHelp = saved; }
+}
+
+test('THE DEFECT, wave editor: a listed lease the store refuses to read stops the page, never "no lease"', async () => {
+  const got = await editorLeaseRead(async () => { throw new Error('HTTP 403'); });
+  ok(got.thrown, 'the page does not go on as if no worker held the machine');
+  eq(got.thrown && got.thrown.message, WUX.leasesUnread.replace('{reason}', 'HTTP 403'));
+});
+
+test('wave editor: a listed lease that is not there now is no lease', async () => {
+  const got = await editorLeaseRead(async () => null);
+  eq(got.thrown, null, String(got.thrown && got.thrown.message));
+  eq(got.leases.size, 0);
+});
+
+test('a lease that is not there is null, and a refused read throws (VmfHelp.storeBlob)', async () => {
+  const { storeBlob } = liftAll('help.js', ['storeBlob', 'storeUrl', 'storeError']);
+  const savedFetch = globalThis.fetch;
+  try {
+    globalThis.fetch = async () => ({ status: 404, ok: false, headers: { get: () => null }, text: async () => '', json: async () => ({}) });
+    eq(await storeBlob(async () => 't', 'https://svc.example.com', 'a.lease'), null, '404 is not there');
+    globalThis.fetch = async () => ({ status: 403, ok: false, headers: { get: () => null }, text: async () => '{"error":"refused"}', json: async () => ({ error: 'refused' }) });
+    let thrown = null;
+    try { await storeBlob(async () => 't', 'https://svc.example.com', 'a.lease'); } catch (e) { thrown = e; }
+    ok(thrown, '403 throws');
+  } finally { globalThis.fetch = savedFetch; }
 });
 
 run('wave-running-lease');

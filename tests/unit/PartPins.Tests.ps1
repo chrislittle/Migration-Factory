@@ -675,7 +675,7 @@ Describe 'SBOM-1: each saved third-party file has a row, and the row agrees with
         $dompurify[0].version | Should -Be '3.4.12'
         $dompurify[0].license | Should -Be '(MPL-2.0 OR Apache-2.0)'
         $msal = @(@($pin.parts | Where-Object key -eq 'npm:@azure/msal-browser')[0].files | Where-Object path -eq 'src/dashboard/msal-browser.min.js')[0]
-        @($msal.contains | Where-Object name -eq '@azure/msal-common')[0].version | Should -Be '16.16.1'
+        @($msal.contains | Where-Object name -eq '@azure/msal-common')[0].version | Should -Be '16.17.0'
     }
 
     It 'the manifest takes in every file a browser loads as code, a style, a font or a picture in vector form' {

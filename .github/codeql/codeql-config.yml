@@ -1,0 +1,15 @@
+# CodeQL settings of the public repository (CODEQL-SHIPPED-ONLY-1).
+#
+# The scan reads what ships to a browser: the dashboard in src/ and the
+# manual. It leaves out the tests. The first scan, 2026-11-19, gave 15 alerts,
+# all of them in tests/js: test helpers that strip the tags from a page to read
+# its text, or look for a host name in a URL. No browser runs that code, and
+# none of it is a copy of code in src/dashboard.
+#
+# A paths-ignore list, never a paths list: a paths list would leave out
+# whatever it forgets to name.
+
+name: Migration Factory CodeQL settings
+
+paths-ignore:
+  - tests/**

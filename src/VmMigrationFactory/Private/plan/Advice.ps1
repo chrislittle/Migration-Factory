@@ -55,27 +55,24 @@ function Get-VmfAdviceStage {
     [ordered]@{ stage = $s.Stage; basis = $s.Basis }
 }
 
-function Get-VmfAdviceOption {
+function New-VmfAdviceOptionBase {
     <#
     .SYNOPSIS
-        One size series for one machine: whether it is supported and the facts
-        about it.
-    .PARAMETER RegionCatalog
-        The machine's region, size name -> SKU. $null means the region's sizes
-        could not be read, and then NOTHING is supported: unknown is not a yes.
+        One size series for one machine, before anything is judged: not
+        supported, with no target and every fact unknown. Pure.
+    .DESCRIPTION
+        Get-VmfAdviceOption starts from it, and so does the option of a
+        machine whose options could not be made (LINUX-VERSION-OVERFLOW-1,
+        machine-not-read) - so a held machine has the same shape as any other.
+        It reads only the series and the temporary disks the scan counted.
     #>
     [CmdletBinding()]
     [OutputType([System.Collections.Specialized.OrderedDictionary])]
     param(
         [Parameter(Mandatory)]$Vm,
-        [Parameter(Mandatory)][ValidateSet('v5', 'v6', 'v7')][string]$Series,
-        [Parameter()][AllowNull()][hashtable]$RegionCatalog,
-        [Parameter()][AllowNull()]$Families,
-        # OLD-SKU-1B: the facts of one of the option's size choices.
-        [Parameter()][AllowNull()][AllowEmptyString()][string]$ChosenSize
+        [Parameter(Mandatory)][ValidateSet('v5', 'v6', 'v7')][string]$Series
     )
-
-    $option = [ordered]@{
+    [ordered]@{
         option = $Series; supported = $false; notSupported = @()
         targetSize = $null; sizeUnverified = $false; path = $null
         # SIZE-FALLTHROUGH-NOTE-1 (v29): the sizes the default transform tried
@@ -125,6 +122,29 @@ function Get-VmfAdviceOption {
         # rebuild did to the system-assigned identity; an in-place upgrade,
         # with or without the preview feature, keeps it.
     }
+}
+
+function Get-VmfAdviceOption {
+    <#
+    .SYNOPSIS
+        One size series for one machine: whether it is supported and the facts
+        about it.
+    .PARAMETER RegionCatalog
+        The machine's region, size name -> SKU. $null means the region's sizes
+        could not be read, and then NOTHING is supported: unknown is not a yes.
+    #>
+    [CmdletBinding()]
+    [OutputType([System.Collections.Specialized.OrderedDictionary])]
+    param(
+        [Parameter(Mandatory)]$Vm,
+        [Parameter(Mandatory)][ValidateSet('v5', 'v6', 'v7')][string]$Series,
+        [Parameter()][AllowNull()][hashtable]$RegionCatalog,
+        [Parameter()][AllowNull()]$Families,
+        # OLD-SKU-1B: the facts of one of the option's size choices.
+        [Parameter()][AllowNull()][AllowEmptyString()][string]$ChosenSize
+    )
+
+    $option = New-VmfAdviceOptionBase -Vm $Vm -Series $Series
 
     if ($null -eq $RegionCatalog) {
         $option.notSupported = @('region-not-read')
@@ -277,97 +297,108 @@ function Get-VmfTargetAdvice {
     $readSet = @($regions | Where-Object { $_.read } | ForEach-Object { $_.location })
 
     $machines = foreach ($vm in @($Assessment.vms)) {
-        $loc = [string]$vm.location
-        $catalog = if ($readSet -contains $loc) { $CatalogByLocation[$loc] } else { $null }
+        try {
+            $loc = [string]$vm.location
+            $catalog = if ($readSet -contains $loc) { $CatalogByLocation[$loc] } else { $null }
 
-        $options = [System.Collections.Generic.List[object]]::new()
-        foreach ($s in 'v5', 'v6', 'v7') {
-            $options.Add((Get-VmfAdviceOption -Vm $vm -Series $s -RegionCatalog $catalog -Families $families))
+            $options = [System.Collections.Generic.List[object]]::new()
+            foreach ($s in 'v5', 'v6', 'v7') {
+                $options.Add((Get-VmfAdviceOption -Vm $vm -Series $s -RegionCatalog $catalog -Families $families))
+            }
+            $supported = @($options | Where-Object { $_.supported } | ForEach-Object { $_.option })
+            $first = { param([string[]]$order) foreach ($o in $order) { if ($supported -contains $o) { return $o } }; $null }
+            # BSV2-TARGET-1 (2026-10-05): Bsv2 is the DEFAULT target of a B
+            # v1 machine, under both defaults - it is Current, and it keeps the
+            # credits. The option whose target is a Bsv2 size (v5) comes first;
+            # with none, the defaults are as before.
+            $burstableStart = @($options | Where-Object { $_.supported -and $_.targetSize -and (Get-VmfBurstableTarget -SizeName ([string]$_.targetSize) -Families $families) } |
+                    ForEach-Object { [string]$_.option }) | Select-Object -First 1
+            $currentOrder = @('v6', 'v7', 'v5')
+            $extendedOrder = @('v5', 'v6', 'v7')
+            # ADVISE-AN-1 (2026-10-10): accelerated networking first. A
+            # machine that uses it today does not start on an option where it
+            # certainly stops working, when another supported option certainly
+            # keeps it (Select-VmfAnKeepingStart). Unknown changes nothing.
+            $startCurrent = Select-VmfAnKeepingStart -Options $options -Order $currentOrder `
+                -Start $(if ($burstableStart) { $burstableStart } else { & $first $currentOrder })
+            $startExtended = Select-VmfAnKeepingStart -Options $options -Order $extendedOrder `
+                -Start $(if ($burstableStart) { $burstableStart } else { & $first $extendedOrder })
+            $release = Get-VmfLinuxRelease -Vm $vm
+            # AN-MANA-DRIVER-RULE-1 (2026-11-06): ADVISE-AN-1 gave an Intel
+            # Linux machine with no MANA driver no start, and a choice between its
+            # Intel v7 size with accelerated networking off and an AMD v5 size
+            # (the decide reason processor-or-an). Both are gone: such a machine
+            # is offered no size that can give MANA, and never an AMD size, so it
+            # has no target, and the screen says which release to upgrade to.
+            # REBUILD-REMOVE-PLAN-1 (2026-11-07): and the two start rules
+            # that moved a machine off a rebuild are gone with the rebuild -
+            # IDENTITY-LOSS-1's (Select-VmfIdentityKeepingStart, the decide reason
+            # identity) and REBUILD-PICKER-1's (Select-VmfInPlaceStart). The start
+            # is the first supported option in the order of the default. Where that
+            # is the in-place upgrade (Preview), the targets step says which
+            # subscription needs the preview feature and how to register it.
+
+            [ordered]@{
+                vmId = [string]$vm.vmId
+                name = [string]$vm.name
+                os = [string]$vm.os
+                osVersion = [string]$vm.osVersion
+                gen = $(if ($vm.gen) { [string]$vm.gen } else { $null })
+                location = $loc
+                sourceSize = [string]$vm.sourceSize
+                # ADVISE-AN-1: the processor maker of the size now (Get-VmfSizeProcessor).
+                processor = (Get-VmfSizeProcessor -SizeName ([string]$vm.sourceSize))
+                # The Details panel shows each option as before -> after.
+                diskController = $(if ($vm.diskController) { [string]$vm.diskController } else { $null })
+                # HDD-OS-1: the type of the OS disk, as the scan read it from the
+                # disk (Standard_LRS is Standard HDD). The targets step offers
+                # Standard SSD for it only when it is Standard HDD. Null when the
+                # scan could not read it, or is older than assessment v5.
+                osDiskType = $(if ($vm.PSObject.Properties['osDiskType'] -and [string]$vm.osDiskType) { [string]$vm.osDiskType } else { $null })
+                sourceStage = (Get-VmfAdviceStage -SizeName ([string]$vm.sourceSize) -Families $families)
+                # IDENTITY-LOSS-1: the identity the scan read, in Azure's own words.
+                # Null when the scan did not read it, which is never read as no
+                # identity. REBUILD-REMOVE-PLAN-1: the account (object ID) is no
+                # longer carried - nothing deletes the identity it named.
+                identityType = $(if ($vm.PSObject.Properties['identityType'] -and [string]$vm.identityType) { [string]$vm.identityType } else { $null })
+                acceleratedNicCount = $(if ($vm.PSObject.Properties['acceleratedNicCount'] -and $null -ne $vm.acceleratedNicCount) { [int]$vm.acceleratedNicCount } else { $null })
+                # ADVISE-AN-1: the Linux release the accelerated networking answers
+                # were made from, and where it was read. Null for a machine that is
+                # not Linux.
+                linuxRelease = $(if ([string]$vm.os -match '^(?i)linux$') {
+                        [ordered]@{
+                            distroId = $(if ($release) { [string]$release.distroId } else { $null })
+                            version = $(if ($release) { [string]$release.version } else { $null })
+                            source = $(if ($release) { [string]$release.source } else { $null })
+                            mana = (Get-VmfManaReleaseListing -Release $release)
+                            # AN-MANA-DRIVER-RULE-1: the release to upgrade to, for a
+                            # machine with no MANA driver possible - null otherwise,
+                            # and null when Microsoft lists no later release of it.
+                            manaUpgrade = $(if (Test-VmfReleaseKnownUnlisted -Vm $vm) { Get-VmfManaUpgradeRelease -Release $release } else { $null })
+                        }
+                    } else { $null })
+                # RHEL-EUS-TARGET-NOTE-1 (v31): the RHEL image on the EUS
+                # repositories the machine was made from, when its kernel for MANA
+                # needs a later minor release (Get-VmfEusImage). What the scan
+                # read, never the repositories it uses now; it changes no offer.
+                eusImage = (Get-VmfEusImage -Vm $vm)
+                options = @($options)
+                # The two defaults are Microsoft's lifecycle stages. Current is v6
+                # (v7 is Current too); Extended is v5. Each falls back to the other
+                # supported options, and to nothing. v7 is a choice a person makes
+                # for any machine where it is supported - every option is judged on
+                # its own.
+                start = [ordered]@{ current = $startCurrent; extended = $startExtended }
+            }
         }
-        $supported = @($options | Where-Object { $_.supported } | ForEach-Object { $_.option })
-        $first = { param([string[]]$order) foreach ($o in $order) { if ($supported -contains $o) { return $o } }; $null }
-        # BSV2-TARGET-1 (2026-10-05): Bsv2 is the DEFAULT target of a B
-        # v1 machine, under both defaults - it is Current, and it keeps the
-        # credits. The option whose target is a Bsv2 size (v5) comes first;
-        # with none, the defaults are as before.
-        $burstableStart = @($options | Where-Object { $_.supported -and $_.targetSize -and (Get-VmfBurstableTarget -SizeName ([string]$_.targetSize) -Families $families) } |
-                ForEach-Object { [string]$_.option }) | Select-Object -First 1
-        $currentOrder = @('v6', 'v7', 'v5')
-        $extendedOrder = @('v5', 'v6', 'v7')
-        # ADVISE-AN-1 (2026-10-10): accelerated networking first. A
-        # machine that uses it today does not start on an option where it
-        # certainly stops working, when another supported option certainly
-        # keeps it (Select-VmfAnKeepingStart). Unknown changes nothing.
-        $startCurrent = Select-VmfAnKeepingStart -Options $options -Order $currentOrder `
-            -Start $(if ($burstableStart) { $burstableStart } else { & $first $currentOrder })
-        $startExtended = Select-VmfAnKeepingStart -Options $options -Order $extendedOrder `
-            -Start $(if ($burstableStart) { $burstableStart } else { & $first $extendedOrder })
-        $release = Get-VmfLinuxRelease -Vm $vm
-        # AN-MANA-DRIVER-RULE-1 (2026-11-06): ADVISE-AN-1 gave an Intel
-        # Linux machine with no MANA driver no start, and a choice between its
-        # Intel v7 size with accelerated networking off and an AMD v5 size
-        # (the decide reason processor-or-an). Both are gone: such a machine
-        # is offered no size that can give MANA, and never an AMD size, so it
-        # has no target, and the screen says which release to upgrade to.
-        # REBUILD-REMOVE-PLAN-1 (2026-11-07): and the two start rules
-        # that moved a machine off a rebuild are gone with the rebuild -
-        # IDENTITY-LOSS-1's (Select-VmfIdentityKeepingStart, the decide reason
-        # identity) and REBUILD-PICKER-1's (Select-VmfInPlaceStart). The start
-        # is the first supported option in the order of the default. Where that
-        # is the in-place upgrade (Preview), the targets step says which
-        # subscription needs the preview feature and how to register it.
-
-        [ordered]@{
-            vmId = [string]$vm.vmId
-            name = [string]$vm.name
-            os = [string]$vm.os
-            osVersion = [string]$vm.osVersion
-            gen = $(if ($vm.gen) { [string]$vm.gen } else { $null })
-            location = $loc
-            sourceSize = [string]$vm.sourceSize
-            # ADVISE-AN-1: the processor maker of the size now (Get-VmfSizeProcessor).
-            processor = (Get-VmfSizeProcessor -SizeName ([string]$vm.sourceSize))
-            # The Details panel shows each option as before -> after.
-            diskController = $(if ($vm.diskController) { [string]$vm.diskController } else { $null })
-            # HDD-OS-1: the type of the OS disk, as the scan read it from the
-            # disk (Standard_LRS is Standard HDD). The targets step offers
-            # Standard SSD for it only when it is Standard HDD. Null when the
-            # scan could not read it, or is older than assessment v5.
-            osDiskType = $(if ($vm.PSObject.Properties['osDiskType'] -and [string]$vm.osDiskType) { [string]$vm.osDiskType } else { $null })
-            sourceStage = (Get-VmfAdviceStage -SizeName ([string]$vm.sourceSize) -Families $families)
-            # IDENTITY-LOSS-1: the identity the scan read, in Azure's own words.
-            # Null when the scan did not read it, which is never read as no
-            # identity. REBUILD-REMOVE-PLAN-1: the account (object ID) is no
-            # longer carried - nothing deletes the identity it named.
-            identityType = $(if ($vm.PSObject.Properties['identityType'] -and [string]$vm.identityType) { [string]$vm.identityType } else { $null })
-            acceleratedNicCount = $(if ($vm.PSObject.Properties['acceleratedNicCount'] -and $null -ne $vm.acceleratedNicCount) { [int]$vm.acceleratedNicCount } else { $null })
-            # ADVISE-AN-1: the Linux release the accelerated networking answers
-            # were made from, and where it was read. Null for a machine that is
-            # not Linux.
-            linuxRelease = $(if ([string]$vm.os -match '^(?i)linux$') {
-                    [ordered]@{
-                        distroId = $(if ($release) { [string]$release.distroId } else { $null })
-                        version = $(if ($release) { [string]$release.version } else { $null })
-                        source = $(if ($release) { [string]$release.source } else { $null })
-                        mana = (Get-VmfManaReleaseListing -Release $release)
-                        # AN-MANA-DRIVER-RULE-1: the release to upgrade to, for a
-                        # machine with no MANA driver possible - null otherwise,
-                        # and null when Microsoft lists no later release of it.
-                        manaUpgrade = $(if (Test-VmfReleaseKnownUnlisted -Vm $vm) { Get-VmfManaUpgradeRelease -Release $release } else { $null })
-                    }
-                } else { $null })
-            # RHEL-EUS-TARGET-NOTE-1 (v31): the RHEL image on the EUS
-            # repositories the machine was made from, when its kernel for MANA
-            # needs a later minor release (Get-VmfEusImage). What the scan
-            # read, never the repositories it uses now; it changes no offer.
-            eusImage = (Get-VmfEusImage -Vm $vm)
-            options = @($options)
-            # The two defaults are Microsoft's lifecycle stages. Current is v6
-            # (v7 is Current too); Extended is v5. Each falls back to the other
-            # supported options, and to nothing. v7 is a choice a person makes
-            # for any machine where it is supported - every option is judged on
-            # its own.
-            start = [ordered]@{ current = $startCurrent; extended = $startExtended }
+        catch {
+            # LINUX-VERSION-OVERFLOW-1: one machine whose options cannot be
+            # made does not stop the advice of the others. A Linux release with
+            # too many digits ended the advise operation for every machine, so
+            # no machine could be planned. The machine gets the three options,
+            # none supported (machine-not-read), and no start.
+            Write-Warning ("The target options of machine $([string]$vm.name) could not be made: " + [string]$_.Exception.Message)
+            Get-VmfAdviceNotReadMachine -Vm $vm
         }
     }
 
@@ -378,6 +409,49 @@ function Get-VmfTargetAdvice {
         generatedUtc = (Get-Date).ToUniversalTime().ToString('o')
         regions = @($regions)
         machines = @($machines)
+    }
+}
+
+function Get-VmfAdviceNotReadMachine {
+    <#
+    .SYNOPSIS
+        LINUX-VERSION-OVERFLOW-1: the advice for a machine whose options could
+        not be made - the three options, none supported (machine-not-read),
+        and no start. Pure.
+    .DESCRIPTION
+        Only plain copies of the record's own fields, and nothing worked out
+        from what the VM agent reported: that is where a value the product
+        cannot read comes from. A Linux machine says its release is unknown.
+    #>
+    [CmdletBinding()]
+    [OutputType([System.Collections.Specialized.OrderedDictionary])]
+    param([Parameter(Mandatory)]$Vm)
+    $field = { param([string]$Name) if ($Vm.PSObject.Properties[$Name] -and $null -ne $Vm.$Name -and [string]$Vm.$Name) { [string]$Vm.$Name } else { $null } }
+    $options = foreach ($s in 'v5', 'v6', 'v7') {
+        $o = New-VmfAdviceOptionBase -Vm $Vm -Series $s
+        $o.notSupported = @('machine-not-read')
+        $o
+    }
+    [ordered]@{
+        vmId = [string]$Vm.vmId
+        name = [string]$Vm.name
+        os = [string]$Vm.os
+        osVersion = [string]$Vm.osVersion
+        gen = & $field 'gen'
+        location = [string]$Vm.location
+        sourceSize = [string]$Vm.sourceSize
+        processor = $null
+        diskController = & $field 'diskController'
+        osDiskType = & $field 'osDiskType'
+        sourceStage = $null
+        identityType = & $field 'identityType'
+        acceleratedNicCount = $(if ($Vm.PSObject.Properties['acceleratedNicCount']) { $Vm.acceleratedNicCount -as [int] } else { $null })
+        linuxRelease = $(if ([string]$Vm.os -match '^(?i)linux$') {
+                [ordered]@{ distroId = $null; version = $null; source = $null; mana = 'unknown'; manaUpgrade = $null }
+            } else { $null })
+        eusImage = $null
+        options = @($options)
+        start = [ordered]@{ current = $null; extended = $null }
     }
 }
 
@@ -462,7 +536,11 @@ function Get-VmfTargetAdvice {
 # Disks in the machine's zone, is not offered to a machine that uses it. A v32
 # file offers it, and Azure refuses the resize after the stop, so it is refused
 # and made again.
-function Get-VmfTargetAdviceSchemaVersion { 33 }
+# v34 (LINUX-VERSION-OVERFLOW-1) adds the reason machine-not-read: the product
+# could not read the facts of the machine - its assessment record, or its
+# options - so it has no supported option, and the other machines get theirs.
+# A v33 file has no such reason, so it is refused and made again.
+function Get-VmfTargetAdviceSchemaVersion { 34 }
 
 # The version of target-choices.json (schemas/target-choices.schema.json) that
 # Set-VmfTargetChoice writes and New-VmfPlan reads. v9 (TARGETS-NO-LIST-1):

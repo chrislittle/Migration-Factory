@@ -98,6 +98,9 @@ const UX = {
   reviewNote:       'Add a note (optional)',
   reviewNoteHint:   'Anything worth recording alongside your name',
   reviewWorking:    'Recording...',
+  // ASSESS-APPROVAL-HASH-1: why I have reviewed this is off.
+  reviewReading:    'The product reads this scan again. Then you can approve it.',
+  reviewReadFailed: 'The product did not read this scan again. Close the report, open it again, then approve the scan.',
 };
 /* ============================= UX-STRINGS-END ============================= */
 
@@ -530,6 +533,13 @@ function plannedHtml(row) {
   return `<h4>${esc(UX.plannedFrom)}</h4><ul>${links}</ul>` +
     '<p><a class="btn small ghost" href="' + esc(VmfHelp.VmfRun.link('wizard.html', row.id)) + '">' + esc(UX.openAgain) + '</a></p>';
 }
+/* ASSESS-APPROVAL-HASH-1: the reason I have reviewed this is off, beside it -
+ * while the scan is read again with its version, or after that read failed.
+ * Nothing when the button is on. */
+function approveWhy(row) {
+  if (row.version || DEMO_MODE) { return ''; }
+  return `<span class="muted" id="approve-why" style="margin-left:10px;font-size:12px">${esc(row.versionFailed ? UX.reviewReadFailed : UX.reviewReading)}</span>`;
+}
 // The point of an assessment is to say what cannot move WHILE THERE IS STILL
 // TIME TO DO SOMETHING. So the report leads with what is holding machines back,
 // grouped by reason rather than listed per machine: twelve machines blocked for
@@ -570,7 +580,7 @@ function reportHtml(row) {
          <label class="muted" style="display:block;margin-top:10px;font-size:12px" for="approve-note">${esc(UX.reviewNote)}</label>
          <input id="approve-note" type="text" maxlength="200" placeholder="${esc(UX.reviewNoteHint)}"
                 style="width:100%;margin-top:4px;padding:7px 10px;border:1px solid var(--line);border-radius:8px;font:inherit;font-size:13px">
-         <div style="margin-top:10px"><button type="button" class="btn" data-approve="${esc(row.id)}">${esc(UX.reviewBtn)}</button></div>
+         <div style="margin-top:10px"><button type="button" class="btn" data-approve="${esc(row.id)}"${row.version || DEMO_MODE ? '' : ' disabled'}>${esc(UX.reviewBtn)}</button>${approveWhy(row)}</div>
        </div></div>`;
 
   // No .detail wrapper: this is drawn INSIDE the shared panel now, which
@@ -733,6 +743,8 @@ async function discardAssessmentNow(id, btn) {
 let assessList = null;
 // The run whose report is open in the panel, or null.
 let openReportId = null;
+// ASSESS-APPROVAL-HASH-1: the version of the scan that panel shows, or ''.
+let openReportVersion = '';
 // ?run= opens that report once, after the store is read.
 let reportAsked = false;
 
@@ -768,14 +780,23 @@ function onListClick(e) {
  * the run page uses for a machine. It has a Close button and Escape closes it
  * (rule 11); the keyboard goes to Close, and comes back to the row's name
  * when the panel closes. false when the page holds no such assessment. */
-function openReport(id) {
+function openReport(id, redraw) {
   const data = rows.find(x => x.id === id);
   if (!data) { return false; }
+  // ASSESS-APPROVAL-HASH-1: a person who opens the report asks again after a
+  // failed read; the redraw after the read (redraw) does not.
+  if (!redraw) { data.versionFailed = false; }
   window.VmfReport.closePanel();
   const panel = window.VmfReport.openPanel(reportHtml(data));
   openReportId = id;
+  // ASSESS-APPROVAL-HASH-1: the version of the scan this panel shows. A
+  // reload of the list (Clear up old scans) makes new rows and leaves the
+  // panel as drawn, so the approval quotes the panel's version, not a row's.
+  openReportVersion = data.version || '';
   const btn = panel.querySelector('[data-approve]');
   if (btn) { btn.addEventListener('click', () => approve(btn.dataset.approve, btn)); }
+  // ASSESS-APPROVAL-HASH-1: the scan this report shows, with its version.
+  if (!redraw && !data.approval && !data.version && !DEMO_MODE) { loadReportVersion(id); }
   const close = panel.querySelector('.close');
   if (close) {
     if (!close.dataset.vmfReturn) { close.dataset.vmfReturn = '1'; close.addEventListener('click', reportClosed); }
@@ -784,11 +805,45 @@ function openReport(id) {
   return true;
 }
 
+/* ASSESS-APPROVAL-HASH-1: an approval names the scan the person read, by the
+ * version the service issued for it (PLANVER-2) - the service refuses another
+ * one, and planning holds to the scan an approval names. The list comes from
+ * one call that gives no version (VmfHelp.storeDocs), so the report of an
+ * assessment nobody approved reads assessment.json again WITH its version,
+ * and is drawn again from that text. Approve stays off until then. The note
+ * typed meanwhile is kept. */
+async function loadReportVersion(id) {
+  const row = rows.find(x => x.id === id);
+  if (!row) { return; }
+  try {
+    const v = await VmfHelp.storeBlob(() => getToken(), cfg.apiUrl, `${id}/assessment.json`, { asVersioned: true });
+    if (!v || !v.text || !v.version) { throw new Error(UX.reviewReadFailed); }
+    const doc = JSON.parse(v.text);
+    row.vms = (doc && doc.vms) ? doc.vms : [];
+    row.machines = row.vms.length;
+    row.notRead = doc?.notRead ?? [];
+    row.version = v.version;
+  } catch (e) {
+    // The reason goes beside the button that stays off, and the error in the
+    // page's message area.
+    row.versionFailed = true;
+    $('#err').textContent = VmfHelp.explainAction(e);
+    $('#err').style.display = 'block';
+  }
+  if (openReportId !== id || row.approval) { return; }
+  const field = document.getElementById('approve-note');
+  const note = field ? field.value : '';
+  openReport(id, true);
+  const again = document.getElementById('approve-note');
+  if (again) { again.value = note; }
+}
+
 /* The panel closed: the keyboard goes back to the name that opened it. */
 function reportClosed() {
   if (!openReportId) { return; }
   const id = openReportId;
   openReportId = null;
+  openReportVersion = '';
   const host = $('#assessments-list');
   const link = host ? [...host.querySelectorAll('a[data-action="report"]')].find(a => a.dataset.value === id) : null;
   if (link) { link.focus(); }
@@ -829,8 +884,11 @@ async function approve(id, btn) {
     // PROJECT-1: ids are now `project/run` for anything inside a project, and a
     // slash does not survive the route. Split it and send the project in the
     // body, the same shape the engine dispatch uses.
+    // ASSESS-APPROVAL-HASH-1: and the version of the scan the report showed
+    // (loadReportVersion). The service refuses another version with 409.
+    const shown = openReportId === id ? openReportVersion : '';
     await api('POST', `assessments/${VmfHelp.VmfRun.routeSegment(id)}/approve`,
-      VmfHelp.VmfRun.withProject({ note }, id));
+      VmfHelp.VmfRun.withProject({ note, assessmentHash: shown }, id));
     await loadAssessments();
     renderTable();
     // PAGE-SCALE-ASSESSMENTS-1: the report shows what was recorded, not the

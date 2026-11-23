@@ -50,6 +50,9 @@ function Get-VmfNvmeLinuxListing {
     if (-not $Release -or -not [string]$Release.distroId -or -not [string]$Release.version) { return 'unknown' }
     $m = [regex]::Match(([string]$Release.version).Trim(), '^(\d+)(\.(\d+))?(\.\d+)*$')
     if (-not $m.Success) { return 'unknown' }
+    # LINUX-VERSION-OVERFLOW-1: a part that does not fit is a version nobody
+    # can compare - unknown, never unlisted.
+    if (-not (Test-VmfVersionInRange -Version ([string]$Release.version))) { return 'unknown' }
     $major = [int]$m.Groups[1].Value
     $minor = if ($m.Groups[3].Success) { [int]$m.Groups[3].Value } else { $null }
     $l = if ($List) { $List } else { Get-VmfNvmeLinuxList }

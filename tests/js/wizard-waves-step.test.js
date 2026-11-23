@@ -44,7 +44,7 @@ const constOf = (name) => {
 const help = liftAll('help.js', ['runParse', 'runStorePath', 'runRouteSegment', 'runWithProject', 'runLink',
   'mapLimited', 'tokenOrRedirect', 'machineStarted', 'idKey']);
 
-const PAGE_FNS = ['readRun', 'ackGiven', 'readDoc', 'readNames', 'readVersionedDoc', 'blobJson', 'blobVersioned', 'blobList', 'getToken',
+const PAGE_FNS = ['readRun', 'ackGiven', 'readDoc', 'readNames', 'readVersionedDoc', 'reviewedScan', 'blobJson', 'blobVersioned', 'blobList', 'getToken',
   'deriveJourney', 'deriveStep', 'targetsFitMachines', 'render', 'renderStep3', 'buildWaves', 'startPolling',
   'backToAssessment', 'runFullId', 'runPrefix', 'runSeg', 'runBody', 'runHref', 'onlyChosen', 'roleAction'];
 PAGE_FNS.push('renderPlanWait', 'deriveAssessStep');
@@ -79,7 +79,7 @@ function freshPage(query) {
     step: 1, poll: null, pollBusy: false, assessment: null, plan: null, states: new Map(), approvals: new Map(),
     runExists: false, manifest: null, approval: null, journey: 'assess', readFailed: null, acceptances: new Map(),
     planSignoff: null, planSignoffCurrent: false, acknowledged: false, targetAdvice: null, adviceVersion: '', adviceOld: false, targetChoices: null,
-    choicesVersion: '', machineChoices: null, machinesVersion: '', runKinds: new Map(),
+    choicesVersion: '', machineChoices: null, machinesVersion: '', assessmentVersion: '', runKinds: new Map(),
     form: { scopeType: 'rg', sub: '', rgs: [], subs: [], mg: '', strategy: 'singleWave', appTag: '' },
     canOperate: true, projectId: PROJECT, runId: null, plannedFrom: null,
     planWatch: null, planRefused: null,

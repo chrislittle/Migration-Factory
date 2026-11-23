@@ -38,6 +38,45 @@ param()
 $ErrorActionPreference = 'Stop'
 . (Join-Path $PSScriptRoot 'AzdHooks.ps1')
 
+# AZD-DOWN-RG-RECHECK-1: READ THE RESOURCE GROUP BEFORE ANYTHING IS REMOVED.
+#
+# azd runs this hook after a delete it saw succeed. It is also the way to
+# finish a removal that azd stopped (azd hooks run postdown), and predown runs
+# it when the group is already gone. In each case the registrations go only
+# when Azure says the resource group is gone: removed while the platform runs,
+# nobody can sign in to it (TEARDOWN-1). A group that is still there is never
+# deleted here - azd down deletes it, and then runs this hook.
+#
+# The name is the one predown recorded: a successful azd down has cleared
+# AZURE_RESOURCE_GROUP before this runs (measured, azd 1.39.1).
+Write-Step 'The resource group'
+$downGroup = Get-VmfDownResourceGroupName
+$downSubscription = Get-AzdValue -Name 'AZURE_SUBSCRIPTION_ID'
+$groupState = Wait-VmfResourceGroupGone -Name $downGroup -Subscription $downSubscription
+switch ($groupState.State) {
+    'gone' { Write-Host "   The resource group $downGroup is gone." }
+    'deleting' {
+        Write-Host "   Azure is still deleting the resource group $downGroup. The two Entra registrations stay."
+        Write-Host '   When the resource group is gone, type azd hooks run postdown to remove them.'
+        exit 1
+    }
+    'present' {
+        Write-Host "   The resource group $downGroup is still in Azure. The two Entra registrations stay, so you can still sign in to the product."
+        Write-Host '   Type azd down again. It deletes the resource group, and then it removes the registrations.'
+        exit 1
+    }
+    default {
+        if (-not $downGroup) {
+            Write-Host '   The name of the resource group is not recorded, so the removal cannot make sure that the platform is gone.'
+        }
+        else {
+            Write-Host "   The removal could not read the resource group ${downGroup}: $($groupState.Detail)"
+        }
+        Write-Host '   The two Entra registrations stay. When Azure answers, type azd hooks run postdown again.'
+        exit 1
+    }
+}
+
 # NO-STACKS-2: the heading said '(the stack does not own them)'. Nothing owns
 # them, because there is no stack - and the next line already says the useful
 # half of it.
@@ -48,7 +87,7 @@ Write-Host ''
 $names = Get-VmfRegistrationNames
 $remove = Read-VmfChoice -Name 'VMF_REMOVE_REGISTRATIONS' -Default 'yes' `
     -Question "Remove the two registrations, $($names.Api) and $($names.Dashboard)?" `
-    -Options @('yes|Yes. Nothing else uses them.', 'no|No. Keep them; a later install with the same environment name adopts them.')
+    -Options @('yes|Yes. Nothing else uses them.', 'no|No. Keep them. A later install with this environment name then stops, until an administrator removes them.')
 
 # BOTH of these belong with the removal, and moved here with it.
 #
@@ -59,11 +98,19 @@ $remove = Read-VmfChoice -Name 'VMF_REMOVE_REGISTRATIONS' -Default 'yes' `
 # none.
 #
 # They are cleared whether or not the registrations were removed. The question
-# has been answered either way, and a kept registration keeps its key because
-# preprovision only generates one when there is nothing to preserve.
+# has been answered either way. INSTALL-ADOPT-OWNER-1: a kept pair is NOT used
+# again. With no key, preprovision stops on any registration with the names,
+# because nothing the directory shows proves who made it; the operator removes
+# the pair or chooses another environment name. (Before, the empty key made a
+# second registration beside each kept one, so reuse never worked.)
+#
+# AZD-DOWN-RG-RECHECK-1: the name predown recorded goes too. The removal is
+# finished, and a name kept after it could point a later run of this hook at a
+# group from an earlier install.
 function Clear-VmfRegistrationState {
     Set-AzdValue -Name 'VMF_REMOVE_REGISTRATIONS' -Value ''
     Set-AzdValue -Name 'VMF_REGISTRATION_KEY' -Value ''
+    Set-AzdValue -Name 'VMF_DOWN_RESOURCE_GROUP' -Value ''
 }
 
 if ($remove -ne 'yes') {

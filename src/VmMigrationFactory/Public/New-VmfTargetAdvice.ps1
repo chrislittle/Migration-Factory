@@ -52,6 +52,11 @@ function New-VmfTargetAdvice {
         throw ("Assessment '$([string]$assessment.runId)' has not been reviewed. Somebody has to read what it " +
                'found and approve it before a migration can be planned from it - open it on the Assessments page.')
     }
+    # ASSESS-APPROVAL-HASH-1: and the approval is of the scan these options
+    # are made from (PLANVER-2: the version of the text read above), before
+    # any size is read from Azure.
+    Assert-VmfApprovalOfScan -Approval $approval -AssessmentVersion (Get-VmfDocumentVersion -Text ([string]$assessmentText)) `
+        -AssessmentId ([string]$assessment.runId)
 
     # ID-ADDRESS-1 part 3: one catalog read per subscription and region, and
     # each machine's options made from its own subscription's sizes.
@@ -124,11 +129,15 @@ function New-VmfTargetAdvice {
     # REBUILD-REMOVE-PLAN-1: no machine waits for a choice (decide) any more,
     # so a machine with a supported target has a start.
     $withTarget = @($machines | Where-Object { $_.start.current -or $_.start.extended }).Count
+    # LINUX-VERSION-OVERFLOW-1: the machines held with machine-not-read, by name.
+    $machinesNotRead = @($machines | Where-Object { @($_.options | Where-Object { @($_.notSupported) -contains 'machine-not-read' }).Count } |
+            ForEach-Object { [string]$_.name })
     # STEP-LOG-4: written after the target options are saved, so a line that cannot be
     # written is a warning, never a failed command.
     Write-VmfStepLine -RunPath $assessmentDir -Step 'advice' -Outcome ok `
-        -Detail ("Wrote the target options for {0} machine(s). {1} have a supported target.{2}" -f $machines.Count, $withTarget,
-                 $(if ($notRead.Count) { " The sizes in $($notRead -join ', ') could not be read." } else { '' }))
+        -Detail ("Wrote the target options for {0} machine(s). {1} have a supported target.{2}{3}" -f $machines.Count, $withTarget,
+                 $(if ($notRead.Count) { " The sizes in $($notRead -join ', ') could not be read." } else { '' }),
+                 $(if ($machinesNotRead.Count) { " The facts of $($machinesNotRead -join ', ') could not be read." } else { '' }))
 
     [pscustomobject]@{
         AdvicePath     = (Get-VmfStoreItemHandle -RunPath $assessmentDir -RelPath 'target-advice.json')

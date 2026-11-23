@@ -58,7 +58,12 @@ function New-VmfPlan {
         }
     }
 
-    $assessment = Read-VmfJsonDocument -Path $AssessmentPath
+    # ASSESS-APPROVAL-HASH-1: read ONCE, as text. The approval below, the
+    # targets and the machines chosen are each held to the version of this
+    # text (PLANVER-2), and the plan is made from the same text.
+    $assessmentText = Read-VmfTextDocument -Path $AssessmentPath
+    $assessment = if ($assessmentText) { $assessmentText | ConvertFrom-Json -Depth 24 }
+    $assessmentVersion = Get-VmfDocumentVersion -Text ([string]$assessmentText)
     Assert-VmfSupportedAssessment -Assessment $assessment -Source $AssessmentPath
 
     # ADVISOR-1: the target each machine was given on the assessment, when
@@ -105,8 +110,7 @@ function New-VmfPlan {
         }
         # Bound to the scan that was reviewed, by the same hash the approval
         # binds (PLANVER-2: Get-VmfDocumentVersion over the stored text).
-        $scanHash = Get-VmfDocumentVersion -Text (Read-VmfTextDocument -Path $AssessmentPath)
-        if ($choices.assessmentHash -and [string]$choices.assessmentHash -ne $scanHash) {
+        if ($choices.assessmentHash -and [string]$choices.assessmentHash -ne $assessmentVersion) {
             throw ('The targets were chosen on a different scan of these machines. Choose the targets again ' +
                    'for this assessment, then plan.')
         }
@@ -181,8 +185,7 @@ function New-VmfPlan {
         $machinesText = Read-VmfTextDocument -Path (Get-VmfStoreItemHandle -RunPath $assessmentDir -RelPath 'machine-choices.json')
         $machineChoice = $machinesText | ConvertFrom-Json -Depth 10
         # Bound to the scan that was reviewed, as the targets are.
-        $scanNow = Get-VmfDocumentVersion -Text (Read-VmfTextDocument -Path $AssessmentPath)
-        if ($machineChoice.assessmentHash -and [string]$machineChoice.assessmentHash -ne $scanNow) {
+        if ($machineChoice.assessmentHash -and [string]$machineChoice.assessmentHash -ne $assessmentVersion) {
             throw ('The machines were chosen on a different scan of these machines. Choose the machines again ' +
                    'for this assessment, then plan.')
         }
@@ -513,6 +516,11 @@ function New-VmfPlan {
         throw ("Assessment '$([string]$assessment.runId)' has not been reviewed. Somebody has to read what it " +
                'found and approve it before a migration can be planned from it - open it on the Assessments page.')
     }
+    # ASSESS-APPROVAL-HASH-1: and the approval is of THIS scan. The approver's
+    # hash is the version of the text they approved (PLANVER-2); a different
+    # one means another scan replaced it after the approval, and nobody read
+    # that one. Ordinal, as every version check is.
+    Assert-VmfApprovalOfScan -Approval $approval -AssessmentVersion $assessmentVersion -AssessmentId ([string]$assessment.runId)
 
     $migrationId = Split-Path $OutPath -Leaf
     # A name already carrying a plan is refused, for the same reason: replacing

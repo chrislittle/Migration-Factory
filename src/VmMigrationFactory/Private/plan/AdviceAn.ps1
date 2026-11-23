@@ -144,6 +144,9 @@ function Get-VmfLinuxRelease {
         only when the agent reported none (deallocated, no agent, or a name
         this does not read). An assessment before v3 has no agent reading, so
         the image decides. A custom image with no agent reading has none.
+        LINUX-VERSION-OVERFLOW-1: a version with a part that does not fit a
+        32-bit number (22.99999999999) is a reading this does not read, so
+        the release is never one nobody can compare.
     #>
     [CmdletBinding()]
     [OutputType([hashtable])]
@@ -152,7 +155,7 @@ function Get-VmfLinuxRelease {
     $field = { param([string]$Name) if ($Vm.PSObject.Properties[$Name]) { [string]$Vm.$Name } else { '' } }
     $id = ConvertTo-VmfDistroId -Name (& $field 'runningOsName')
     $ver = (& $field 'runningOsVersion').Trim()
-    if ($id -and $ver -match '^\d+(\.\d+)*$') {
+    if ($id -and $ver -match '^\d+(\.\d+)*$' -and (Test-VmfVersionInRange -Version $ver)) {
         return @{ distroId = $id; version = $ver; source = 'agent' }
     }
     $image = Get-VmfImageRelease -Publisher (& $field 'imagePublisher') -Offer (& $field 'imageOffer') -Sku (& $field 'osVersion')
@@ -250,6 +253,9 @@ function Get-VmfManaReleaseListing {
         [Parameter()][AllowNull()]$Floors
     )
     if (-not $Release -or -not [string]$Release.distroId -or -not [string]$Release.version) { return 'unknown' }
+    # LINUX-VERSION-OVERFLOW-1: a release nobody can read is unknown, never
+    # unlisted - Test-VmfReleaseKnownUnlisted must not take it as a no.
+    if (-not (Test-VmfVersionInRange -Version ([string]$Release.version))) { return 'unknown' }
     $f = if ($Floors) { $Floors } else { Get-VmfDriverFloors }
     $id = [string]$Release.distroId
     $version = [string]$Release.version
@@ -437,6 +443,8 @@ function Get-VmfManaUpgradeRelease {
         [Parameter()][AllowNull()]$Floors
     )
     if (-not $Release -or -not [string]$Release.distroId -or -not [string]$Release.version) { return $null }
+    # LINUX-VERSION-OVERFLOW-1: no release is named above one nobody can read.
+    if (-not (Test-VmfVersionInRange -Version ([string]$Release.version))) { return $null }
     $f = if ($Floors) { $Floors } else { Get-VmfDriverFloors }
     $id = [string]$Release.distroId
     $mine = [string]$Release.version

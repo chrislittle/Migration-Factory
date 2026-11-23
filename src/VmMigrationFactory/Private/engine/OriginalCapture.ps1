@@ -141,15 +141,25 @@ function Get-VmfPutBackCapture {
         zone - with the machine's shape from the FIRST capture: the size, the
         disk controller, accelerated networking on each interface it still
         has, and the type of the OS disk and of each data disk by its LUN. The
-        stored captures are evidence and are never changed.
+        capacity reservation group comes from Get-VmfPutBackReservationGroup
+        (CRG-ROLLBACK-ATTEMPT-GROUP-1): this attempt's own group, else a group
+        an earlier rollback still owes, else the first capture's. The stored
+        captures are evidence and are never changed.
 
         On the first attempt the two captures are the same. A record with no
         first capture, or a first capture that does not say its capacity
         reservation group, throws (Get-VmfPutBackRecordGap): this version
         always writes both, and a put-back never guesses the shape.
+    .PARAMETER ProductGroupIds
+        Get-VmfProductReservationGroupIds of the run. A caller that acts on the
+        capacity reservation group passes it; without it, a group of this
+        migration in this attempt's capture is read as the machine's own.
     #>
     [CmdletBinding()]
-    param([Parameter()][AllowNull()]$Doc)
+    param(
+        [Parameter()][AllowNull()]$Doc,
+        [Parameter()][AllowEmptyCollection()][AllowNull()][string[]]$ProductGroupIds = @()
+    )
     $f = { param($o, $n) Get-VmfRecordField -Object $o -Name $n }
     $captured = & $f $Doc 'captured'
     $attempt = & $f $captured 'vmConfig'
@@ -164,9 +174,11 @@ function Get-VmfPutBackCapture {
     # A Generation 1 machine has no controller on record (ROLLBACK-NULL-1), and
     # its put-back must not name one, so an empty value is copied too.
     & $set $now 'controller' (& $f $first 'controller')
-    # ROLLBACK-CRG-1: the capacity reservation group, from the first capture
-    # (it always says, Get-VmfPutBackRecordGap).
-    & $set $now 'capacityReservationGroupId' (Get-VmfCapturedReservationGroup -Capture $first).GroupId
+    # ROLLBACK-CRG-1 with CRG-ROLLBACK-ATTEMPT-GROUP-1: the capacity
+    # reservation group the machine was in at the start of this attempt, else
+    # the group an earlier rollback still owes, else the first capture's (it
+    # always says, Get-VmfPutBackRecordGap).
+    & $set $now 'capacityReservationGroupId' (Get-VmfPutBackReservationGroup -Doc $Doc -ProductGroupIds $ProductGroupIds).GroupId
 
     # Accelerated networking, by interface. An interface the first capture
     # never saw keeps what this attempt found; one it could not read stays as

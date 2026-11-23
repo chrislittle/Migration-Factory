@@ -53,6 +53,7 @@ globalThis.migrateCounts = ctx.window.VmfReport.migrateCounts;
 
 globalThis.UX = liftConst('assessments.html', 'UX');
 globalThis.reading = false;
+globalThis.DEMO_MODE = false;
 globalThis.STORE_READ_LIMIT = 8;
 globalThis.projects = [];
 const page = liftAll('assessments.html', ['assessmentStatus', 'lastChange', 'deleteAction', 'nextAction', 'assessmentRow',
@@ -220,6 +221,7 @@ test('WAIT-1, LOADING-LINE-1: the list is given the Reading sentence and told wh
   eq(mounts[0].cfg.waiting, UX.waiting, 'the sentence');
   eq(mounts[0].updates[0].reading, true, 'reading');
   globalThis.reading = false;
+globalThis.DEMO_MODE = false;
   renderTable();
   eq(mounts[0].updates[1].reading, false, 'the read ended');
   eq(tileOf(mounts[0].updates[1].tiles, 'all').empty, UX.none);
@@ -232,11 +234,13 @@ test('?run= opens that report once, after the store is read', () => {
   renderTable();
   eq(opened, [], 'not while the store is read');
   globalThis.reading = false;
+globalThis.DEMO_MODE = false;
   renderTable();
   renderTable();
   eq(opened, ['pay/a1'], 'once');
   const none = renderPage('');
   globalThis.reading = false;
+globalThis.DEMO_MODE = false;
   none.renderTable();
   eq(none.opened, [], 'no ?run=, no report');
 });
@@ -287,7 +291,11 @@ function panelWorld() {
   globalThis.$ = (sel) => (sel === '#assessments-list' ? host : null);
   globalThis.reportHtml = (row) => 'report of ' + row.id;
   globalThis.rows = [a('p/1'), a('p/2')];
+  // ASSESS-APPROVAL-HASH-1: the report of an assessment nobody approved reads
+  // its version (assess-approval-hash.test.js runs that read).
+  globalThis.loadReportVersion = (id) => calls.push('version ' + id);
   globalThis.openReportId = null;
+  globalThis.openReportVersion = '';
   return { focused, close, calls };
 }
 
@@ -317,15 +325,17 @@ test('an acceptance made in the open report draws the report again, so it shows 
   const calls = [];
   Object.assign(globalThis, {
     document: { getElementById: () => ({ value: ' note ' }) },
-    api: async (method, route, body) => { calls.push(['api', route, body.note]); return {}; },
+    api: async (method, route, body) => { calls.push(['api', route, body.note, body.assessmentHash]); return {}; },
     loadAssessments: async () => calls.push(['load']), renderTable: () => calls.push(['draw']),
     openReport: (id) => { calls.push(['open', id]); return true; },
   });
   globalThis.VmfHelp = Object.assign({}, shared, { VmfRun: Object.assign({}, VmfRun,
     { routeSegment: (id) => VmfRun.parse(id).run, withProject: (b, id) => Object.assign(b, { project: VmfRun.parse(id).project }) }) });
   globalThis.openReportId = 'p/a1';
+  // ASSESS-APPROVAL-HASH-1: the version of the scan the report showed goes with it.
+  globalThis.openReportVersion = 'v-scan';
   await approve('p/a1', { textContent: 'I have reviewed this', disabled: false });
-  eq(calls, [['api', 'assessments/a1/approve', 'note'], ['load'], ['draw'], ['open', 'p/a1']]);
+  eq(calls, [['api', 'assessments/a1/approve', 'note', 'v-scan'], ['load'], ['draw'], ['open', 'p/a1']]);
   calls.length = 0;
   globalThis.openReportId = null;
   await approve('p/a1', { textContent: 'x', disabled: false });
@@ -333,7 +343,8 @@ test('an acceptance made in the open report draws the report again, so it shows 
 });
 
 test('the report is headed by the row\'s name, says where the scan looked with the ids on hover, and lists its migrations', () => {
-  const { reportHtml, scopeLineHtml, scopeText } = liftAll('assessments.html', ['reportHtml', 'scopeLineHtml', 'scopeText']);
+  const { reportHtml, scopeLineHtml, scopeText, approveWhy } = liftAll('assessments.html', ['reportHtml', 'scopeLineHtml', 'scopeText', 'approveWhy']);
+  globalThis.approveWhy = approveWhy;
   const R = ctx.window.VmfReport;
   Object.assign(globalThis, { scopeLineHtml, scopeText, scopes: null, subName: (id) => 'Prod', mgName: (id) => id,
     ago: () => '', vmName: (id) => id, groupByCode: R.groupByCode, splitBlockers: R.splitBlockers,

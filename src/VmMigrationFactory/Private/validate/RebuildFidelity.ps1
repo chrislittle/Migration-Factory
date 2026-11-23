@@ -136,8 +136,9 @@ function Get-VmfStorageFacts {
     $topology = & $get 'lvm topology'
     if ($topology) {
         $facts.Reported = $true
-        if ($topology -match '(\d+) volume group') { $facts.Groups = [int]$Matches[1] }
-        if ($topology -match '(\d+) logical volume') { $facts.Volumes = [int]$Matches[1] }
+        # LINUX-VERSION-OVERFLOW-1: a count that does not fit stays unknown.
+        if ($topology -match '(\d+) volume group') { $facts.Groups = ConvertTo-VmfBoundedNumber -Text $Matches[1] }
+        if ($topology -match '(\d+) logical volume') { $facts.Volumes = ConvertTo-VmfBoundedNumber -Text $Matches[1] }
     }
     $complete = & $get 'lvm volume groups complete'
     if ($complete) { $facts.Reported = $true; if ($complete -match 'INCOMPLETE:(.*)') { $facts.Incomplete = $Matches[1].Trim() } }

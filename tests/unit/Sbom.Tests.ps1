@@ -572,11 +572,27 @@ Describe 'SBOM-1: tools/Publish-VmfRelease.ps1 publishes only a release that has
     BeforeAll {
         # A stand-in GitHub API that records each call and answers like the
         # real one: a release with an id and an upload address.
-        function script:New-VmfFakeGitHub([switch]$UploadFails, [switch]$AssetMissing, [switch]$StaysDraft) {
+        # RELEASE-DRAFT-RERUN-1: -Existing is what the releases list holds
+        # before the run, on its first page; -SecondPage is page 2.
+        function script:New-VmfFakeGitHub([switch]$UploadFails, [switch]$AssetMissing, [switch]$StaysDraft, [object[]]$Existing = @(), [object[]]$SecondPage = @(), [object[]]$DraftAssets = @()) {
             $state = [pscustomobject]@{ Calls = [System.Collections.Generic.List[object]]::new(); Uploaded = $null }
             $rest = {
                 param($Method, $Uri, $Body, $InFile, $ContentType)
                 $state.Calls.Add([pscustomobject]@{ Method = $Method; Uri = $Uri; Body = $Body; InFile = $InFile; ContentType = $ContentType })
+                if ($Method -eq 'Get' -and $Uri -match '^https://api\.github\.com/repos/contoso/vmf/releases\?per_page=100&page=(\d+)$') {
+                    $page = [int]$matches[1]
+                    if ($page -eq 1) { return , @($Existing) }
+                    if ($page -eq 2) { return , @($SecondPage) }
+                    return , @()
+                }
+                if ($Method -eq 'Get' -and $Uri -eq 'https://api.github.com/repos/contoso/vmf/releases/41/assets') {
+                    if ($state.Uploaded) { return , @([pscustomobject]@{ id = 10; name = 'vm-migration-factory-1.2.3.spdx.json'; size = $state.Uploaded; state = 'uploaded' }) }
+                    return , @($DraftAssets)
+                }
+                if ($Method -eq 'Delete' -and $Uri -like 'https://api.github.com/repos/contoso/vmf/releases/assets/*') { return $null }
+                if ($Method -eq 'Patch' -and $Uri -eq 'https://api.github.com/repos/contoso/vmf/releases/41') {
+                    return [pscustomobject]@{ id = 41; tag_name = 'v1.2.3'; draft = [bool]$StaysDraft; html_url = 'https://github.com/contoso/vmf/releases/tag/v1.2.3' }
+                }
                 if ($Method -eq 'Post' -and $Uri -eq 'https://api.github.com/repos/contoso/vmf/releases') {
                     return [pscustomobject]@{ id = 42; tag_name = 'v1.2.3'; draft = $true; html_url = 'https://github.com/contoso/vmf/releases/tag/v1.2.3'; upload_url = 'https://uploads.github.com/repos/contoso/vmf/releases/42/assets{?name,label}' }
                 }
@@ -607,7 +623,9 @@ Describe 'SBOM-1: tools/Publish-VmfRelease.ps1 publishes only a release that has
         $gh = New-VmfFakeGitHub
         $r = Invoke-VmfPublish $gh
         $calls = @($gh.State.Calls)
-        @($calls.Method) | Should -Be @('Post', 'Post', 'Get', 'Patch')
+        @($calls.Method) | Should -Be @('Get', 'Post', 'Post', 'Get', 'Patch')
+        $calls[0].Uri | Should -Be 'https://api.github.com/repos/contoso/vmf/releases?per_page=100&page=1' -Because 'it looks for a release of the tag before it creates anything'
+        $calls = @($calls | Select-Object -Skip 1)
         $create = $calls[0].Body | ConvertFrom-Json
         $create.draft | Should -BeTrue -Because 'nobody sees a release before its bill of materials is on it'
         $create.tag_name | Should -Be 'v1.2.3'
@@ -627,7 +645,7 @@ Describe 'SBOM-1: tools/Publish-VmfRelease.ps1 publishes only a release that has
             $file = Join-Path $script:temp "vm-migration-factory-$($case.Version).spdx.json"
             Set-Content -LiteralPath $file -Value '{}'
             try { Invoke-VmfPublish $gh $case.Version $file | Out-Null } catch { $null = $_ }
-            ($gh.State.Calls[0].Body | ConvertFrom-Json).prerelease | Should -Be $case.Pre -Because $case.Version
+            (@($gh.State.Calls | Where-Object Method -eq 'Post')[0].Body | ConvertFrom-Json).prerelease | Should -Be $case.Pre -Because $case.Version
         }
     }
 
@@ -653,6 +671,50 @@ Describe 'SBOM-1: tools/Publish-VmfRelease.ps1 publishes only a release that has
         $gh = New-VmfFakeGitHub -StaysDraft
         { Invoke-VmfPublish $gh } | Should -Throw '*draft*'
     }
+
+    # RELEASE-DRAFT-RERUN-1 (fault g of 2026-11-19): a run for a tag that
+    # already had a release left a second draft, because the tool created a
+    # draft before it looked.
+    It 'REFUSES a tag that already has a published release, and creates, uploads and changes nothing' {
+        $gh = New-VmfFakeGitHub -Existing @([pscustomobject]@{ id = 40; tag_name = 'v1.2.3'; draft = $false; html_url = 'https://github.com/contoso/vmf/releases/tag/v1.2.3' })
+        { Invoke-VmfPublish $gh } | Should -Throw '*v1.2.3*already*releases/tag/v1.2.3*'
+        @($gh.State.Calls.Method) | Should -Be @('Get') -Because 'a refusal comes before anything is made'
+    }
+
+    It 'finds the release on a later page of the list too' {
+        $gh = New-VmfFakeGitHub -Existing @(1..100 | ForEach-Object { [pscustomobject]@{ id = $_; tag_name = "v0.0.$_"; draft = $false; html_url = 'x' } }) `
+            -SecondPage @([pscustomobject]@{ id = 40; tag_name = 'v1.2.3'; draft = $false; html_url = 'https://github.com/contoso/vmf/releases/tag/v1.2.3' })
+        { Invoke-VmfPublish $gh } | Should -Throw '*already*'
+        @($gh.State.Calls.Method) | Should -Not -Contain 'Post'
+    }
+
+    It 'a release of another tag is no reason to stop' {
+        $gh = New-VmfFakeGitHub -Existing @([pscustomobject]@{ id = 39; tag_name = 'v1.2.2'; draft = $false; html_url = 'x' }, [pscustomobject]@{ id = 38; tag_name = 'v1.2.30'; draft = $true; html_url = 'y' })
+        (Invoke-VmfPublish $gh).Asset | Should -Be 'vm-migration-factory-1.2.3.spdx.json'
+        @($gh.State.Calls | Where-Object { $_.Method -eq 'Post' -and $_.Uri -eq 'https://api.github.com/repos/contoso/vmf/releases' }).Count | Should -Be 1
+    }
+
+    It 'REUSES the one draft an earlier failed run of the same version left: no second release, its old attachment replaced' {
+        $gh = New-VmfFakeGitHub -Existing @([pscustomobject]@{ id = 41; tag_name = 'v1.2.3'; draft = $true; html_url = 'https://github.com/contoso/vmf/releases/tag/untagged-1'; upload_url = 'https://uploads.github.com/repos/contoso/vmf/releases/41/assets{?name,label}' }) `
+            -DraftAssets @([pscustomobject]@{ id = 9; name = 'vm-migration-factory-1.2.3.spdx.json'; size = 1; state = 'uploaded' })
+        $r = Invoke-VmfPublish $gh
+        $calls = @($gh.State.Calls)
+        @($calls | Where-Object { $_.Method -eq 'Post' -and $_.Uri -eq 'https://api.github.com/repos/contoso/vmf/releases' }) | Should -BeNullOrEmpty -Because 'one tag has one release'
+        @($calls | Where-Object Method -eq 'Delete').Uri | Should -Be @('https://api.github.com/repos/contoso/vmf/releases/assets/9')
+        $upload = @($calls | Where-Object { $_.Method -eq 'Post' -and $_.Uri -like 'https://uploads.github.com/*' })
+        $upload.Uri | Should -Be @('https://uploads.github.com/repos/contoso/vmf/releases/41/assets?name=vm-migration-factory-1.2.3.spdx.json')
+        $calls.IndexOf(@($calls | Where-Object Method -eq 'Delete')[0]) | Should -BeLessThan $calls.IndexOf($upload[0]) -Because 'the old file goes before the new one comes'
+        @($calls | Where-Object Method -eq 'Patch').Uri | Should -Be @('https://api.github.com/repos/contoso/vmf/releases/41')
+        $r.Tag | Should -Be 'v1.2.3'
+    }
+
+    It 'REFUSES when the tag has more than one draft, names them, and changes nothing' {
+        $gh = New-VmfFakeGitHub -Existing @(
+            [pscustomobject]@{ id = 41; tag_name = 'v1.2.3'; draft = $true; html_url = 'https://github.com/contoso/vmf/releases/tag/untagged-1' }
+            [pscustomobject]@{ id = 43; tag_name = 'v1.2.3'; draft = $true; html_url = 'https://github.com/contoso/vmf/releases/tag/untagged-2' })
+        { Invoke-VmfPublish $gh } | Should -Throw '*2 drafts*untagged-1*untagged-2*'
+        @($gh.State.Calls.Method) | Should -Be @('Get')
+    }
 }
 
 # PUBLIC-SYNC-1: this tests this repository's own CI workflows, which run on its own
@@ -661,6 +723,7 @@ Describe 'SBOM-1: tools/Publish-VmfRelease.ps1 publishes only a release that has
 Describe 'SBOM-1: the release workflow makes the document and attaches it' -Skip:(-not (Test-Path (Join-Path $PSScriptRoot '..' '..' 'tools' 'Initialize-VmfCiRunner.ps1'))) {
 
     BeforeAll {
+        # RELEASE-FLOW-RESTORE-1: one job again, after the CI check and the tag.
         $script:releasePath = Join-Path $script:repoRoot '.github' 'workflows' 'release.yml'
         $script:steps = @(Get-VmfWorkflowSteps -Path $script:releasePath)
         $script:make = @($script:steps | Where-Object Name -eq 'Make the bill of materials')

@@ -62,10 +62,11 @@ failed on a message about appId. MEASURED 2026-09-09, one property at a time:
 So uniqueName is what collides and displayName is free. The name a person sees
 in the portal is unchanged; only the key moves.
 
-EMPTY MEANS "AS IT WAS", and that is the migration. An install that already has
-its registrations keeps uniqueName equal to displayName, so nothing is
-recreated. preprovision only generates a key when there is no registration to
-preserve.''')
+NEVER EMPTY FROM AN INSTALL (INSTALL-ADOPT-OWNER-1). An empty key makes the
+uniqueName equal to the display name, which any member of the tenant can make
+first, and this template upserts into whatever holds that uniqueName.
+preprovision and identity-deploy.ps1 pass the recorded key, or a new random key
+when no registration has either name; else they stop before this runs.''')
 param registrationKey string = ''
 
 // displayName is what a person reads; uniqueName is what Entra reserves.

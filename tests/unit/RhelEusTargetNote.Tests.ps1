@@ -159,10 +159,10 @@ Describe 'RHEL-EUS-TARGET-NOTE-1: a machine made from a RHEL image on the EUS re
     }
 
     It 'the version is 31: a v30 file has no eusImage, so it is refused and made again' {
-        InModuleScope VmMigrationFactory { Get-VmfTargetAdviceSchemaVersion | Should -Be 33 }
+        InModuleScope VmMigrationFactory { Get-VmfTargetAdviceSchemaVersion | Should -Be 34 }
         $s = Get-Content (Join-Path $script:repoRoot 'schemas' 'target-advice.schema.json') -Raw | ConvertFrom-Json -Depth 30
-        $s.properties.schemaVersion.const | Should -Be 33
-        (Get-VmfPageSource -Path (Join-Path $script:repoRoot 'src' 'dashboard' 'wizard.html')) | Should -Match 'const TARGET_ADVICE_VERSION = 33;'
+        $s.properties.schemaVersion.const | Should -Be 34
+        (Get-VmfPageSource -Path (Join-Path $script:repoRoot 'src' 'dashboard' 'wizard.html')) | Should -Match 'const TARGET_ADVICE_VERSION = 34;'
         (Get-Content (Join-Path $script:repoRoot 'docs' 'schema-migrations.md') -Raw) | Should -Match 'target-advice v30 -> v31'
     }
 }

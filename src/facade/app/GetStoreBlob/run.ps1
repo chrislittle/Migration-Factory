@@ -34,6 +34,9 @@ try {
 
     # The caller names the document, so it is checked before it is used.
     $path = Resolve-VmfFacadeStoreKey -Path ([string]$Request.Query.path)
+    # RECORDS-VIEWER-READ-1: the folders the product keeps beside the runs
+    # (the kept migration records, the machine claims) are the Admin's.
+    Assert-VmfFacadeStoreKeyReadable -Principal $principal -Path $path
 
     if ($env:VMF_STORE_PATH) {
         $file = Join-Path $env:VMF_STORE_PATH ($path -replace '/', [System.IO.Path]::DirectorySeparatorChar)

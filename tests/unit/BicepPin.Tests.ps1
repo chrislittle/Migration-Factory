@@ -505,14 +505,19 @@ Describe 'BICEP-PIN-1: every workflow step that runs Bicep follows the pin' -Ski
             })
         # A step runs Bicep when it builds a template, or runs the tests (the
         # Pester files compile the templates with `az bicep build`).
-        # PUBLIC-PIPELINE-1: the public send runs the export, which runs the tests.
-        $script:runsBicep = '(?i)az bicep|Invoke-VmfTests\.ps1|New-VmfRelease\.ps1|Invoke-VmfPesterParallel\.ps1|Invoke-Pester\b|Send-VmfPublicRelease\.ps1|Export-VmfPublicRelease\.ps1'
+        # A direct call of the export runs the suite in the exported tree.
+        # PUBLIC-RELEASE-SKIP-SUITE-1 (2026-11-20): the public send runs the
+        # export with -SkipSuite, and VERSION-BUMP-TESTED-TREE-1 took the
+        # checks out of New-VmfRelease, so neither runs Bicep any more
+        # (PublicPipeline.Tests.ps1 and Release.Tests.ps1 hold both).
+        $script:runsBicep = '(?i)az bicep|Invoke-VmfTests\.ps1|Invoke-VmfPesterParallel\.ps1|Invoke-Pester\b|Export-VmfPublicRelease\.ps1'
         $script:sync = 'Sync-VmfBicepVersion\.ps1'
     }
 
     It 'found the steps to check' {
         $script:steps.Count | Should -BeGreaterThan 20
-        @($script:steps | Where-Object { $_.Code -match $script:runsBicep }).Count | Should -BeGreaterOrEqual 3
+        # ci.yml: the templates and the tests (CI-FOUR-SHARES-1 put both in one job).
+        @($script:steps | Where-Object { $_.Code -match $script:runsBicep }).Count | Should -BeGreaterOrEqual 2
     }
 
     It 'each one has the pin step earlier in its own job, with no condition that could skip it' {
@@ -523,27 +528,29 @@ Describe 'BICEP-PIN-1: every workflow step that runs Bicep follows the pin' -Ski
         }
     }
 
-    It 'ci.yml: the pin step comes before the templates compile in the gates job, and before the tests in each share' {
-        # CI-SHARD-1 split the Windows job into the gates and the test shares;
-        # each runs on its own runner, so each has its own pin step.
+    It 'ci.yml: the pin step comes before the templates compile and before the tests, in the one share job' {
+        # CI-FOUR-SHARES-1: each share runs on its own runner, and share 1
+        # also builds the templates, so the one job has one pin step, run by
+        # every share.
         $ci = @($script:steps | Where-Object { $_.File -eq 'ci.yml' })
         $pinSteps = @($ci | Where-Object { $_.Code -match $script:sync })
-        @($pinSteps.Job | Sort-Object) | Should -Be @('gates', 'unit-tests')
+        @($pinSteps.Job) | Should -Be @('checks')
         $pinSteps | ForEach-Object { $_.Shell | Should -Be 'pwsh' }
-        foreach ($pair in @(@('gates', 'Templates compile'), @('unit-tests', 'Pester unit tests'))) {
-            $pin = @($pinSteps | Where-Object { $_.Job -eq $pair[0] })[0]
-            $target = @($ci | Where-Object { $_.Job -eq $pair[0] -and $_.Name -eq $pair[1] })
-            $target.Count | Should -Be 1 -Because "ci.yml job $($pair[0]) has the step '$($pair[1])'"
-            $pin.Line | Should -BeLessThan $target[0].Line -Because "$($pair[0]): the pin step comes first"
+        foreach ($name in 'Templates compile', 'Pester unit tests') {
+            $target = @($ci | Where-Object { $_.Job -eq 'checks' -and $_.Name -eq $name })
+            $target.Count | Should -Be 1 -Because "ci.yml has the step '$name'"
+            $pinSteps[0].Line | Should -BeLessThan $target[0].Line -Because "the pin step comes before '$name'"
         }
     }
 
-    It 'release.yml: the pin step comes before the release is prepared and before the checks on a tag' {
-        $rel = @($script:steps | Where-Object { $_.File -eq 'release.yml' })
-        $pinStep = @($rel | Where-Object { $_.Code -match $script:sync })
-        $pinStep.Count | Should -Be 1
-        foreach ($name in 'Prepare and push the release', 'The checks must pass on the tagged commit') {
-            $pinStep[0].Line | Should -BeLessThan (@($rel | Where-Object { $_.Name -eq $name })[0].Line) -Because $name
+    It 'release.yml and public-release.yml run no Bicep, so neither needs the pin step' {
+        # RELEASE-NO-SECOND-SUITE-1 and PUBLIC-RELEASE-SKIP-SUITE-1: neither
+        # runs the tests or a template any more.
+        foreach ($file in 'release.yml', 'public-release.yml') {
+            $wf = @($script:steps | Where-Object { $_.File -eq $file })
+            $wf.Count | Should -BeGreaterOrEqual 2 -Because "$file was read"
+            @($wf | Where-Object { $_.Code -match $script:runsBicep }) | Should -BeNullOrEmpty -Because $file
+            @($wf | Where-Object { $_.Code -match $script:sync }) | Should -BeNullOrEmpty -Because "$file has nothing that needs the pinned Bicep"
         }
     }
 

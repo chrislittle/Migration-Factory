@@ -85,7 +85,7 @@ Describe 'REVIEW-1: a failed start of the target options is written to the run' 
                 Write-VmfStoreJson -RunPath $p -RelPath 'assessment.json' -Document $d -Depth 24
             }
             Mock -ModuleName FacadeCore Invoke-VmfFacadeStartEngine { throw 'the engine job could not be read' }
-            Invoke-VmfFacadeApproveAssessment -Principal (R1Approver) -StorePath $rp -RunId 'scan-1' | Out-Null
+            Invoke-VmfFacadeApproveAssessment -Principal (R1Approver) -StorePath $rp -AssessmentHash (InModuleScope VmMigrationFactory -Parameters @{ p = $rp } { param($p) Get-VmfDocumentVersion -Text (Read-VmfTextDocument -Path (Get-VmfStoreItemHandle -RunPath $p -RelPath 'assessment.json')) }) -RunId 'scan-1' | Out-Null
             $events = @(Get-Content (Join-Path $rp 'logs' 'events.jsonl') | ForEach-Object { $_ | ConvertFrom-Json })
             $e = $events | Where-Object { $_.step -eq 'engine:advise' -and $_.outcome -eq 'fail' }
             $e | Should -Not -BeNullOrEmpty

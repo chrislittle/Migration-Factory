@@ -6913,9 +6913,14 @@ async function refreshRun(reads = tickReads()) {
       const known = VmfHelp.heldJson(runHeld, `${run}/${n}`);
       return known ? Promise.resolve(known.value) : source.readJson(run, n);
     };
+    /* WAVE-RUNNING-LEASE-1: a lease its job removed after the listing is gone,
+     * and source.readJson reads that 404 as null. LEASE-UNREAD-PAGE-1: a read
+     * the store REFUSES is not "no lease" - the machine ID is inside the
+     * lease, so no wave can be judged, and the refresh fails with the words
+     * of a failed listing. */
+    const leaseRead = (n) => readOne(n).catch((e) => { throw new Error(UX_MISC.leasesUnread.replace('{reason}', VmfHelp.explain(e))); });
     const read = await VmfHelp.mapLimited(tagged, ([kind, n]) =>
-      // WAVE-RUNNING-LEASE-1: a lease its job removed after the listing is gone.
-      (kind === 'acc' || kind === 'lease' ? readOne(n).catch(() => null) : readOne(n)));
+      (kind === 'acc' ? readOne(n).catch(() => null) : kind === 'lease' ? leaseRead(n) : readOne(n)));
     if (run !== currentRun) { return; }   // MIGRATIONS-LOAD-1: as above
     const of = (kind) => tagged.map(([k, n], i) => [k, n, read[i]]).filter(([k]) => k === kind);
     const leaf = (n) => n.split('/').pop().replace(/\.json$/, '');

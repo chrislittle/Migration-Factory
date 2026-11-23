@@ -169,7 +169,7 @@ Describe 'STEP-LOG-6: a line that cannot be written, after the service started t
         Mock -ModuleName FacadeCore Invoke-VmfFacadeStartEngine { throw 'the engine job could not be read' }
         Mock -ModuleName VmMigrationFactory Write-VmfEvent -ParameterFilter { $Step -eq 'engine:advise' } { throw 'The store did not answer.' }
         $approver = [pscustomobject]@{ Identity = 'approver@example.com'; Roles = @('Vmf.Approver'); TenantId = 't' }
-        $r = Invoke-VmfFacadeApproveAssessment -Principal $approver -StorePath $scan -RunId 'scan' -WarningVariable w -WarningAction SilentlyContinue
+        $r = Invoke-VmfFacadeApproveAssessment -Principal $approver -StorePath $scan -AssessmentHash (InModuleScope VmMigrationFactory -Parameters @{ p = $scan } { param($p) Get-VmfDocumentVersion -Text (Read-VmfTextDocument -Path (Get-VmfStoreItemHandle -RunPath $p -RelPath 'assessment.json')) }) -RunId 'scan' -WarningVariable w -WarningAction SilentlyContinue
         $r.TargetOptions.started | Should -BeFalse
         $r.TargetOptions.error | Should -BeLike '*did not start*the engine job could not be read*'
         Test-Path (Join-Path $scan 'approval.json') | Should -BeTrue -Because 'the review is recorded whether or not the start works'

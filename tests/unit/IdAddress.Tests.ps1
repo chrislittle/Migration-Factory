@@ -283,10 +283,16 @@ Describe 'ID-ADDRESS-1 part 2: a registration is found by the application ID the
     Context 'the uninstall hook, run with a stand-in for az and azd' {
         BeforeEach {
             $script:envKeys = 'AZURE_ENV_NAME', 'VMF_REMOVE_REGISTRATIONS', 'VMF_API_APP_ID', 'VMF_DASHBOARD_APP_ID',
-                'VMF_API_DISPLAY_NAME', 'VMF_DASHBOARD_DISPLAY_NAME', 'VMF_REGISTRATION_KEY'
+                'VMF_API_DISPLAY_NAME', 'VMF_DASHBOARD_DISPLAY_NAME', 'VMF_REGISTRATION_KEY',
+                'AZURE_SUBSCRIPTION_ID', 'AZURE_RESOURCE_GROUP', 'VMF_DOWN_RESOURCE_GROUP'
             $script:envBefore = @{}
             foreach ($k in $script:envKeys) { $script:envBefore[$k] = [Environment]::GetEnvironmentVariable($k); [Environment]::SetEnvironmentVariable($k, $null) }
             [Environment]::SetEnvironmentVariable('AZURE_ENV_NAME', 'idtest')
+            # AZD-DOWN-RG-RECHECK-1: postdown removes nothing until Azure says
+            # the resource group is gone. Here it is gone (the stand-in below);
+            # AzdDownRecheck.Tests.ps1 holds the other answers.
+            [Environment]::SetEnvironmentVariable('AZURE_SUBSCRIPTION_ID', $script:subA)
+            [Environment]::SetEnvironmentVariable('VMF_DOWN_RESOURCE_GROUP', 'rg-idtest')
             [Environment]::SetEnvironmentVariable('VMF_REMOVE_REGISTRATIONS', 'yes')
             $global:idDeleted = @()
             $global:idByName = @()
@@ -294,6 +300,10 @@ Describe 'ID-ADDRESS-1 part 2: a registration is found by the application ID the
             function global:azd { $global:LASTEXITCODE = 0 }
             function global:az {
                 $global:LASTEXITCODE = 0
+                if ($args[0] -eq 'group' -and $args[1] -eq 'show') {
+                    Write-Error "(ResourceGroupNotFound) Resource group 'rg-idtest' could not be found."
+                    $global:LASTEXITCODE = 3; return
+                }
                 if ($args[0] -eq 'ad' -and $args[2] -eq 'delete') { $global:idDeleted += [string]$args[[array]::IndexOf($args, '--id') + 1]; return }
                 if ($args -contains '--app-id') {
                     if ($global:idFailById) { $global:LASTEXITCODE = 1; return }

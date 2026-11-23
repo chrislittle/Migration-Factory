@@ -74,7 +74,7 @@ A machine whose power state is the only change can be tried again. The panel the
 
 While the power state of a machine is not as it was, its panel says the power state that it had. **Return to the power state** returns the machine to it and changes nothing else. The panel shows it in each state that no job works on, also on a machine that you left out. Write a short note, then select **Return to the power state**. The product starts the return at once. If Azure refuses again, the panel keeps the button. You need the operator role.
 
-A rollback or a restore after a retry sets the size, disk controller, accelerated networking, disk types and capacity reservation group back. They are as before the first change. The disk content comes from the copies of the latest attempt.
+A rollback or a restore after a retry sets the size, disk controller, accelerated networking and disk types back. They are as before the first change. At the start of the latest attempt, the machine can be in a capacity reservation group that this migration did not make. Then the rollback or the restore returns the machine to that group. For the other cases, see [Capacity and quota](capacity.md). The disk content comes from the copies of the latest attempt.
 
 Before a retry changes the machine, the product checks that the original size holds the network interfaces and data disks the machine has now. If the machine got more than that size holds, the retry stops and nothing changes. The reason says what to remove.
 

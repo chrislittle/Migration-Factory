@@ -20,6 +20,46 @@ The 'E' family of VM size series are one of Azure's memory-optimized VM instance
 
 ## Series in family
 
+### Epsv7 and Epdsv7-series
+
+# [Epsv7-series](#tab/epsv7)
+The Epsv7-series virtual machines are powered by Azure's second-generation Cobalt 200 processor, designed for memory-optimized workloads. The Azure Cobalt 200 processor is based on the Arm Neoverse V3 architecture and provides an entire physical core for each virtual machine vCPU. Cobalt 200 supports the [Processor Mode](../../vm-processor-mode) feature, running at up to 3.6 GHz in Opportunistic mode and at 3.2 GHz in Deterministic mode. These virtual machines offer 8 GiB of memory per vCPU and a wide range of vCPU sizes.
+
+These VMs are suited for memory-intensive scale-out and enterprise workloads, such as relational and NoSQL databases, data analytics engines, and in-memory caches. Epsv7-series virtual machines offer up to 128 vCPUs and 1,024 GiB of RAM. These VMs come without local disk, providing a better value proposition for workloads that don't require local temporary storage.
+
+Epsv7-series virtual machines support Standard SSD, Standard HDD, and Premium SSD types. You can also attach Premium SSD v2 and Ultra Disk storage. Disk storage is billed separately from virtual machines. For more information, see [pricing for disks](https://azure.microsoft.com/pricing/details/managed-disks/).
+
+[View the full Epsv7-series page](epsv7-series).
+
+| Part | Quantity^Count Units^ | Specs^SKU ID, Performance Units, etc.^ |
+| --- | --- | --- |
+| Processor | 1 - 128 vCPUs | Azure Cobalt 200 [Arm64] |
+| Memory | 8 - 1,024 GiB |  |
+| Local Storage | None |  |
+| Remote Storage | 4 - 64 Disks | 2,000 - 320,000 IOPS 60 - 8,770 MBps Disk Types: [Standard SSD/HDD](../../disks-types#standard-ssds), [Premium SSD](../../disks-types#premium-ssds), [Premium SSD v2](../../disks-types#premium-ssd-v2), [Ultra Disk](../../disks-types#ultra-disks) |
+| Network | 2 - 15 NICs | 12,500 - 85,000 Mbps Interfaces: NetVSC, [MANA](https://aka.ms/ManaFAQ1) |
+| Accelerators | None |  |
+
+# [Epdsv7-series](#tab/epdsv7)
+The Epdsv7-series virtual machines are powered by Azure's second-generation Cobalt 200 processor, designed for memory-optimized workloads. The Azure Cobalt 200 processor is based on the Arm Neoverse V3 architecture and provides an entire physical core for each virtual machine vCPU. Cobalt 200 supports the [Processor Mode](../../vm-processor-mode) feature, running at up to 3.6 GHz in Opportunistic mode and at 3.2 GHz in Deterministic mode. These virtual machines offer 8 GiB of memory per vCPU and a wide range of vCPU sizes.
+
+These VMs are suited for memory-intensive scale-out and enterprise workloads, such as relational and NoSQL databases, data analytics engines, and in-memory caches. Epdsv7-series virtual machines offer up to 128 vCPUs, 1,024 GiB of RAM, and 7,040 GiB of local NVMe temporary storage.
+
+Epdsv7-series virtual machines support Standard SSD, Standard HDD, and Premium SSD types. You can also attach Premium SSD v2 and Ultra Disk storage. Disk storage is billed separately from virtual machines. For more information, see [pricing for disks](https://azure.microsoft.com/pricing/details/managed-disks/).
+
+[View the full Epdsv7-series page](epdsv7-series).
+
+| Part | Quantity^Count Units^ | Specs^SKU ID, Performance Units, etc.^ |
+| --- | --- | --- |
+| Processor | 1 - 128 vCPUs | Azure Cobalt 200 [Arm64] |
+| Memory | 8 - 1,024 GiB |  |
+| Local Storage | 1 - 6 Disks | 55 - 1,760 GiB 25,000 - 3,200,000 IOPS 180 - 23,040 MBps |
+| Remote Storage | 4 - 64 Disks | 2,000 - 320,000 IOPS 60 - 8,770 MBps Disk Types: [Standard SSD/HDD](../../disks-types#standard-ssds), [Premium SSD](../../disks-types#premium-ssds), [Premium SSD v2](../../disks-types#premium-ssd-v2), [Ultra Disk](../../disks-types#ultra-disks) |
+| Network | 2 - 15 NICs | 12,500 - 85,000 Mbps Interfaces: NetVSC, [MANA](https://aka.ms/ManaFAQ1) |
+| Accelerators | None |  |
+
+---
+
 ### Esv7 and Edsv7-series
 
 # [Esv7 series](#tab/esv7)
@@ -95,7 +135,7 @@ Eadsv7-series VMs utilize AMD's 5th Generation EPYC™ 9005 processors that can 
 ### Ebsv6 and Ebdsv6-series
 
 # [Ebsv6-series](#tab/ebsv6)
-The Ebsv6-series virtual machines run on the fifth Generation Intel® Xeon® Platinum 8573C (Emerald Rapids) processor and deliver higher remote storage performance compared to the previous generation. The Ebsv6-series is ideal for storage throughput intensive workloads. These virtual machines offer up to 800,000 IOPS and 14,000 MBps of remote disk storage performance. Additionally, the Ebsv6 VM series offer up to 192vCPU and 1,832 GiB of RAM providing larger processing power to consolidate workloads. Refer to the Premium SSD, Premium SSD v2, and Ultra Disks to attain published disk performance.
+The Ebsv6-series virtual machines run on the fifth Generation Intel® Xeon® Platinum 8573C (Emerald Rapids) processor and deliver higher remote storage performance compared to the previous generation. The Ebsv6-series is ideal for storage throughput intensive workloads. These virtual machines offer up to 800,000 IOPS and 12,500 MBps of remote disk storage performance. Additionally, the Ebsv6 VM series offer up to 192vCPU and 1,832 GiB of RAM providing larger processing power to consolidate workloads. Refer to the Premium SSD, Premium SSD v2, and Ultra Disks to attain published disk performance.
 
 [View the full Ebsv6-series page](ebsv6-series).
 
@@ -104,12 +144,12 @@ The Ebsv6-series virtual machines run on the fifth Generation Intel® Xeon® Pla
 | Processor | 2 - 192 vCPUs | Intel Xeon Platinum 8573C (Emerald Rapids) [x86-64] |
 | Memory | 16 - 1832 GiB |  |
 | Local Storage | None |  |
-| Remote Storage | 8 - 64 Disks | 8800 - 800000 IOPS  253 - 14000 MBps |
+| Remote Storage | 8 - 64 Disks | 8800 - 800000 IOPS  253 - 12500 MBps |
 | Network | 2 - 8 NICs | 12500 - 200000 Mbps Interfaces: NetVSC, [MANA](https://aka.ms/ManaFAQ1) |
 | Accelerators | None |  |
 
 # [Ebdsv6-series](#tab/ebdsv6)
-The Ebdsv6-series virtual machines run on the fifth Generation Intel® Xeon® Platinum 8573C (Emerald Rapids) processor and deliver higher remote storage performance compared to the previous generation. The Ebdsv6-series is ideal for storage throughput intensive workloads. These virtual machines offer up to 800,000 IOPS and 14,000 MBps of remote disk storage performance. Additionally, the Ebsv6 VM series offer up to 192vCPU and 1,832 GiB of RAM providing larger processing power to consolidate workloads. Refer to the Premium SSD, Premium SSD v2, and Ultra Disks to attain published disk performance.
+The Ebdsv6-series virtual machines run on the fifth Generation Intel® Xeon® Platinum 8573C (Emerald Rapids) processor and deliver higher remote storage performance compared to the previous generation. The Ebdsv6-series is ideal for storage throughput intensive workloads. These virtual machines offer up to 800,000 IOPS and 12,500 MBps of remote disk storage performance. Additionally, the Ebdsv6 VM series offer up to 192vCPU and 1,832 GiB of RAM providing larger processing power to consolidate workloads. Refer to the Premium SSD, Premium SSD v2, and Ultra Disks to attain published disk performance.
 
 [View the full Ebdsv6-series page](ebdsv6-series).
 
@@ -118,7 +158,7 @@ The Ebdsv6-series virtual machines run on the fifth Generation Intel® Xeon® Pl
 | Processor | 2 - 192 vCPUs | Intel Xeon Platinum 8573C (Emerald Rapids) [x86-64] |
 | Memory | 16 - 1832 GiB |  |
 | Local Storage | 1 - 6 Disks | 110 - 1760 GiB  37500 - 3600000 IOPS 180 - 17280 MBps |
-| Remote Storage | 8 - 64 Disks | 8800 - 800000 IOPS  253 - 14000 MBps |
+| Remote Storage | 8 - 64 Disks | 8800 - 800000 IOPS  253 - 12500 MBps |
 | Network | 2 - 8 NICs | 12500 - 200000 Mbps Interfaces: NetVSC, [MANA](https://aka.ms/ManaFAQ1) |
 | Accelerators | None |  |
 

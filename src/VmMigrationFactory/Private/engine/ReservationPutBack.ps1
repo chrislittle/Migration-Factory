@@ -11,8 +11,12 @@
 # starts had no capacity guarantee.
 #
 # So PRECHECK records the group (captured.vmConfig.capacityReservationGroupId,
-# vm-state v24; $null is "in no group"), and the put-back takes it from the
-# FIRST capture, as it takes the size (ROLLBACK-RETRY-CAPTURE-1).
+# vm-state v24; $null is "in no group"). The put-back takes the group of THIS
+# attempt's capture when this migration did not make it - a retry is a
+# complete new run (SAFETY-RETRY-1), and a group chosen between two attempts is
+# not a change of the product. Else the group an earlier rollback could not
+# put the machine back in, else the FIRST capture's group
+# (Get-VmfPutBackReservationGroup, CRG-ROLLBACK-ATTEMPT-GROUP-1).
 #   - A group the machine was not in before the move is left, BEFORE the size
 #     changes - the product's group, or one somebody joined during the move.
 #   - The group it was in is put back AFTER the size is back: Azure checks the
@@ -50,6 +54,88 @@ function Get-VmfCapturedReservationGroup {
     if (-not (Test-VmfRecordHasField -Object $Capture -Name 'capacityReservationGroupId')) { return @{ Known = $false; GroupId = $null } }
     $id = [string](Get-VmfRecordField -Object $Capture -Name 'capacityReservationGroupId')
     @{ Known = $true; GroupId = $(if ($id) { $id } else { $null }) }
+}
+
+function Get-VmfOwedReservationGroup {
+    <#
+    .SYNOPSIS
+        CRG-ROLLBACK-ATTEMPT-GROUP-1 review: the capacity reservation group an
+        earlier rollback did not return the machine to, and that no put-back
+        has tried since. Pure.
+    .DESCRIPTION
+        rollback.reservationGroupNotBack: Azure refused the join, the rollback
+        said so and finished, and the machine runs in no group. The record
+        stays across attempts (the rollback record is kept until the next
+        rollback writes it), and every write of the record that does not try
+        the group carries it on (Set-VmfRollbackRecord), so a later attempt
+        still owes the group. A restore after that rollback
+        (restore.restoredUtc later than rollback.rolledBackUtc) made its own
+        decision about the group, so the record no longer stands. A group of
+        this migration is never owed.
+    .OUTPUTS
+        @{ groupId; why }, or $null.
+    #>
+    [CmdletBinding()]
+    param(
+        [Parameter()][AllowNull()]$Doc,
+        [Parameter()][AllowEmptyCollection()][AllowNull()][string[]]$ProductGroupIds = @()
+    )
+    $f = { param($o, $n) Get-VmfRecordField -Object $o -Name $n }
+    $rb = & $f $Doc 'rollback'
+    $miss = & $f $rb 'reservationGroupNotBack'
+    $groupId = [string](& $f $miss 'groupId')
+    if (-not $groupId) { return $null }
+    $utc = { param($v) if ($v -is [datetime]) { $v.ToUniversalTime() } elseif ($v) { [datetime]::Parse([string]$v, $null, [System.Globalization.DateTimeStyles]'AdjustToUniversal, AssumeUniversal') } else { $null } }
+    $restoredAt = & $utc (& $f (& $f $Doc 'restore') 'restoredUtc')
+    $rolledBackAt = & $utc (& $f $rb 'rolledBackUtc')
+    if ($restoredAt -and (-not $rolledBackAt -or $restoredAt -gt $rolledBackAt)) { return $null }
+    if (@(@($ProductGroupIds) | Where-Object { $_ -and [string]::Equals([string]$_, $groupId, [System.StringComparison]::OrdinalIgnoreCase) }).Count) { return $null }
+    [ordered]@{ groupId = $groupId; why = [string](& $f $miss 'why') }
+}
+
+function Get-VmfPutBackReservationGroup {
+    <#
+    .SYNOPSIS
+        CRG-ROLLBACK-ATTEMPT-GROUP-1: the capacity reservation group a
+        rollback or a restore of this attempt returns the machine to. Pure.
+    .DESCRIPTION
+        In this order:
+          1. The group of THIS attempt's capture (captured.vmConfig), when it
+             is a group this migration did not make. A retry from the first
+             step is a complete new run (SAFETY-RETRY-1), so a put-back of
+             attempt N returns the machine to the group it was in at the start
+             of attempt N - a group the machine joined between two attempts
+             included.
+          2. Else the group an earlier rollback did not return the machine to
+             (Get-VmfOwedReservationGroup): Azure refused that join, so the
+             attempt started in no group, and the put-back tries the group
+             again.
+          3. Else the first capture's group, "in no group" included - as
+             before this rule, so a machine is never worse off: a machine in
+             no group at this attempt, or in a group of this migration, goes
+             back to the group it was in before the first change.
+        The size, the controller and the disk types still come from the first
+        capture (ROLLBACK-RETRY-CAPTURE-1): the product changed those, and a
+        group chosen between attempts is not a change of the product.
+    .PARAMETER ProductGroupIds
+        Get-VmfProductReservationGroupIds of the run.
+    .OUTPUTS
+        @{ Known; GroupId }, as Get-VmfCapturedReservationGroup gives it.
+    #>
+    [CmdletBinding()]
+    [OutputType([hashtable])]
+    param(
+        [Parameter()][AllowNull()]$Doc,
+        [Parameter()][AllowEmptyCollection()][AllowNull()][string[]]$ProductGroupIds = @()
+    )
+    $attempt = Get-VmfCapturedReservationGroup -Capture (Get-VmfRecordField -Object (Get-VmfRecordField -Object $Doc -Name 'captured') -Name 'vmConfig')
+    if ($attempt.Known -and $attempt.GroupId) {
+        $ours = @(@($ProductGroupIds) | Where-Object { $_ -and [string]::Equals([string]$_, [string]$attempt.GroupId, [System.StringComparison]::OrdinalIgnoreCase) })
+        if (-not $ours.Count) { return $attempt }
+    }
+    $owed = Get-VmfOwedReservationGroup -Doc $Doc -ProductGroupIds $ProductGroupIds
+    if ($owed) { return @{ Known = $true; GroupId = [string]$owed.groupId } }
+    Get-VmfCapturedReservationGroup -Capture (Get-VmfOriginalCapture -Doc $Doc)
 }
 
 function Get-VmfProductReservationGroupIds {
@@ -298,68 +384,45 @@ function Test-VmfReservationJoinPermissions {
         not see a group in another resource group. A group of this migration is
         not asked about: the product never puts a machine back in it.
 
-        Two groups can be asked about, each once:
-          - the group a put-back returns the machine to: the group of the
-            FIRST capture (Get-VmfPutBackCapture, ROLLBACK-CRG-1);
-          - CRG-JOIN-ATTEMPT-1: the group the move acts in: the group of THIS
-            attempt's capture (Get-VmfOwnReservationGroup over
-            captured.vmConfig, as CRG-MOVE-1 reads it). On a first attempt it
-            is the same group. On a retry it can be another: a machine in no
-            group at first, which its owner then put in a group of their own,
-            was asked about no group and moved in the new one.
-        Every group with a missing action is named in ONE stop, so one round of
-        grants fixes the machine.
+        One group is asked about: the group a put-back returns the machine to
+        (Get-VmfPutBackCapture with the groups of this migration). Since
+        CRG-ROLLBACK-ATTEMPT-GROUP-1 (2026-11-21) that is the group of THIS
+        attempt's capture whenever this migration did not make it - the group
+        the move acts in too (CRG-MOVE-1). So CRG-JOIN-ATTEMPT-1's second
+        group - this attempt's, when it differed from the first capture's - is
+        the same group, and it is asked about once. With no such group, it is
+        the group an earlier rollback still owes, or the first capture's.
     #>
     [CmdletBinding()]
     param(
         [Parameter(Mandatory)]$Context,
         # RESTORE-PERM-CHECK-1: 'restore' when Restore this machine asks - the
-        # same groups, with the words of the restore.
+        # same group, with the words of the restore.
         [Parameter()][ValidateSet('move', 'restore')][string]$For = 'move'
     )
     $doc = Read-VmfStateDoc -RunPath $Context.RunPath -VmId $Context.VmId
     $productGroupIds = @(Get-VmfProductReservationGroupIds -RunPath $Context.RunPath)
-    $same = { param($a, $b) [string]::Equals([string]$a, [string]$b, [System.StringComparison]::OrdinalIgnoreCase) }
-    $putBackGroup = Get-VmfOwnReservationGroup -Capture (Get-VmfPutBackCapture -Doc $doc) -ProductGroupIds $productGroupIds
-    $attemptGroup = Get-VmfOwnReservationGroup -Capture (Get-VmfRecordField -Object (Get-VmfRecordField -Object $doc -Name 'captured') -Name 'vmConfig') -ProductGroupIds $productGroupIds
-    $groups = [System.Collections.Generic.List[hashtable]]::new()
-    if ($putBackGroup) { $groups.Add(@{ Id = [string]$putBackGroup; Role = 'putBack' }) }
-    if ($attemptGroup -and -not ($putBackGroup -and (& $same $putBackGroup $attemptGroup))) { $groups.Add(@{ Id = [string]$attemptGroup; Role = 'move' }) }
-    if (-not $groups.Count) { return $null }
+    $groupId = Get-VmfOwnReservationGroup -Capture (Get-VmfPutBackCapture -Doc $doc -ProductGroupIds $productGroupIds) -ProductGroupIds $productGroupIds
+    if (-not $groupId) { return $null }
 
-    $short = [System.Collections.Generic.List[hashtable]]::new()
-    foreach ($g in $groups) {
-        $groupId = $g.Id
-        $perms = Invoke-VmfAzOperation -Name 'reservationPermissions' -RunPath $Context.RunPath -VmId $Context.VmId -Operation {
-            Get-VmfEffectivePermissions -Scope $groupId
-        }
-        $missing = @(Get-VmfMissingActions -RequiredActions @($script:VmfReservationJoinActions) -Permissions $perms)
-        if ($missing.Count) { $short.Add(@{ Id = $groupId; Role = $g.Role; Missing = $missing }) }
+    $perms = Invoke-VmfAzOperation -Name 'reservationPermissions' -RunPath $Context.RunPath -VmId $Context.VmId -Operation {
+        Get-VmfEffectivePermissions -Scope $groupId
     }
-    if (-not $short.Count) { return $null }
+    $missing = @(Get-VmfMissingActions -RequiredActions @($script:VmfReservationJoinActions) -Permissions $perms)
+    if (-not $missing.Count) { return $null }
 
-    $count = @($short | ForEach-Object { $_.Missing }).Count
-    $names = @($short | ForEach-Object { "the capacity reservation group '$(Get-VmfResourceNameFromId $_.Id)'" }) -join ' and on '
-    $why = @(foreach ($s in $short) {
-            $on = @($s.Missing | ForEach-Object { "$_ on $($s.Id)" }) -join '; '
-            $name = Get-VmfResourceNameFromId $s.Id
-            if ($For -eq 'restore') {
-                # A restore updates the machine in the group it is in, and the
-                # first copy returns it to the group it was in before the move.
-                if ($short.Count -gt 1) { "The restore keeps this machine in the capacity reservation group '$name', or returns it to that group. Azure checks this permission on that group: $on." }
-                else { "The restore keeps this machine in the capacity reservation group, or returns it to the group. Azure checks this permission on the group: $on." }
-            }
-            elseif ($s.Role -eq 'move') {
-                "The move keeps this machine in the group '$name', and Azure can check this permission on the group when the product updates the machine: $on."
-            }
-            elseif ($short.Count -gt 1) {
-                "A rollback or a restore returns this machine to the group '$name', and Azure checks this permission on the group: $on."
-            }
-            else {
-                "A rollback or a restore returns this machine to the group, and Azure checks this permission on the group: $on."
-            }
-        }) -join ' '
-    $where = if ($short.Count -gt 1) { 'on each capacity reservation group that this stop names' } else { 'on the capacity reservation group' }
+    $count = $missing.Count
+    $on = @($missing | ForEach-Object { "$_ on $groupId" }) -join '; '
+    $why = if ($For -eq 'restore') {
+        # A restore updates the machine in the group it is in, and the first
+        # copy returns it to the group it was in before the move.
+        "The restore keeps this machine in the capacity reservation group, or returns it to the group. Azure checks this permission on the group: $on."
+    }
+    else {
+        "A rollback or a restore returns this machine to the group, and Azure checks this permission on the group: $on."
+    }
+    $where = 'on the capacity reservation group'
+    $names = "the capacity reservation group '$(Get-VmfResourceNameFromId $groupId)'"
     @{
         Next   = 'NEEDS_DECISION'
         # STOP-TEXT-SPECIFIC-1: its own reason, and the words lead with the group.

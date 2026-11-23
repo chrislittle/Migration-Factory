@@ -263,7 +263,7 @@ Describe 'RETIRE-SCOPE-1: the target advice gives no option' {
         }
         $advice.assessmentHash = 'h'
         ($advice | ConvertTo-Json -Depth 30) | Test-Json -SchemaFile (Join-Path $script:repoRoot 'schemas' 'target-advice.schema.json') | Should -BeTrue
-        $advice.schemaVersion | Should -Be 33 -Because 'SIZE-FALLTHROUGH-NOTE-1 made it 29 (sizesNotTaken); REBUILD-REMOVE-PLAN-1 made it 28 (no rebuild); AN-MANA-DRIVER-RULE-1 made it 27 (the reason no-mana-driver); DRIFT-11-OTHER-OPTIONS-1 made it 26 (the reason an-required-no-mana); NO-PLAN-SCOPE-1 made it 25 (the reason purchase-plan-out-of-scope); TEMP-DISK-PREVIEW-1 made it 24 (preview); REBUILD-PICKER-1 made it 23; GEN1-ROUTE-GONE-1 made it 22; IDENTITY-LOSS-1 made it 21; v18 (ADVISE-AN-1) added keptOn; v19 (DETECT-PATTERNS-1) four workload reasons outside the scope of this tool; v20 (HDD-OS-1) the OS disk type of each machine'
+        $advice.schemaVersion | Should -Be 34 -Because 'SIZE-FALLTHROUGH-NOTE-1 made it 29 (sizesNotTaken); REBUILD-REMOVE-PLAN-1 made it 28 (no rebuild); AN-MANA-DRIVER-RULE-1 made it 27 (the reason no-mana-driver); DRIFT-11-OTHER-OPTIONS-1 made it 26 (the reason an-required-no-mana); NO-PLAN-SCOPE-1 made it 25 (the reason purchase-plan-out-of-scope); TEMP-DISK-PREVIEW-1 made it 24 (preview); REBUILD-PICKER-1 made it 23; GEN1-ROUTE-GONE-1 made it 22; IDENTITY-LOSS-1 made it 21; v18 (ADVISE-AN-1) added keptOn; v19 (DETECT-PATTERNS-1) four workload reasons outside the scope of this tool; v20 (HDD-OS-1) the OS disk type of each machine'
     }
 }
 

@@ -52,9 +52,18 @@ param(
     [Parameter()][string]$BaseSuffix,
     [Parameter()][string]$ApiDisplayName = 'vmf-api',
     [Parameter()][string]$DashboardDisplayName = 'vmf-dashboard',
-    # Empty means uniqueName equals displayName, which is how every install made
-    # before 2026-09-09 is left alone. See identity.bicep's registrationKey.
+    # Empty means "decide it here" (Resolve-VmfRegistrationKey): a new random
+    # key, or a stop when a registration with either name exists. The template
+    # never receives an empty key from this script.
     [Parameter()][string]$RegistrationKey = '',
+    # INSTALL-PURGE-DELETED-1: the key was made in this run (preprovision's
+    # Source 'new'), so no deleted registration can hold its unique names and
+    # the deleted items are not read.
+    [Parameter()][switch]$RegistrationKeyIsNew,
+    # The application IDs recorded by the last install of this environment.
+    # A live registration with its recorded ID means nothing to purge.
+    [Parameter()][string]$RecordedApiAppId = '',
+    [Parameter()][string]$RecordedDashboardAppId = '',
     [Parameter()][switch]$WhatIf
 )
 $ErrorActionPreference = 'Stop'
@@ -62,6 +71,20 @@ $ErrorActionPreference = 'Stop'
 . (Join-Path $PSScriptRoot 'Resolve-VmfRegistration.ps1')
 
 $suffix = Resolve-VmfSuffix -ResourceGroup $ResourceGroup -BaseSuffix $BaseSuffix
+
+# INSTALL-ADOPT-OWNER-1: an EMPTY key made the uniqueName equal to the display
+# name, which any member of the tenant can make first - and the template
+# upserts by uniqueName, so it wrote this product's roles into their
+# registration. A run with no key now takes the rule the azd install takes:
+# a new random key when no registration has either name, else a stop before
+# any change.
+if (-not $RegistrationKey) {
+    $registration = Resolve-VmfRegistrationKey -RecordedKey $RegistrationKey `
+        -ApiDisplayName $ApiDisplayName -DashboardDisplayName $DashboardDisplayName
+    $RegistrationKey = $registration.Key
+    $RegistrationKeyIsNew = ($registration.Source -eq 'new')
+    Write-Host "   registration key $RegistrationKey ($($registration.Source)). Give -RegistrationKey $RegistrationKey to every later run of this script."
+}
 
 # The live posture is read from the registration THIS deployment updates,
 # found by its exact name and then by its application id - never by the first
@@ -77,53 +100,30 @@ if ($apiApp -and -not $apiSp) {
                    'deployment uses. Stop now if the gate was closed, and run this as an account that may read ' +
                    'service principals.')
 }
-# A REMOVED INSTALL LEAVES ITS NAMES BEHIND FOR 30 DAYS, and that is what makes
-# `azd down` followed by `azd up` fail. MEASURED 2026-09-09.
-#
-# azd down deletes both registrations. Entra SOFT-deletes an application and
-# holds its displayName for thirty days, and the Graph extension upserts by
-# uniqueName - so the next install collides with the tombstone and the
-# deployment fails with:
+# A REMOVED INSTALL LEAVES ITS UNIQUE NAMES BEHIND FOR 30 DAYS. MEASURED
+# 2026-09-09: Entra SOFT-deletes an application and keeps its uniqueName for
+# thirty days, and the Graph extension upserts by uniqueName - so a deployment
+# that creates a uniqueName a deleted registration holds fails with:
 #
 #   InvalidDeployment ... The language expression property 'appId' doesn't exist
 #
-# which names appId, never the deleted object. Nobody would work that out.
-# PROVEN both ways: the same deployment, the same names, tombstones present
-# fails and tombstones purged succeeds.
+# which names appId, never the deleted object. The same measurement proved the
+# display name is free: only the uniqueName collides.
 #
-# So the tombstones are cleared here, and ONLY ones that carry the exact names
-# this install is about to create. Those names are env-suffixed and belong to
-# this product, so a collision with anything else is not credible - but the
-# match is exact rather than a prefix, because permanently deleting the wrong
-# directory object is not recoverable.
-#
-# A FAILURE TO PURGE STOPS THE INSTALL rather than letting it reach the
-# confusing error. Purging needs directory rights the installer may not hold,
-# and a person who cannot purge needs the command, not a mystery.
-foreach ($wanted in @($ApiDisplayName, $DashboardDisplayName)) {
-    $deleted = az rest --method GET --url "https://graph.microsoft.com/v1.0/directory/deletedItems/microsoft.graph.application?`$select=id,displayName" -o json 2>$null |
-        ConvertFrom-Json
-    $global:LASTEXITCODE = 0
-    $tombstones = @($deleted.value | Where-Object { $_.displayName -eq $wanted })
-    foreach ($t in $tombstones) {
-        Write-Host "   removing a deleted registration still holding the name '$wanted'"
-        az rest --method DELETE --url "https://graph.microsoft.com/v1.0/directory/deletedItems/$($t.id)" --output none 2>$null
-        if ($LASTEXITCODE -ne 0) {
-            $global:LASTEXITCODE = 0
-            throw @"
-A removed install left the name '$wanted' on a deleted registration, and this
-account may not remove it permanently. Entra holds the name for 30 days, and
-the install cannot create the registration until it is gone.
-
-Ask a directory administrator to run:
-
-  az rest --method DELETE --url https://graph.microsoft.com/v1.0/directory/deletedItems/$($t.id)
-
-Or install with a different environment name, which gives every registration a
-different name.
-"@
-        }
-    }
+# INSTALL-PURGE-DELETED-1: so the purge takes ONLY a deleted registration whose
+# uniqueName is exactly the one this run creates ('<display name>-<key>'), never
+# one matched by display name - that permanently deleted a deleted registration
+# somebody else made. A new key cannot be held by any deleted registration, so
+# nothing is read for it. A recorded key is read (a registration deleted by hand
+# while the key stayed recorded). A failed read or purge STOPS the install with
+# the command for a directory administrator (Clear-VmfDeletedRegistration).
+# A what-if run removes nothing: a permanent delete is not a preview.
+if ($WhatIf) {
+    Write-Host '   what-if: no deleted registration is removed'
+}
+else {
+    Clear-VmfDeletedRegistration -ApiDisplayName $ApiDisplayName -DashboardDisplayName $DashboardDisplayName -RegistrationKey $RegistrationKey -NewKey:$RegistrationKeyIsNew `
+        -RecordedApiAppId $RecordedApiAppId -RecordedDashboardAppId $RecordedDashboardAppId
 }
 
 $gateIsClosed = if ($apiSp) { [bool]$apiSp.appRoleAssignmentRequired } else { $false }

@@ -41,6 +41,10 @@ Describe 'SCOPE-SUBS-GUID-1: the web service checks scopeSubs before it starts a
         $script:operator = ConvertFrom-VmfClientPrincipal -Header (SsgPrincipalHeader)
         $script:ssgCalls = [System.Collections.Generic.List[string]]::new()
         $script:ssgStartBody = $null
+        # ASSESS-APPROVAL-HASH-1: the scan start asks Azure whether a scan of the
+        # run runs (Test-VmfFacadeEngineRunning); none does.
+        
+Mock -ModuleName VmMigrationFactory Invoke-AzRestMethod { [pscustomobject]@{ StatusCode = 200; Content = '{"value":[]}' } }
         Mock -ModuleName FacadeCore Invoke-AzRestMethod {
             $script:ssgCalls.Add([string]$Method)
             if ($Method -eq 'GET') {
@@ -213,6 +217,10 @@ Describe 'SCOPE-SUBS-GUID-1: the scan route passes every scopeSubs it is sent' {
         New-Item -ItemType Directory -Path $script:ssgStore -Force | Out-Null
         $global:VmfSsgCalls = [System.Collections.Generic.List[string]]::new()
         $global:VmfSsgStartBody = $null
+        # ASSESS-APPROVAL-HASH-1: the scan start asks Azure whether a scan of the
+        # run runs (Test-VmfFacadeEngineRunning); none does.
+        
+Mock -ModuleName VmMigrationFactory Invoke-AzRestMethod { [pscustomobject]@{ StatusCode = 200; Content = '{"value":[]}' } }
         Mock -ModuleName FacadeCore Invoke-AzRestMethod {
             $global:VmfSsgCalls.Add([string]$Method)
             if ($Method -eq 'GET') {

@@ -88,7 +88,8 @@ The run store is a storage account in the product's resource group. It keeps the
 | Data | How long it stays | Who can read it |
 |---|---|---|
 | The records of a migration or an assessment | Until a person deletes it on the dashboard, or removes the product | The service and the engine. A person with a role reads them through the service. |
-| The kept record of each migration | 90 days, also after a person deletes the migration | The service and the engine. An administrator downloads it through the service. |
+| The kept record of each migration | 90 days, also after a person deletes the migration | The service and the engine. Only an administrator reads it through the service. |
+| The machine claims, and the log of who deleted each migration | A claim until its migration frees the machine. The log until you remove the product. | The service and the engine. Only an administrator reads them through the service. |
 | The logs of the engine | The install sets the Log Analytics workspace of the product to keep data 30 days. | A person with an Azure role on the workspace |
 | The telemetry of the service | The Log Analytics workspace of the product keeps the tables of Application Insights 90 days. Microsoft sets 90 days on these tables by default. The install also sets 90 days on the Application Insights resource. | A person with an Azure role on the workspace |
 | The safety copies | Until the retention of the wave ends after the machine is migrated | A person with an Azure role on the resource group |

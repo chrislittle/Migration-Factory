@@ -116,6 +116,13 @@
     sizesFixPermission: 'Azure refused the read. On the Admin page, give the product Assess access to this subscription. Its {role} role holds {action}. Then start a new assessment.',
     sizesFixNotFound: 'Azure cannot find this subscription. Make sure that it exists and that the product has access to it on the Admin page. Then start a new assessment.',
     sizesFixOther: 'The product tried the read again if the failure was temporary. Read what Azure said and correct the cause. Then start a new assessment.',
+    // LINUX-VERSION-OVERFLOW-1: a machine whose facts the scan could not
+    // read - which, and what the product said. The report says the same
+    // (ConvertTo-VmfNotReadReportHtml).
+    couldNotReadWhyMachine: 'The scan finished without these. A machine in this list is held until a new assessment reads it.',
+    machineWhere: 'Machine {name}. The scan could not read the facts of this machine, so the machine is held.',
+    machineSaid: 'The product said: {said}',
+    machineFix: 'Start a new assessment.',
     // DETECT-PATTERNS-1: the warnings, and the workload type of each machine.
     checkFirst: 'What to check before the move',
     checkFirstWhy: 'These machines can still move. Check the thing that each finding names before the migration starts.',
@@ -541,14 +548,24 @@
       `<div style="margin-top:6px">${esc(fix)}</div></div></div>`;
   }
 
+  function machineNotReadHtml(x) {
+    const name = String(x.scope ?? '').split('/').pop();
+    const said = String(x.detail ?? '');
+    return `<div class="vmf-finding"><div class="vmf-finding-body"><b>${esc(T.machineWhere.replace('{name}', name))}</b>` +
+      (said ? `<div style="margin-top:6px">${esc(T.machineSaid.replace('{said}', said))}</div>` : '') +
+      `<div style="margin-top:6px">${esc(T.machineFix)}</div></div></div>`;
+  }
+
   function notReadHtml(notRead) {
     const items = (notRead ?? []).filter(x => x && x.subject);
     if (!items.length) { return ''; }
     ensureStyles();
     const held = items.some(x => String(x.subject) === 'sizes');
+    const heldMachine = items.some(x => String(x.subject) === 'machine');
     const rows = items.map((x) => {
       const key = String(x.subject);
       if (key === 'sizes') { return sizesNotReadHtml(x); }
+      if (key === 'machine') { return machineNotReadHtml(x); }
       // hasOwnProperty, not a bare lookup: a subject called `constructor` or
       // `__proto__` would otherwise return something from the prototype and
       // render a function into the page.
@@ -558,7 +575,7 @@
       return `<div class="vmf-finding"><div class="vmf-finding-body">${esc(words)}</div></div>`;
     }).join('');
     return `<h4 class="vmf-finding-heading">${esc(T.couldNotRead)}</h4>` +
-      `<p class="muted" style="margin:0 0 8px">${esc(held ? T.couldNotReadWhyHeld : T.couldNotReadWhy)}</p>${rows}`;
+      `<p class="muted" style="margin:0 0 8px">${esc(held ? T.couldNotReadWhyHeld : heldMachine ? T.couldNotReadWhyMachine : T.couldNotReadWhy)}</p>${rows}`;
   }
 
   /* THE SIDE PANEL, shared, matching the machine breakout on the migrations

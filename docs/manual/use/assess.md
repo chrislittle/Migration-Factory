@@ -36,6 +36,8 @@ The page says **Looking for machines.** When the product has found the machines,
 
 When the scan stops before it completes, the page says **The scan stopped.** and gives the reason. To start the scan again, select **Back**, and then select **Start looking**. If the job of the scan stops and records no reason, the product finds this in approximately five minutes. The page then gives the status of the job execution in Azure, for example **Failed**.
 
+One assessment has one scan. While a scan of the assessment runs, the service refuses a second scan of it. If two scans of one assessment run, the product keeps the scan that completes first. The other scan stops and saves nothing.
+
 ## What the assessment does
 
 It reads every virtual machine in the place you chose. It records its size, its generation, its operating system, its disks, its network interfaces, its image and its identity. It never runs anything inside a machine at this stage. For each machine it applies a set of rules and puts the machine in one of five groups:

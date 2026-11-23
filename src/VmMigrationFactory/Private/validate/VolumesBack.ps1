@@ -91,10 +91,16 @@ function Get-VmfLvmDevicesFileFact {
     if ($detail -eq 'not in use') { $fact.State = 'notInUse' }
     elseif ($detail -eq 'LVM is not installed') { $fact.State = 'noLvm' }
     elseif ($detail -match '^in use \((.*)\): (\d+) physical volume\(s\), (every one found|(\d+) not found)') {
-        $fact.State = 'inUse'
-        $fact.Path = $Matches[1]
-        $fact.Total = [int]$Matches[2]
-        $fact.NotFound = if ($Matches[4]) { [int]$Matches[4] } else { 0 }
+        # LINUX-VERSION-OVERFLOW-1: a count that does not fit leaves the
+        # fact unknown, as a line this does not read does.
+        $total = ConvertTo-VmfBoundedNumber -Text $Matches[2]
+        $notFound = if ($Matches[4]) { ConvertTo-VmfBoundedNumber -Text $Matches[4] } else { 0 }
+        if ($null -ne $total -and $null -ne $notFound) {
+            $fact.State = 'inUse'
+            $fact.Path = $Matches[1]
+            $fact.Total = $total
+            $fact.NotFound = $notFound
+        }
     }
     $fact
 }
@@ -126,7 +132,12 @@ function Get-VmfDataDiskStates {
         if (-not $m.Success) { continue }
         $key = $m.Groups['key'].Value.ToLowerInvariant()
         if ($key -notmatch $script:VmfDiskKeyPattern) { continue }
-        $rows.Add([pscustomobject]@{ Key = $key; Number = [int]$m.Groups['n'].Value; Offline = ($m.Groups['on'].Value -eq 'offline'); ReadOnly = ($m.Groups['rw'].Value -eq 'readonly') })
+        # LINUX-VERSION-OVERFLOW-1: a disk number that does not fit is a part
+        # this does not read, as a part with another shape is - so the disk
+        # is left as it is.
+        $number = ConvertTo-VmfBoundedNumber -Text $m.Groups['n'].Value
+        if ($null -eq $number) { continue }
+        $rows.Add([pscustomobject]@{ Key = $key; Number = $number; Offline = ($m.Groups['on'].Value -eq 'offline'); ReadOnly = ($m.Groups['rw'].Value -eq 'readonly') })
     }
     , $rows.ToArray()
 }

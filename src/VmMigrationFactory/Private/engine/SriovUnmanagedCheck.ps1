@@ -49,8 +49,11 @@ function Test-VmfCloudInitAppliesSriov {
     param([Parameter()][AllowEmptyString()][AllowNull()][string]$Version)
     $m = [regex]::Match([string]$Version, '^(\d+)\.(\d+)(\.\d+)?$')
     if (-not $m.Success) { return $false }
-    $major = [int]$m.Groups[1].Value
-    $minor = [int]$m.Groups[2].Value
+    # LINUX-VERSION-OVERFLOW-1: a part that does not fit is a version it
+    # cannot read, even when its major alone is above 23.
+    $major = ConvertTo-VmfBoundedNumber -Text $m.Groups[1].Value
+    $minor = ConvertTo-VmfBoundedNumber -Text $m.Groups[2].Value
+    if ($null -eq $major -or $null -eq $minor) { return $false }
     ($major -gt 23) -or ($major -eq 23 -and $minor -ge 2)
 }
 

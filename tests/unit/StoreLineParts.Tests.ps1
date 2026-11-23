@@ -209,7 +209,7 @@ Describe 'EVENTLOG-1: a log that fills carries on in the next part' {
             $rp = 'azblob://acct/cont/run-deleted'
             Initialize-VmfStore -RunPath $rp
             1..5 | ForEach-Object { Add-VmfStoreLine -RunPath $rp -RelPath 'logs/events.jsonl' -Line "{`"n`":$_}" }
-            Remove-VmfStorePrefix -RunPath $rp -Confirm:$false | Out-Null
+            Remove-VmfStorePrefix -RunPath $rp -Kind run -Confirm:$false | Out-Null
             Add-VmfStoreLine -RunPath $rp -RelPath 'logs/events.jsonl' -Line '{"n":"after"}'
             Read-VmfStoreLines -RunPath $rp -RelPath 'logs/events.jsonl'
         }

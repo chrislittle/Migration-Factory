@@ -668,7 +668,19 @@ Describe 'DISCARD-ENGINE-1: the service checks the request and starts the engine
         # RESTORE-EARLIER-DELETE-1: Delete these disks writes restore.earlierDisksDeleted into the record.
         @{ Busy = 'deleteearlier'; Copies = 'delete' }, @{ Busy = 'deleteearlier'; Copies = 'keep' }
         # MADE-DISK-DELETE-1: Delete these disks now marks each disk it deletes in the record.
-        @{ Busy = 'deletemade'; Copies = 'delete' }, @{ Busy = 'deletemade'; Copies = 'keep' }) {
+        @{ Busy = 'deletemade'; Copies = 'delete' }, @{ Busy = 'deletemade'; Copies = 'keep' }
+        # DISCARD-BUSY-JOBS-1: every other job that writes the records of this
+        # migration. A reservation job makes a reservation that bills, and a
+        # delete under it removes the only record of it. A power return
+        # changes a machine and writes its record.
+        @{ Busy = 'finish'; Copies = 'delete' }, @{ Busy = 'finish'; Copies = 'keep' }
+        @{ Busy = 'checkvolumes'; Copies = 'delete' }, @{ Busy = 'checkvolumes'; Copies = 'keep' }
+        @{ Busy = 'reserve'; Copies = 'delete' }, @{ Busy = 'reserve'; Copies = 'keep' }
+        @{ Busy = 'powerback'; Copies = 'delete' }, @{ Busy = 'powerback'; Copies = 'keep' }
+        @{ Busy = 'release'; Copies = 'delete' }, @{ Busy = 'release'; Copies = 'keep' }
+        @{ Busy = 'quota'; Copies = 'delete' }, @{ Busy = 'quota'; Copies = 'keep' }
+        @{ Busy = 'quotacheck'; Copies = 'delete' }, @{ Busy = 'quotacheck'; Copies = 'keep' }
+        @{ Busy = 'retention'; Copies = 'delete' }, @{ Busy = 'retention'; Copies = 'keep' }) {
         $script:fx = DeRun
         $global:DeBusy = $Busy
         Mock -ModuleName FacadeCore Test-VmfFacadeEngineRunning { (@($Operation) -contains $global:DeBusy) -and $RunId -eq 'run-x' }
@@ -679,6 +691,19 @@ Describe 'DISCARD-ENGINE-1: the service checks the request and starts the engine
             Should -Throw '400: The engine works on this migration now. Delete it when that job ends.'
         $global:DeStarts.Count | Should -Be 0
         Test-Path (Join-Path $script:fx.Run 'plan.json') | Should -BeTrue
+        Remove-Variable -Name DeBusy -Scope Global -ErrorAction SilentlyContinue
+    }
+    It 'DISCARD-BUSY-JOBS-1: a <Busy> job of an assessment does not hold the delete of a migration (<Copies>)' -ForEach @(
+        @{ Busy = 'assess'; Copies = 'delete' }, @{ Busy = 'assess'; Copies = 'keep' }
+        @{ Busy = 'advise'; Copies = 'delete' }, @{ Busy = 'advise'; Copies = 'keep' }
+        @{ Busy = 'plan'; Copies = 'delete' }, @{ Busy = 'plan'; Copies = 'keep' }) {
+        # These jobs run on an assessment. Asked for, they would refuse a
+        # delete that no job of this migration holds.
+        $script:fx = DeRun
+        $global:DeBusy = $Busy
+        Mock -ModuleName FacadeCore Test-VmfFacadeEngineRunning { (@($Operation) -contains $global:DeBusy) -and $RunId -eq 'run-x' }
+        $r = Invoke-VmfFacadeDiscardRun -Principal $script:operator -StorePath $script:fx.Run -RunId 'run-x' -Note 'n' -DeleteSafetyCopies:($Copies -eq 'delete')
+        if ($Copies -eq 'delete') { $global:DeStarts.Count | Should -Be 1 } else { $r.Removed | Should -BeTrue }
         Remove-Variable -Name DeBusy -Scope Global -ErrorAction SilentlyContinue
     }
     It 'S3: an engine that does not start ends the delete in the log, so nothing says deleting for an hour' {

@@ -200,7 +200,7 @@ var acrLoginServer = '${acrName}${environment().suffixes.acrLoginServer}'
 // Same reason: the store grants the facade's identity access, so the facade
 // cannot also reference the store module without forming a cycle.
 
-module logs 'br/public:avm/res/operational-insights/workspace:0.16.1' = {
+module logs 'br/public:avm/res/operational-insights/workspace:0.16.2' = {
   name: 'vmf-logs-deploy'
   params: {
     name: logsName
@@ -302,7 +302,7 @@ module publishIdentity 'br/public:avm/res/managed-identity/user-assigned-identit
   }
 }
 
-module store 'br/public:avm/res/storage/storage-account:0.33.1' = {
+module store 'br/public:avm/res/storage/storage-account:0.33.2' = {
   name: 'vmf-store-deploy'
   params: {
     name: storeName
@@ -570,7 +570,7 @@ module perimeter 'br/public:avm/res/network/network-security-perimeter:0.1.4' = 
   dependsOn: [ store ]
 }
 
-module acr 'br/public:avm/res/container-registry/registry:0.13.1' = {
+module acr 'br/public:avm/res/container-registry/registry:0.13.2' = {
   name: 'vmf-acr-deploy'
   params: {
     name: acrName
@@ -595,7 +595,7 @@ module acr 'br/public:avm/res/container-registry/registry:0.13.1' = {
   }
 }
 
-module acaEnv 'br/public:avm/res/app/managed-environment:0.16.0' = {
+module acaEnv 'br/public:avm/res/app/managed-environment:0.17.0' = {
   name: 'vmf-aca-env-deploy'
   params: {
     name: acaEnvName
@@ -659,7 +659,7 @@ module acaEnv 'br/public:avm/res/app/managed-environment:0.16.0' = {
 //
 // WARM-1: this is the SHARED plan when the answer is Basic. The dashboard site
 // and the facade site both sit on it, and Azure bills the plan once.
-module dashboardPlan 'br/public:avm/res/web/serverfarm:0.7.0' = {
+module dashboardPlan 'br/public:avm/res/web/serverfarm:0.7.1' = {
   name: 'vmf-dash-plan-deploy'
   params: {
     name: dashboardPlanName
@@ -757,7 +757,7 @@ module dashboard 'br/public:avm/res/web/site:0.24.0' = {
  * below needs no change - the name already points at the shared plan when the
  * answer is Basic.
  */
-module facadeHostingPlan 'br/public:avm/res/web/serverfarm:0.7.0' = if (!warm) {
+module facadeHostingPlan 'br/public:avm/res/web/serverfarm:0.7.1' = if (!warm) {
   name: 'vmf-facade-plan-deploy'
   params: {
     name: facadeHostingPlanName

@@ -173,7 +173,7 @@ async function run(label) {
  *
  * It copies the library's rules, read from the pinned library
  * (src/dashboard/msal-browser.min.js, @azure/msal-browser v5.26.0, checked
- * again on v5.28.0 by MSAL-5-28-1 and on v5.29.0 by DRIFT-PINS-2026-11-07) and from Microsoft's pages. msal-stand-in.test.js proves each rule holds.
+ * again on v5.28.0 by MSAL-5-28-1 and on v5.29.0 by DRIFT-PINS-2026-11-07 and on v5.30.0 by PARTS-1120) and from Microsoft's pages. msal-stand-in.test.js proves each rule holds.
  *
  * 1. NOTHING BUT initialize() UNTIL initialize() HAS FINISHED.
  *    "The initialize function is asynchronous and must resolve before

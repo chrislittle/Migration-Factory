@@ -42,6 +42,14 @@ function Remove-VmfRun {
         [Parameter()][string]$RemovedBy
     )
 
+    # STORE-RESERVED-NAMES-1: one run, never more. A "run" at vmf-records (a
+    # run started under that name) is every kept migration record; a "run" at
+    # a project's root (a run started under the project's id) is the whole
+    # project, machines in the middle of a move included. Asked before the
+    # migration record, a machine claim or a safety copy is touched, and the
+    # bulk delete asks again of every document (Remove-VmfStorePrefix -Kind run).
+    Assert-VmfRunPrefixDeletable -RunPath $RunPath
+
     $manifest = Read-VmfStoreJson -RunPath $RunPath -RelPath 'run.json' -Depth 6
     if (-not $manifest) { throw "There is no run at '$RunPath'." }
     $runId = [string]$manifest.runId
@@ -265,7 +273,7 @@ function Remove-VmfRun {
         }
         throw $stopped
     }
-    $docs = Remove-VmfStorePrefix -RunPath $RunPath -Confirm:$false
+    $docs = Remove-VmfStorePrefix -RunPath $RunPath -Kind run -Confirm:$false
 
     [pscustomobject]@{
         RunId = $runId

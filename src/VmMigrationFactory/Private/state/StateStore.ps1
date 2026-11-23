@@ -163,12 +163,24 @@ function Initialize-VmfRun {
         [Parameter()][AllowNull()][string]$Project
     )
 
+    # STORE-RESERVED-NAMES-1: never at a folder the product keeps, asked before
+    # the store is touched. And a NEW run never at a project's root or inside
+    # another run: a run there is one whose delete takes the project, or the
+    # other run. Asked only when there is no manifest yet, the one time a run
+    # is made, so every later call costs no extra read.
+    Assert-VmfRunNames -RunPath $RunPath
+    $hasManifest = Test-VmfStoreItem -RunPath $RunPath -RelPath 'run.json'
+    if (-not $hasManifest) {
+        Assert-VmfNotProject -RunPath $RunPath
+        Assert-VmfParentNotRun -RunPath $RunPath -HasProject:([bool]$Project)
+    }
+
     Initialize-VmfStore -RunPath $RunPath
 
     # NOT re-written when it already exists. Every operation calls this, so a
     # later call that could overwrite the kind would silently turn an assessment
     # into a migration the moment somebody planned from it.
-    if (-not (Test-VmfStoreItem -RunPath $RunPath -RelPath 'run.json')) {
+    if (-not $hasManifest) {
         $manifest = [ordered]@{
             schemaVersion  = 9
             kind           = $Kind

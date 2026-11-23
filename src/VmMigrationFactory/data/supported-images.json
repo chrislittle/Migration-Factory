@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updatedUtc": "2026-11-14",
+  "updatedUtc": "2026-11-20",
   "why": "IMAGE-1: the product migrates only machines running OS images Microsoft publishes or endorses on Azure. Azure's image API answers whether an image CAN boot on NVMe (DiskControllerTypes) but says nothing about whether anyone still supports it - CentOS 7.9 is end-of-life and still reports NVMe support. Support is therefore a curated judgement and lives here as DATA, with a date, so it can be reviewed and changed without touching code.",
   "publishers": [
     { "publisher": "MicrosoftWindowsServer", "os": "Windows", "support": "microsoft-published" },
@@ -40,10 +40,10 @@
       "offerPattern": "^azurelinux-(\\d+)$",
       "os": "Linux",
       "support": "unsupported",
-      "note": "Microsoft says that Azure Linux 4.0 is in preview, for evaluation and testing only, and not for production use. The product does not move this machine.",
+      "note": "The scripts that the product runs in the machine do not support Azure Linux 4.0. The product does not move this machine.",
       "source": "https://learn.microsoft.com/azure/azure-linux/azure-linux-vm-vmss-overview",
-      "readUtc": "2026-11-12",
-      "why": "DRIFT-12: Azure Linux 4.0 images are published under the microsoftazurelinux publisher, offer azurelinux-4 (the source page; measured 2026-11-12 with az vm image list-skus: SKUs 4, 4-fips, 4-arm64, 4-arm64-fips, Generation 2, DiskControllerTypes SCSI, NVMe). The automatic guest patching page names the publisher Microsoft; Azure has no publisher of that name in five regions. offerPattern limits this entry to the azurelinux-<n> offers, and its group is the release the advice reads (Get-VmfImageRelease). An Arm64 SKU is refused by its size, as every Arm64 machine is. When Microsoft makes 4.0 generally available, change support to microsoft-published."
+      "readUtc": "2026-11-20",
+      "why": "DRIFT-12: Azure Linux 4.0 images are published under the microsoftazurelinux publisher, offer azurelinux-4 (the source page; measured 2026-11-12 with az vm image list-skus: SKUs 4, 4-fips, 4-arm64, 4-arm64-fips, Generation 2, DiskControllerTypes SCSI, NVMe). The automatic guest patching page names the publisher Microsoft; Azure has no publisher of that name in five regions. offerPattern limits this entry to the azurelinux-<n> offers, and its group is the release the advice reads (Get-VmfImageRelease). An Arm64 SKU is refused by its size, as every Arm64 machine is. DRIFT-13 (2026-11-20): the source page no longer calls 4.0 a preview and says that 4.0 supports Generation 2 only, and the endorsed-distros page now lists Azure Linux (offer azurelinux-4). The machine stays not supported, because nvme-fix.sh has no branch for the os-release ID azurelinux; AZURE-LINUX-3-SUPPORT-1 adds it, proves a move and a rollback, and then changes support to microsoft-published."
     },
     { "publisher": "Canonical", "os": "Linux", "support": "endorsed" },
     { "publisher": "RedHat", "os": "Linux", "support": "endorsed" },

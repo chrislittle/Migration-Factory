@@ -63,7 +63,7 @@
     {
       "code": "permissionMissingReservationGroup",
       "title": "The product's managed identity is missing a permission on the capacity reservation group of this machine",
-      "meaning": "This machine is in a capacity reservation group, or was in one before the first change. The move keeps the machine in its group, and a rollback or a restore returns the machine to the group it was in. Azure checks a permission on the group for that. The product's managed identity does not have it. The stop names each group and each action.",
+      "meaning": "This machine is in a capacity reservation group, or was in one before the first change. The move keeps the machine in its group, and a rollback or a restore returns the machine to the group it was in. Azure checks a permission on the group for that. The product's managed identity does not have it. The stop names the group and each action.",
       "whatToDo": "Grant the VMF Migration role on the capacity reservation group that the stop names. The access Assess and migrate gives this role.",
       "machine": "untouched",
       "retry": "afterFix"

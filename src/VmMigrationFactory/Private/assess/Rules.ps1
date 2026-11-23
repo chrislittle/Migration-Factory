@@ -1090,3 +1090,65 @@ function Get-VmfAssessmentRecord {
     }
     $record
 }
+
+function Get-VmfMachineNotReadRecord {
+    <#
+    .SYNOPSIS
+        LINUX-VERSION-OVERFLOW-1: the record of a machine whose assessment
+        record could not be made - held (Blocked, machine-not-read), never
+        dropped and never shown as able to move. Pure, and it never throws.
+    .DESCRIPTION
+        Invoke-VmfAssessment makes one record per machine. One machine whose
+        record threw (a version number with too many digits did) stopped the
+        scan of every machine, and no assessment was saved. Now that machine
+        gets this record, the other machines are judged, and the assessment is
+        saved - the shape SCAN-PARTIAL-SUBS-1 gives a machine whose sizes were
+        not read.
+
+        Only the facts Azure gives to every machine are copied - its id, name,
+        place, size, operating system type, generation and image. Nothing the
+        VM agent or the guest reported is copied (runningOsName and
+        runningOsVersion stay empty): that is where a value the product cannot
+        read comes from, and the target advice reads the record again.
+    .PARAMETER Vm
+        The machine as discovery gave it.
+    .PARAMETER Detail
+        What the product said when the record could not be made.
+    #>
+    [CmdletBinding()]
+    [OutputType([pscustomobject])]
+    param(
+        [Parameter(Mandatory)]$Vm,
+        [Parameter()][AllowNull()][AllowEmptyString()][string]$Detail
+    )
+    $field = { param([string]$Name) if ($Vm.PSObject.Properties[$Name] -and $null -ne $Vm.$Name) { [string]$Vm.$Name } else { '' } }
+    $blockers = [System.Collections.Generic.List[string]]::new()
+    $blockers.Add('machine-not-read')
+    $gen = & $field 'gen'
+    $note = 'The scan could not read the facts of this machine.'
+    if ($Detail) { $note = "$note The product said: $Detail" }
+    [pscustomobject]@{
+        vmId             = & $field 'id'
+        name             = & $field 'name'
+        resourceGroup    = & $field 'resourceGroup'
+        location         = & $field 'location'
+        zones            = @(@($(if ($Vm.PSObject.Properties['zones']) { $Vm.zones })) | Where-Object { $_ } | ForEach-Object { [string]$_ })
+        classification   = 'Blocked'
+        gen              = $(if ($gen -match 'V?2') { 'V2' } elseif ($gen -match 'V?1') { 'V1' } else { $null })
+        os               = & $field 'os'
+        osVersion        = & $field 'imageSku'
+        runningOsName    = ''
+        runningOsVersion = ''
+        imagePublisher   = & $field 'imagePublisher'
+        imageOffer       = & $field 'imageOffer'
+        imageId          = & $field 'imageId'
+        sourceSize       = & $field 'sku'
+        diskController   = & $field 'diskController'
+        securityType     = & $field 'securityType'
+        platformManaged  = $false
+        blockers         = @($blockers)
+        warnings         = @()
+        prepNeeded       = @()
+        notes            = @($note)
+    }
+}

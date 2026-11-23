@@ -43,6 +43,8 @@ The product refuses to delete a migration while one of its waves holds an on-dem
 
 The product also refuses to delete a migration while a restore or a finish of one of its machines has not ended. It also refuses after the product stopped one that did not finish. That machine can be part way, and the product needs the record and the safety copies to restore it. The page names each machine and tells you what to do. Then select **Delete this migration** again.
 
+The product also refuses to delete a migration while it runs a job for that migration. These jobs include a wave, a restore, **Reserve capacity**, **Release** and **Check the quota**. They also include a quota increase request, the cleanup of the safety copies, and the return of a machine to its power state. Then the page gives the reason. Wait until the job ends, then select **Delete this migration** again.
+
 <!-- next:begin -->
 
 ---

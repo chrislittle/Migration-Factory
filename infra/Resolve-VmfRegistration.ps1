@@ -215,6 +215,233 @@ function Get-VmfEntraApplicationByAppId {
     return $app
 }
 
+# INSTALL-ADOPT-OWNER-1: AN INSTALL NEVER TAKES OVER A REGISTRATION IT DID NOT MAKE.
+#
+# identity.bicep UPSERTS each registration by its uniqueName. A first install
+# with no recorded key used to find the API registration by display name and,
+# on one match, record an EMPTY key - so the uniqueName was the display name,
+# 'vmf-api-<environment>', which anybody can guess. A tenant member who made a
+# registration with that name first (the Entra default lets any user register
+# applications) then owned the application the service trusts, and the owner of
+# an application writes its app roles: they could give themselves Vmf.Admin,
+# whose id is public in identity.bicep.
+#
+# NOTHING THE DIRECTORY SHOWS PROVES WHO MADE A REGISTRATION. The first fix
+# adopted one when the installer was its one owner and its uniqueName carried a
+# key; the review showed both are the maker's to set - make it, give yourself
+# Vmf.Admin, make the installer the one owner, leave. So:
+#   - a recorded key is used as it is, and nothing is read: the uniqueName
+#     carries a key only this environment holds;
+#   - no key and no registration with either name -> a NEW random key;
+#   - no key and a registration with either name -> STOP, before the template
+#     runs. Not adoption, and not a new key either: that would make a second
+#     registration with the same display name, which every later lookup
+#     refuses (Get-VmfEntraApplication).
+# A pair kept by 'azd down' therefore stops the next install with that
+# environment name. It did not work before this change either: postdown clears
+# the key, and the empty key made a second registration beside each kept one.
+
+# A new registration key: six lower-case letters and digits from a
+# cryptographic random source, so nobody can make the uniqueName first.
+function New-VmfRegistrationKey {
+    [CmdletBinding()]
+    param()
+    $alphabet = 'abcdefghijklmnopqrstuvwxyz0123456789'
+    -join ((1..6) | ForEach-Object { $alphabet[[System.Security.Cryptography.RandomNumberGenerator]::GetInt32($alphabet.Length)] })
+}
+
+# The registration key an install uses. Returns Key and Source ('recorded' or
+# 'new'), or stops.
+function Resolve-VmfRegistrationKey {
+    [CmdletBinding()]
+    param(
+        [Parameter()][AllowEmptyString()][AllowNull()][string]$RecordedKey,
+        [Parameter(Mandatory)][string]$ApiDisplayName,
+        [Parameter(Mandatory)][string]$DashboardDisplayName
+    )
+    if ($RecordedKey) { return [pscustomobject]@{ Key = $RecordedKey; Source = 'recorded' } }
+
+    $found = @(foreach ($wanted in @($ApiDisplayName, $DashboardDisplayName)) {
+        $app = Get-VmfEntraApplication -DisplayName $wanted
+        if ($app) { $app }
+    })
+    if ($found.Count) {
+        $list = (@($found | ForEach-Object { "'$([string]$_.displayName)' (application ID $([string]$_.appId))" }) -join ', ')
+        throw ("The install stopped. These registration names are already in use in this directory: $list. " +
+               'The install does not use an application registration that it did not make in this environment. ' +
+               'Ask a directory administrator to remove these registrations. Or use a different environment name with azd env new.')
+    }
+    [pscustomobject]@{ Key = (New-VmfRegistrationKey); Source = 'new' }
+}
+
+# INSTALL-PURGE-DELETED-1: THE INSTALL PERMANENTLY DELETES ONLY A DELETED
+# REGISTRATION THAT HOLDS THE UNIQUE NAME IT IS ABOUT TO CREATE.
+#
+# Entra keeps a deleted application, and its uniqueName, for 30 days, and
+# identity.bicep upserts by uniqueName - so a deleted registration with the
+# uniqueName this install creates makes the deployment fail on a message about
+# appId (MEASURED 2026-09-09). The same measurement proved that ONLY the
+# uniqueName collides: a deleted registration with the same display name and
+# another uniqueName blocks nothing.
+#
+# The purge used to match by DISPLAY NAME, so it also permanently deleted a
+# deleted registration with the name 'vmf-api-<env>' that somebody else made
+# and might want back (MEASURED 2026-11-22). Since INSTALL-ADOPT-OWNER-1 the
+# uniqueName is '<display name>-<key>', so:
+#   - a NEW key: no registration ever held that uniqueName, so no deleted one
+#     can, and the directory is not read (-NewKey);
+#   - a RECORDED key: a deleted registration blocks the install only if its
+#     uniqueName is EXACTLY '<display name>-<key>' - one this environment made,
+#     deleted by hand while the key stayed recorded. Only that one is purged,
+#     by its object ID, and the output names it and says why.
+# A directory call that fails STOPS the install. It is never read as "no
+# deleted registration", which is the answer that lets a purge be skipped
+# silently or done on a guess.
+
+# The uniqueName identity.bicep gives a registration. Keep the two in step
+# (InstallPurgeDeleted.Tests.ps1 reads the template).
+function Get-VmfRegistrationUniqueName {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)][string]$DisplayName,
+        [Parameter(Mandatory)][string]$RegistrationKey
+    )
+    "$DisplayName-$RegistrationKey"
+}
+
+# Every deleted application registration in the directory, all pages. Stops
+# on any failure.
+function Get-VmfDeletedApplications {
+    [CmdletBinding()]
+    param([ValidateRange(1, 1000)][int]$MaxPages = 50)
+    $graphRoot = 'https://graph.microsoft.com/'
+    $what = 'the deleted application registrations'
+    # The first page is the call measured on 2026-11-22, with uniqueName added
+    # to the fields it asks for.
+    $callArgs = @('rest', '--method', 'GET', '--url',
+        'https://graph.microsoft.com/v1.0/directory/deletedItems/microsoft.graph.application?$select=id,displayName,uniqueName')
+    $all = [System.Collections.Generic.List[object]]::new()
+    for ($pagesRead = 0; $callArgs; $pagesRead++) {
+        if ($pagesRead -ge $MaxPages) {
+            throw ("The install stopped. The list of $what fills more than $MaxPages pages, so the install cannot make sure " +
+                   'that no deleted registration holds the unique name it creates.')
+        }
+        $answer = Get-VmfDirectoryList -Arguments $callArgs -What $what
+        $page = @($answer) | Select-Object -First 1
+        if ($null -eq $page -or $page.PSObject.Properties.Name -notcontains 'value') {
+            throw "The install stopped. Could not read $what from the directory (the answer holds no list of them)."
+        }
+        foreach ($item in @($page.value)) { if ($null -ne $item) { $all.Add($item) } }
+
+        $callArgs = $null
+        $next = if ($page.PSObject.Properties.Name -contains '@odata.nextLink') { [string]$page.'@odata.nextLink' } else { '' }
+        if (-not $next) { break }
+        if (-not $next.StartsWith($graphRoot, [System.StringComparison]::OrdinalIgnoreCase)) {
+            throw "The install stopped. The next page of $what has an address that does not start with $graphRoot, so the install does not read it."
+        }
+        # The next page's address holds '&', which az.cmd reads as a command
+        # separator (CLAUDE.md). So its query goes to --url-parameters, one
+        # KEY=VALUE per argument, and no argument holds '&'.
+        $parts = $next.Split('?', 2)
+        $nextArgs = @('rest', '--method', 'GET', '--url', $parts[0])
+        if ($parts.Count -gt 1 -and $parts[1]) {
+            $nextArgs += '--url-parameters'
+            foreach ($pair in $parts[1].Split('&')) {
+                if (-not $pair) { continue }
+                $decoded = [System.Uri]::UnescapeDataString($pair)
+                if ($decoded -match '[&|<>^"%\s]') {
+                    throw ("The install stopped. The next page of $what has an address that holds a character the Azure CLI " +
+                           'on Windows cannot pass, so the install does not read it.')
+                }
+                $nextArgs += $decoded
+            }
+        }
+        $callArgs = $nextArgs
+    }
+    return , $all.ToArray()
+}
+
+function Clear-VmfDeletedRegistration {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)][string]$ApiDisplayName,
+        [Parameter(Mandatory)][string]$DashboardDisplayName,
+        [Parameter(Mandatory)][string]$RegistrationKey,
+        # The application IDs the environment recorded before this run
+        # (VMF_API_APP_ID, VMF_DASHBOARD_APP_ID). Empty when none is recorded.
+        [Parameter()][AllowEmptyString()][AllowNull()][string]$RecordedApiAppId = '',
+        [Parameter()][AllowEmptyString()][AllowNull()][string]$RecordedDashboardAppId = '',
+        [switch]$NewKey
+    )
+    if ($NewKey) { return }
+    $deleted = $null
+    foreach ($want in @(@($ApiDisplayName, $RecordedApiAppId), @($DashboardDisplayName, $RecordedDashboardAppId))) {
+        $displayName = [string]$want[0]
+        $recordedAppId = [string]$want[1]
+        $uniqueName = Get-VmfRegistrationUniqueName -DisplayName $displayName -RegistrationKey $RegistrationKey
+        # THE ORDINARY UPDATE. The registration this environment recorded is
+        # still there, found by its APPLICATION ID, so it still holds the
+        # uniqueName and no deleted registration can. Nothing more is read:
+        # this does not depend on uniqueName being in the az answer.
+        if ($recordedAppId) {
+            if ($recordedAppId -notmatch '^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$') {
+                throw "The install stopped. The recorded application ID '$recordedAppId' of '$displayName' is not an application ID."
+            }
+            $byId = Get-VmfDirectoryList -Arguments @('ad', 'app', 'list', '--app-id', $recordedAppId) `
+                -What "the application registration with id $recordedAppId"
+            $present = @($byId | Where-Object {
+                $null -ne $_ -and ($_.PSObject.Properties.Name -contains 'appId') -and [string]$_.appId -eq $recordedAppId
+            })
+            if ($present.Count) { continue }
+        }
+        # No recorded ID, or the registration with it is gone (deleted in the
+        # portal). A live registration that holds this uniqueName means no
+        # deleted one can.
+        $live = Get-VmfDirectoryList -Arguments @('ad', 'app', 'list', '--display-name', $displayName) `
+            -What "the '$displayName' application registration"
+        $holder = @($live | Where-Object {
+            $null -ne $_ -and ($_.PSObject.Properties.Name -contains 'uniqueName') -and [string]$_.uniqueName -eq $uniqueName
+        })
+        if ($holder.Count) { continue }
+
+        if ($null -eq $deleted) { $deleted = Get-VmfDeletedApplications }
+        # Exact, never a prefix and never the display name: a purge cannot be
+        # undone. (-eq ignores case, as Entra does for a uniqueName; the key in
+        # it is random, so the case does not make the match less exact.)
+        $hits = @($deleted | Where-Object {
+            $null -ne $_ -and ($_.PSObject.Properties.Name -contains 'uniqueName') -and [string]$_.uniqueName -eq $uniqueName
+        })
+        foreach ($tomb in $hits) {
+            $purgeObjectId = [string]$tomb.id
+            # The id goes into a URL, so it is checked before it is sent.
+            if ($purgeObjectId -notmatch '^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$') {
+                throw "The install stopped. The deleted registration with the unique name $uniqueName has '$purgeObjectId', which is not an object ID."
+            }
+            Write-Host ("   removing the deleted registration '$([string]$tomb.displayName)' (object ID $purgeObjectId) permanently. " +
+                        "It holds the unique name $uniqueName, which this install gives its registration. Entra keeps that name 30 days.")
+            $purge = Invoke-VmfAzCall -Step "remove the deleted registration $uniqueName permanently" -Quiet -Command {
+                az rest --method DELETE --url "https://graph.microsoft.com/v1.0/directory/deletedItems/$purgeObjectId" --output none
+            }
+            if ($purge.ExitCode -ne 0) {
+                $detail = ((@($purge.ErrorLines) -join [Environment]::NewLine).Trim() + (Get-VmfAzThrottleNote -Result $purge)).Trim()
+                throw @"
+The install stopped. The deleted registration with the unique name
+$uniqueName (object ID $purgeObjectId) holds the name this install
+creates, and this account may not remove it permanently. Entra holds the name
+for 30 days, and the install cannot create the registration until it is gone.
+$detail
+
+Ask a directory administrator to run:
+
+  az rest --method DELETE --url https://graph.microsoft.com/v1.0/directory/deletedItems/$purgeObjectId
+
+Or install with a different environment name, which gives every registration a
+different name.
+"@
+            }
+        }
+    }
+}
 function Select-VmfOneByName {
     <#
     .SYNOPSIS

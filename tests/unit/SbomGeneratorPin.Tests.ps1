@@ -135,6 +135,18 @@ Describe 'SBOM-GEN-DRIFT-1: the pin names its check' {
     It 'the generator pin says how to move it' {
         (Get-Content -LiteralPath $script:realGenerator -Raw | ConvertFrom-Json).why | Should -Match ([regex]::Escape("Test-VmfPartPinDrift.ps1 -UpdateBaseline -Part $($script:key)"))
     }
+
+    # PARTS-1120: a pin moved by hand in one field and not the others was found
+    # only when the release downloaded the file. The sha256 itself cannot be
+    # checked without the download; the release checks it (New-VmfSbom.ps1).
+    It 'the generator pin names one version in its version, its release notes link and its address, and a sha256 of 64 hex digits' {
+        $gen = Get-Content -LiteralPath $script:realGenerator -Raw | ConvertFrom-Json
+        $ver = [string]$gen.version
+        $ver | Should -Match '^\d+\.\d+\.\d+$'
+        $gen.releaseNotes | Should -Be "https://github.com/anchore/syft/releases/tag/v$ver"
+        $gen.url | Should -Be "https://github.com/anchore/syft/releases/download/v$ver/syft_$($ver)_windows_amd64.zip"
+        $gen.sha256 | Should -Match '^[0-9a-f]{64}$'
+    }
 }
 
 Describe 'SBOM-GEN-DRIFT-1: the daily check of the generator (no network)' {

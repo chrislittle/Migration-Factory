@@ -142,7 +142,7 @@ Describe 'README-SCOPE-1: the scope picture is held to assessment-reasons.json' 
             'gen1-requires-redeploy', 'image-not-supported', 'image-cannot-boot-nvme',
             'windows-version-below-2019', 'linux-release-not-on-nvme-list', 'windows-version-not-proven',
             'disk-encryption-present', 'hpc-or-fpga-size', 'local-nvme-storage-size',
-            'l-series-replacement', 'gpu-size', 'size-retired', 'sizes-not-read')
+            'l-series-replacement', 'gpu-size', 'size-retired', 'sizes-not-read', 'machine-not-read')
     }
 
     It 'the "leaves out" panel shows every excluded code, and no other' {

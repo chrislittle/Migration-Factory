@@ -1,6 +1,6 @@
 <#
 .SYNOPSIS
-    DIST-1a: prepare a release - set the version, commit it, tag it.
+    DIST-1a: prepare a release - set the version and commit it.
 .DESCRIPTION
     THE NORMAL WAY TO RELEASE IS THE BUTTON, not this script: Actions ->
     Release -> Run workflow, and type the number. Since 2026-09-08, a release
@@ -11,16 +11,18 @@
     apply different ones - and the copy that drifted would be the one nobody
     ran.
 
-    A release is a tag whose name equals the manifest's ModuleVersion. Doing
-    that by hand is two edits in two places that must agree, and the release
-    workflow refuses the tag when they do not - after the tag is already
-    pushed, which is the awkward moment to find out.
+    A release is a tag whose name equals the manifest's ModuleVersion, and
+    README.md states the same number. Doing that by hand is edits in places
+    that must agree, and the release refuses a tag when they do not.
 
-    This makes the two agree by construction, and stops before the one step
-    that is outward-facing: it does NOT push. The workflow pushes on the next
-    line; a person running it from a laptop gets the command printed. Either
-    way, nothing anybody else can see happens until the refusals and the
-    checks have both passed.
+    This makes the two agree by construction, and stops before anything
+    outward-facing: it does NOT tag, run the checks or push.
+    VERSION-BUMP-TESTED-TREE-1 (2026-11-20): it used to run the checks and
+    then change the version, so the commit it tagged was one no check had run
+    on, and tests/unit/Readme.Tests.ps1 failed on it. Now the button's
+    tools/New-VmfReleaseTag.ps1 checks that CI passed on the head of main
+    first, runs this to commit the version on top of that exact commit, and
+    pushes and tags it (RELEASE-FLOW-RESTORE-1).
 
     IT REFUSES rather than repairs. A dirty tree, a branch that is not main, a
     version that does not move forward, or a tag that already exists all stop
@@ -81,17 +83,11 @@ if ([version]$Version -le [version]$current) {
     throw "The manifest is already at $current, so $Version does not move forward. A version that goes backwards makes every stamp ambiguous."
 }
 
-# --- 2. the gates, before the commit rather than after --------------------
-# The workflow runs these again on the tagged commit, and that is the check
-# that counts. Running them here means a person finds out now instead of after
-# a tag is pushed and has to be deleted.
-Write-Host "1/3 running the gates before anything is written..."
-& (Join-Path $PSScriptRoot 'Invoke-VmfTests.ps1')
-if ($LASTEXITCODE -ne 0) { throw 'The gates did not pass, so there is nothing to release.' }
-
-# --- 3. set, commit, tag ---------------------------------------------------
-if ($PSCmdlet.ShouldProcess("$current -> $Version", 'set the module version, commit and tag')) {
-    Write-Host "2/3 setting ModuleVersion to $Version..."
+# --- 2. set and commit ------------------------------------------------------
+# No check runs here (VERSION-BUMP-TESTED-TREE-1): CI already passed on the
+# commit this goes on top of, and this changes only the version.
+if ($PSCmdlet.ShouldProcess("$current -> $Version", 'set the module version and commit it')) {
+    Write-Host "1/2 setting ModuleVersion to $Version..."
     $text = Get-Content $manifest -Raw
     $pattern = "ModuleVersion(\s*)= '$([regex]::Escape($current))'"
     if (@([regex]::Matches($text, $pattern)).Count -ne 1) {
@@ -108,22 +104,14 @@ if ($PSCmdlet.ShouldProcess("$current -> $Version", 'set the module version, com
     $readmeText = [regex]::Replace($readmeText, $readmePattern, "Version **$Version**")
     Set-Content $readme -Value $readmeText -Encoding utf8NoBOM -NoNewline
 
-    Write-Host "3/3 committing and tagging $tag..."
+    Write-Host "2/2 committing $tag..."
     git -C $repoRoot add -- $manifest $readme
     Assert-GitOk 'stage the manifest'
     git -C $repoRoot commit -m "Release $tag"
     Assert-GitOk 'commit the version'
-    # An ANNOTATED tag: it carries who made it and when, which a lightweight
-    # tag does not, and `git describe` prefers it.
-    git -C $repoRoot tag -a $tag -m "Release $tag"
-    Assert-GitOk 'create the tag'
 
     Write-Host ''
-    Write-Host "Prepared $tag. Nothing has been pushed."
-    Write-Host 'Pushing the tag is what starts the release:'
-    Write-Host ''
-    Write-Host "    git push origin main $tag"
-    Write-Host ''
-    Write-Host 'The Release button does that step itself.'
+    Write-Host "Committed the version $Version. Nothing is tagged or pushed."
+    Write-Host 'The Release button pushes this commit to main and tags it.'
     Write-Host ''
 }

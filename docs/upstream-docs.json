@@ -5,7 +5,7 @@
   "why": "UPST-3: the v6/v7 migration documentation is the SOURCE of most rules this tool enforces - temp-disk categories, OS floors, hibernation, quota families, NVMe readiness. A change here can invalidate an engine rule with nothing in our code moving. Watched as a FOLDER so a NEW page is reported too.",
   "how": "DOCS-DRIFT-LEARN-1: each page is read from the site with Accept: text/markdown, and the sha256 of the text AFTER the front matter is pinned here. The accepted text itself is kept in textFolder, at the page's Learn path, so a change is shown as a difference from it. Each folder names the toc.json that lists its pages, so a NEW page is still found. A folder path is the Learn path of the GitHub folder it was watched in: articles/ became azure/ for azure-compute-docs and azure-docs, and docs/ became entra/ for entra-docs. Every page's own front matter (source_path) confirmed its GitHub path on 2026-10-03.",
   "license": "The stored text is Microsoft documentation, kept for comparison only. Microsoft publishes it under CC BY 4.0 (azure-compute-docs, azure-docs) and MIT (entra-docs), per each repository's LICENSE file, read 2026-10-03. Each file is named by the Learn page it came from.",
-  "checkedUtc": "2026-11-12T15:43:54.5170373Z",
+  "checkedUtc": "2026-11-20T15:31:51.3274571Z",
   "folders": [
     {
       "path": "azure/virtual-machines/sizes/lifecycle",
@@ -243,7 +243,7 @@
       "pages": [
         {
           "name": "endorsed-distros",
-          "sha256": "7b04796ef1b14e1f5241d0b6c8b12847b46b7f53a2491035d3954831f786da4e"
+          "sha256": "546a2ccc784a4ff880843fa71e52ffaa7510b3bbfc3de2f3b186dacfb459baf6"
         }
       ]
     },
@@ -253,12 +253,12 @@
       "include": "^azure-linux-vm-vmss-overview$",
       "githubSource": "MicrosoftDocs/azure-management-docs/articles/azure-linux (never watched there; added 2026-11-12, DRIFT-12)",
       "localDerivatives": [
-        "src/VmMigrationFactory/data/supported-images.json microsoftazurelinux (DRIFT-12): Azure Linux 4.0 images are published under the publisher microsoftazurelinux, offer azurelinux-4, and Azure Linux 4.0 is in preview, for evaluation and testing only. The entry says not supported for that reason, and its offerPattern is what Get-VmfImageSupport and the release reader Get-VmfImageRelease (src/VmMigrationFactory/Private/plan/AdviceAn.ps1, the MANA advice) read. If the publisher, the offer or the preview statement changes - for example general availability - this entry is the thing to change"
+        "src/VmMigrationFactory/data/supported-images.json microsoftazurelinux (DRIFT-12): Azure Linux 4.0 images are published under the publisher microsoftazurelinux, offer azurelinux-4, Generation 2 only. The page called 4.0 a preview until DRIFT-13 (2026-11-20) found the note gone. The entry says not supported because nvme-fix.sh has no branch for the os-release ID azurelinux (AZURE-LINUX-3-SUPPORT-1 owns that), and its offerPattern is what Get-VmfImageSupport and the release reader Get-VmfImageRelease (src/VmMigrationFactory/Private/plan/AdviceAn.ps1, the MANA advice) read. If the publisher, the offer or the generations change, this entry is the thing to change"
       ],
       "pages": [
         {
           "name": "azure-linux-vm-vmss-overview",
-          "sha256": "9cfb4e610cd891b68eae62f18f3b00cc5fff47b5c17ba9004c821bad6d166e9a"
+          "sha256": "21180e0f025a3d051cd77d2495526ef199ec711ad56f06cb11285f5d3077a7a9"
         }
       ]
     },
@@ -327,7 +327,7 @@
         },
         {
           "name": "d-family",
-          "sha256": "887952615093be39c317922cf2e8357ae031e63d50b59aa4a3cc0d253326cc08"
+          "sha256": "d6887284aaf108ab1d3ab5b280e0819482d79ae303a9d571d0354d8d01c2ae4d"
         },
         {
           "name": "dadsv5-series",
@@ -507,7 +507,7 @@
         },
         {
           "name": "e-family",
-          "sha256": "e315f293d062ff700520bc3feef15e2a8de93445f4dc101bf13d542c1e72bd64"
+          "sha256": "5e3f8b73a7968781c7a38e57a3ddb488d3a04042b5ff007a74d7a2079961e722"
         },
         {
           "name": "eadsv5-series",
@@ -543,7 +543,7 @@
         },
         {
           "name": "eb-family",
-          "sha256": "83c9220162cd6523c1883ad2ea1ebd83633409f43b58512417e79c994d69b956"
+          "sha256": "9777df981f75ee2182aa378d658ac2d746e5299c19a894fe964da6e9b85939ba"
         },
         {
           "name": "ebdsv5-ebsv5-series",
@@ -551,11 +551,11 @@
         },
         {
           "name": "ebdsv6-series",
-          "sha256": "19342313da8a02a26eb224b7e39927dfdc644cebea41958df35eb6fd1b66ac88"
+          "sha256": "95e2f20d6fb6d1a64c42d68ec0cea283dcb1effe89885e33ee52362a33a6d15d"
         },
         {
           "name": "ebsv6-series",
-          "sha256": "9f9b86173d67ca91776fbe32f7cb5e33c2866aecad840eaf54b036c22998d218"
+          "sha256": "d593502e1c58c14af6b46bbc063dad6ebf635804a946bba67b9b35ccc2a338c2"
         },
         {
           "name": "edsv5-series",
@@ -774,6 +774,10 @@
     {
       "url": "https://learn.microsoft.com/rest/api/compute/resource-skus/list",
       "reason": "The size list (SCAN-PARTIAL-SUBS-1). A pointer in the message for a machine whose size list the scan could not read; the rule is only that the read failed, and no rule rests on the page, so a change to it changes nothing the product does."
+    },
+    {
+      "url": "https://learn.microsoft.com/azure/governance/resource-graph/overview",
+      "reason": "Azure Resource Graph (LINUX-VERSION-OVERFLOW-1). A pointer in the message for a machine whose facts the scan could not read; the rule is only that the record of the machine could not be made, and no rule rests on the page, so a change to it changes nothing the product does."
     },
     {
       "url": "https://learn.microsoft.com/azure/virtual-machines/marketplace-images",

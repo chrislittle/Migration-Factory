@@ -67,24 +67,27 @@ Describe 'INSTALL-1: a removed install must not block the next one' {
     # install collides with the tombstone and fails on a message about appId.
     # Proven both ways: tombstones present fails, tombstones purged succeeds.
 
-    It 'the deploy clears a deleted registration that still holds a name it needs' {
-        $script:idDeploy | Should -Match 'deletedItems/microsoft\.graph\.application'
-        $script:idDeploy | Should -Match 'directory/deletedItems/\$\(\$t\.id\)'
+    It 'the deploy clears a deleted registration that still holds the unique name it needs' {
+        # INSTALL-PURGE-DELETED-1: by the UNIQUE NAME this install creates,
+        # never by display name - InstallPurgeDeleted.Tests.ps1 drives it.
+        $script:idDeploy | Should -Match 'Clear-VmfDeletedRegistration'
+        $resolve = Get-Content (Join-Path $script:repoRoot 'infra' 'Resolve-VmfRegistration.ps1') -Raw
+        $resolve | Should -Match 'deletedItems/microsoft\.graph\.application'
     }
 
-    It 'and matches the name EXACTLY, because a purge cannot be undone' {
-        # A prefix match could permanently delete a directory object that is
-        # not ours. The names are env-suffixed, so exact is enough.
-        $script:idDeploy | Should -Match '\$_\.displayName -eq \$wanted'
-        $script:idDeploy | Should -Not -Match '\$_\.displayName -like'
+    It 'and matches the unique name EXACTLY, because a purge cannot be undone' {
+        $resolve = Get-Content (Join-Path $script:repoRoot 'infra' 'Resolve-VmfRegistration.ps1') -Raw
+        $resolve | Should -Match '\[string\]\$_\.uniqueName -eq \$uniqueName'
+        $resolve | Should -Not -Match '\$_\.(displayName|uniqueName) -like'
     }
 
     It 'a purge it cannot do STOPS the install and hands over the command' {
         # Purging needs directory rights the installer may not hold. Reaching
         # the deployment anyway means meeting the confusing error instead.
-        $script:idDeploy | Should -Match 'may not remove it permanently'
-        $script:idDeploy | Should -Match 'ask a directory administrator|Ask a directory administrator'
-        $script:idDeploy | Should -Match 'different environment name'
+        $resolve = Get-Content (Join-Path $script:repoRoot 'infra' 'Resolve-VmfRegistration.ps1') -Raw
+        $resolve | Should -Match 'may not remove it permanently'
+        $resolve | Should -Match 'Ask a directory administrator'
+        $resolve | Should -Match 'different environment name'
     }
 
     It 'and the manual says it before a person meets it' {
@@ -121,16 +124,16 @@ Describe 'INSTALL-1: a removal cannot poison the next install' {
         $script:identity | Should -Match 'displayName: dashboardDisplayName'
     }
 
-    It 'an EMPTY key means "as it was", which is the migration' {
-        # Every install made before this change has uniqueName equal to
-        # displayName. Generating a key for them would create a SECOND
-        # registration beside the working one.
-        $script:identity | Should -Match "empty\(registrationKey\) \? apiDisplayName"
-        $script:preprov  | Should -Match 'registrations already exist; their names are kept as they are'
+    It 'the install never records an EMPTY key, whose uniqueName anybody can make first' {
+        # INSTALL-ADOPT-OWNER-1: the empty key used to adopt any registration
+        # with the display name. With no recorded key, a registration with the
+        # name now stops the install (InstallAdoptOwner.Tests.ps1 drives it).
+        $script:preprov | Should -Not -Match 'registrations already exist; their names are kept as they are'
+        $script:preprov | Should -Not -Match "Set-AzdValue -Name 'VMF_REGISTRATION_KEY' -Value ''"
     }
 
     It 'a key is generated ONLY when there is no registration to preserve' {
-        $script:preprov | Should -Match 'Get-VmfEntraApplication -DisplayName \$names\.Api'
+        $script:preprov | Should -Match 'Resolve-VmfRegistrationKey -RecordedKey'
         $script:preprov | Should -Match 'fresh install: registrations get the key'
     }
 
@@ -142,8 +145,9 @@ Describe 'INSTALL-1: a removal cannot poison the next install' {
     It 'the purge survives as the FALLBACK, for registrations deleted by hand' {
         # The key stops azd down creating the problem. It does not help when
         # somebody deletes the registrations in the portal, and then the
-        # recorded key still points at names that are tombstoned.
-        $script:idDeploy | Should -Match 'deletedItems/microsoft\.graph\.application'
+        # recorded key still points at names that are tombstoned. That is the
+        # ONE case left, so the purge takes only that unique name.
+        $script:idDeploy | Should -Match 'Clear-VmfDeletedRegistration'
     }
 }
 

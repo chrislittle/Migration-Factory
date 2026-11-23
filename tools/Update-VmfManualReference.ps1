@@ -585,7 +585,7 @@ $winRows = @($winRows) + "| Windows client (Windows 10 and Windows 11) | Not sup
 $distroOf = @{
     Canonical = 'Ubuntu'; RedHat = 'Red Hat Enterprise Linux'; SUSE = 'SUSE Linux Enterprise Server'; Debian = 'Debian'
     Oracle = 'Oracle Linux'; MicrosoftCBLMariner = 'Azure Linux (CBL-Mariner)'; 'microsoft-dsvm' = 'Data Science Virtual Machine'
-    microsoftazurelinux = 'Azure Linux 4.0 (preview)'
+    microsoftazurelinux = 'Azure Linux 4.0'
     OpenLogic = 'CentOS'; 'center-for-internet-security-inc' = 'CIS hardened images'
 }
 $supportWords = @{ 'microsoft-published' = 'Microsoft publishes this image.'; endorsed = 'Microsoft endorses this distribution on Azure.' }
@@ -675,6 +675,9 @@ foreach ($entry in $reasons.blockers.PSObject.Properties) {
     # SCAN-PARTIAL-SUBS-1: a scan that could not read the sizes says nothing
     # about what the product supports. A new assessment clears it.
     if ($entry.Name -eq 'sizes-not-read') { continue }
+    # LINUX-VERSION-OVERFLOW-1: nor does a machine whose facts the scan could
+    # not read. A new assessment clears it.
+    if ($entry.Name -eq 'machine-not-read') { continue }
     $applies = @($entry.Value.appliesTo)
     if (@($allSeries | Where-Object { $applies -notcontains $_ }).Count) { continue }
     $r = $entry.Value

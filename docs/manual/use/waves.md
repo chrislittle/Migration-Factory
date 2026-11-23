@@ -4,7 +4,7 @@ Waves decide what moves together and in what order. The wave editor lets you bui
 
 ![The wave editor](../images/waves.png)
 
-In the wizard, the wave editor is the step **Arrange the waves**, after **Build the waves**. Later, open it from a migration's page with **Arrange the waves**. While a wave runs, that button is **Change the waves that are not running**.
+In the wizard, the wave editor is the step **Arrange the waves**, after **Build the waves**. Later, open it from a migration's page with **Arrange the waves**. While a wave runs, that button is **Change the waves that are not running**. If the wave editor cannot read which machines a worker holds, it shows the reason and does not show the waves.
 
 ## The two sides
 
@@ -29,7 +29,7 @@ A machine marked **moves with its pair** shares an availability set. Machines in
 
 ## Add, rename and delete waves
 
-**Add a wave** creates an empty wave named `new-wave`. Select the name to rename it. A wave name can hold only letters, numbers, dots, dashes and underscores, and the page says when it changes what you typed. The names unscheduled and unplanned are not available: the product uses them for the machines that are not in a wave. **Delete** on a wave removes it and returns its machines to the left side. **Move up** and **Move down** change the order in which the waves run.
+**Add a wave** creates an empty wave named `new-wave`. Select the name to rename it. A wave name can hold only letters, numbers, dots, dashes and underscores, and the page says when it changes what you typed. The names unscheduled and unplanned are not available: the product uses them for the machines that are not in a wave. Each wave must have a different name, and a different letter case does not make a different name. Thus `Prod` and `prod` are one name. You cannot change only the letter case of a saved wave name. If you type such a name, the page keeps the old name and says why. **Delete** on a wave removes it and returns its machines to the left side. **Move up** and **Move down** change the order in which the waves run.
 
 ## Smaller first waves
 

@@ -155,3 +155,109 @@ function Get-VmfRegistrationNames {
     if (-not $dashboard) { $dashboard = "vmf-dashboard-$envName" }
     @{ Api = $api; Dashboard = $dashboard }
 }
+
+# AZD-DOWN-RG-RECHECK-1: IS THE PLATFORM REALLY GONE? READ THE RESOURCE GROUP.
+#
+# FOUND 2026-11-19 in a real removal: azd down printed "Failed deleting
+# resource group" and "context canceled", and Azure still deleted the group.
+# azd runs postdown only after a delete it saw succeed, so the two Entra
+# registrations stayed. A second azd down stopped on "404
+# ResourceGroupNotFound", again before postdown.
+#
+# MEASURED 2026-11-20, azd 1.39.1, an empty resource group in a lab
+# subscription:
+#   * a successful azd down CLEARS AZURE_RESOURCE_GROUP (it is a deployment
+#     output) before postdown runs, and keeps a value predown wrote with
+#     azd env set. So predown records the name in VMF_DOWN_RESOURCE_GROUP;
+#   * azd down with the group already gone runs predown, exits 1 on
+#     ResourceGroupNotFound and never runs postdown. So predown finishes the
+#     removal itself in that case (predown.ps1);
+#   * azd hooks run postdown runs the hook with the environment, so a removal
+#     that azd stopped can be finished with it.
+#
+# The resource group is the whole platform (one resource group holds it all,
+# azure.yaml), so "the group is gone" is what TEARDOWN-1 waits for before the
+# registrations go. Only Azure's own ResourceGroupNotFound is "gone". Any other
+# failure is "unknown", never a pass.
+function Get-VmfDownResourceGroupName {
+    $recorded = Get-AzdValue -Name 'VMF_DOWN_RESOURCE_GROUP'
+    if ($recorded) { return $recorded }
+    return (Get-AzdValue -Name 'AZURE_RESOURCE_GROUP')
+}
+
+function Get-VmfResourceGroupState {
+    <#
+    .SYNOPSIS
+        One read of a resource group: gone (ResourceGroupNotFound), deleting
+        (provisioningState Deleting), present, or unknown (with what Azure
+        said, or what is missing).
+    #>
+    [CmdletBinding()]
+    param([AllowEmptyString()][string]$Name, [AllowEmptyString()][string]$Subscription)
+    # The names start with 'vmfRg' because the az script block runs in a scope
+    # below Invoke-VmfAzCall, and a plain $Name could meet one of its own.
+    $vmfRgName = $Name
+    $vmfRgSubscription = $Subscription
+    if (-not $vmfRgName) { return [pscustomobject]@{ State = 'unknown'; Detail = 'the name of the resource group is not recorded' } }
+    if (-not $vmfRgSubscription) { return [pscustomobject]@{ State = 'unknown'; Detail = 'AZURE_SUBSCRIPTION_ID is not set' } }
+    $read = Invoke-VmfAzCall -Step "read the resource group $vmfRgName" -Quiet -Command {
+        az group show --name $vmfRgName --subscription $vmfRgSubscription -o json
+    }
+    if ($read.ExitCode -eq 0) {
+        $group = $null
+        try { $group = ($read.Output -join [Environment]::NewLine) | ConvertFrom-Json } catch { $group = $null }
+        if (-not $group) { return [pscustomobject]@{ State = 'unknown'; Detail = 'Azure gave an answer that is not a resource group' } }
+        $provisioning = ''
+        if ($group.PSObject.Properties['properties'] -and $group.properties -and $group.properties.PSObject.Properties['provisioningState']) {
+            $provisioning = [string]$group.properties.provisioningState
+        }
+        if ($provisioning -eq 'Deleting') { return [pscustomobject]@{ State = 'deleting'; Detail = '' } }
+        return [pscustomobject]@{ State = 'present'; Detail = $provisioning }
+    }
+    $said = (@($read.ErrorLines) -join ' ').Trim()
+    if ($said -match '\bResourceGroupNotFound\b') { return [pscustomobject]@{ State = 'gone'; Detail = '' } }
+    if (-not $said) { $said = "az exit $($read.ExitCode)" }
+    return [pscustomobject]@{ State = 'unknown'; Detail = $said }
+}
+
+function Wait-VmfResourceGroupGone {
+    <#
+    .SYNOPSIS
+        Read the resource group until it is gone, or until a fixed limit:
+        DeletingSeconds while Azure reports it Deleting, PresentSeconds for any
+        other answer. Returns the last read.
+    #>
+    [CmdletBinding()]
+    param(
+        [AllowEmptyString()][string]$Name,
+        [AllowEmptyString()][string]$Subscription,
+        [int]$DeletingSeconds = 1800,
+        [int]$PresentSeconds = 60,
+        [ValidateRange(1, 600)][int]$IntervalSeconds = 30
+    )
+    $waited = 0
+    $saidDeleting = $false
+    $saidOther = $false
+    while ($true) {
+        $state = Get-VmfResourceGroupState -Name $Name -Subscription $Subscription
+        if ($state.State -eq 'gone') { return $state }
+        # With no name there is nothing to read again.
+        if (-not $Name -or -not $Subscription) { return $state }
+        $limit = if ($state.State -eq 'deleting') { $DeletingSeconds } else { $PresentSeconds }
+        if ($waited -ge $limit) {
+            $state | Add-Member -NotePropertyName WaitedSeconds -NotePropertyValue $waited -Force
+            return $state
+        }
+        if ($state.State -eq 'deleting' -and -not $saidDeleting) {
+            Write-Host ("   Azure is deleting the resource group $Name. The removal reads it again every $IntervalSeconds seconds, " +
+                "for up to $([Math]::Ceiling($DeletingSeconds / 60)) minutes.")
+            $saidDeleting = $true
+        }
+        elseif ($state.State -ne 'deleting' -and -not $saidOther) {
+            Write-Host "   The resource group $Name is still in Azure. The removal reads it again for up to $PresentSeconds seconds."
+            $saidOther = $true
+        }
+        Start-Sleep -Seconds $IntervalSeconds
+        $waited += $IntervalSeconds
+    }
+}

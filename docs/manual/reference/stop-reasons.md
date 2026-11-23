@@ -55,7 +55,7 @@ Each change to this machine, and its rollback, assigns its user-assigned managed
 
 ## The product's managed identity is missing a permission on the capacity reservation group of this machine
 
-This machine is in a capacity reservation group, or was in one before the first change. The move keeps the machine in its group, and a rollback or a restore returns the machine to the group it was in. Azure checks a permission on the group for that. The product's managed identity does not have it. The stop names each group and each action.
+This machine is in a capacity reservation group, or was in one before the first change. The move keeps the machine in its group, and a rollback or a restore returns the machine to the group it was in. Azure checks a permission on the group for that. The product's managed identity does not have it. The stop names the group and each action.
 
 **The machine:** Nothing on this machine was changed.
 

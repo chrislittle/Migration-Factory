@@ -428,7 +428,7 @@ Describe 'Deleting a run leaves nothing behind' {
                 }
                 return @{ StatusCode = 202; Content = '' }
             }
-            $n = Remove-VmfStorePrefix -RunPath 'azblob://acct/cont/run-x' -Confirm:$false
+            $n = Remove-VmfStorePrefix -RunPath 'azblob://acct/cont/run-x' -Kind run -Confirm:$false
             $n | Should -Be 3 -Because 'the straggler counts too'
             @($script:calls | Where-Object { $_.Method -eq 'DELETE' -and $_.Uri -match 'events\.jsonl' }).Count |
                 Should -Be 1 -Because 'the second pass is what catches it'

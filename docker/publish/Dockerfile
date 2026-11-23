@@ -17,7 +17,7 @@
 #
 # The SAME base image as the engine, pinned to the same version, so this
 # product trusts one base rather than two.
-FROM mcr.microsoft.com/azure-powershell:16.5.0-ubuntu-24.04
+FROM mcr.microsoft.com/azure-powershell:17.0.0-ubuntu-24.04
 
 # The package layout the Functions host expects, built here rather than on
 # somebody's machine: the app at the root, and the two modules under Modules/

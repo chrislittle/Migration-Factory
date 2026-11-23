@@ -23,11 +23,16 @@ function ConvertTo-VmfNotReadReportHtml {
     $enc = { param($v) [System.Net.WebUtility]::HtmlEncode([string]$v) }
     $field = { param($o, [string]$n) if ($o.PSObject.Properties[$n]) { $o.$n } else { $null } }
     $hasSizes = [bool]@($items | Where-Object { [string]$_.subject -eq 'sizes' }).Count
+    # LINUX-VERSION-OVERFLOW-1: a machine whose facts the scan could not read.
+    $hasMachine = [bool]@($items | Where-Object { [string]$_.subject -eq 'machine' }).Count
 
     $sb = [System.Text.StringBuilder]::new()
     $null = $sb.AppendLine('<h2>What this scan could not read</h2>')
     if ($hasSizes) {
         $null = $sb.AppendLine('<p>The scan finished without these. The machines of a subscription in this list are held until a new assessment reads it.</p><ul>')
+    }
+    elseif ($hasMachine) {
+        $null = $sb.AppendLine('<p>The scan finished without these. A machine in this list is held until a new assessment reads it.</p><ul>')
     }
     else {
         $null = $sb.AppendLine('<p>The scan finished without these. Everything else here is not affected.</p><ul>')
@@ -61,6 +66,14 @@ function ConvertTo-VmfNotReadReportHtml {
                     }
                 }
                 "Sizes in $(& $enc (& $field $item 'location')) for subscription $(& $enc (& $field $item 'subscriptionId')). $held Azure said: $(& $enc $said) $fix"
+            }
+            # LINUX-VERSION-OVERFLOW-1: which machine, and what the product said.
+            'machine' {
+                $machineName = ([string](& $field $item 'scope') -split '/')[-1]
+                $said = [string](& $field $item 'detail')
+                "Machine $(& $enc $machineName). The scan could not read the facts of this machine, so the machine is held." +
+                    $(if ($said) { " The product said: $(& $enc $said)" } else { '' }) +
+                    ' Start a new assessment.'
             }
             default { "The scan could not read this: $(& $enc $item.subject)" }
         }
